@@ -3,10 +3,12 @@
 
 <!-- badges: start -->
 
-\[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml/badge.svg)\]
+\[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)\]
 (<https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml>)
 
-[![Reproducibility](https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/.github/workflows/reproducibility.yaml)
+\[![Reproducibility](https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml/badge.svg)\]
+(<https://github.com/ymbouamboua/GnRHcell/.github/workflows/reproducibility.yaml>)
+
 <!-- badges: end -->
 
 # GnRHcell
