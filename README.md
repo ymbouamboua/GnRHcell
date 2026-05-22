@@ -1,6 +1,8 @@
 
 # GnRHcell
 
+<img src="inst/figures/GnRHcell-logo.png" align="right" width="180" />
+
 <!-- badges: start -->
 
 \[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)\]
