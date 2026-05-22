@@ -2,16 +2,17 @@
 % Please edit documentation in R/visualization.R
 \name{gnrh_colors}
 \alias{gnrh_colors}
-\title{GnRH color palettes}
+\title{GnRHcell color palettes}
 \usage{
-gnrh_colors(type = c("status", "class", "stage"))
+gnrh_colors(type = c("status", "truth", "stage"))
 }
 \arguments{
-\item{type}{Palette type. One of \code{"status"}, \code{"class"}, or \code{"stage"}.}
+\item{type}{Palette type. One of \code{"status"},
+\code{"truth"}, or \code{"stage"}.}
 }
 \value{
-A named character vector of colors.
+Named character vector of colors.
 }
 \description{
-Returns predefined color palettes used throughout GnRHcell plots.
+Returns named color palettes for GnRHcell metadata variables.
 }

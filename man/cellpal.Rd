@@ -2,20 +2,51 @@
 % Please edit documentation in R/visualization.R
 \name{cellpal}
 \alias{cellpal}
-\title{Generate plotting palette}
+\title{Generate a discrete color palette}
 \usage{
-cellpal(n, preset = c("base", "bright", "pastel"), reverse = FALSE)
+cellpal(
+  n = 5,
+  preset = "base",
+  theme = NULL,
+  base_colors = NULL,
+  space = c("Lab", "rgb", "HCL"),
+  oversample_factor = 1.3,
+  remove_gray = TRUE,
+  reverse = FALSE,
+  adjust_saturation = 1,
+  adjust_lightness = 1
+)
 }
 \arguments{
-\item{n}{Number of colors.}
+\item{n}{Integer. Number of colors to return.}
 
-\item{preset}{Palette preset.}
+\item{preset}{Character. Name of a predefined palette. Options include:
+"base", "journal", "ggsci_npg", "ggsci_aaas", "nature", "science", "nejm", "lancet",
+"jama", "bmj", "jco", "ggsci_ucscgb", "mult", "tableau", "bright", "pastel",
+"contrast", "earth", "tube", "tol", "simpsons", "futurama", "rickandmorty",
+"startrek", "tron", "frontiers", "flatui", "ggsci_gsea". Default NULL.}
 
-\item{reverse}{Logical; whether to reverse color order.}
+\item{theme}{Character. Thematic palettes: "viridis", "magma", "plasma", "inferno", "cividis", or any RColorBrewer palette name.}
+
+\item{base_colors}{Character vector. User-defined colors. Overrides preset/theme if provided.}
+
+\item{space}{Character. Color interpolation space: "Lab", "rgb", or "HCL".}
+
+\item{oversample_factor}{Numeric. How much to oversample before picking final n colors.}
+
+\item{remove_gray}{Logical. Remove grayish colors when oversampling.}
+
+\item{reverse}{Logical. Reverse the color order.}
+
+\item{adjust_saturation}{Numeric. Factor to adjust saturation (1 = no change).}
+
+\item{adjust_lightness}{Numeric. Factor to adjust lightness (1 = no change).}
 }
 \value{
-A character vector of colors.
+Character vector of colors.
 }
 \description{
-Generate plotting palette
+This function returns a vector of colors from predefined palettes, thematic palettes (viridis, plasma, etc.),
+or a user-provided set of base colors. It can oversample, remove grayish colors, adjust lightness and saturation,
+and reverse the palette order.
 }

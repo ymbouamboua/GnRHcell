@@ -1,6 +1,6 @@
 Package: GnRHcell
 Type: Package
-Title: GnRH Cell Detection and Staging in Single-Cell Data
+Title: An integrated framework for GnRH neuron identification and developmental trajectory inference
 Version: 0.1.0
 Authors@R:
     person(
@@ -17,22 +17,36 @@ LazyData: true
 Depends:
     R (>= 4.1.0)
 Imports:
-    Matrix,
-    methods,
-    stats,
-    utils,
     Seurat,
     SeuratObject,
+    Matrix,
     ggplot2,
+    magrittr,
+    patchwork,
+    FNN,
+    pROC,
+    RColorBrewer,
+    colorspace,
+    viridisLite,
+    cowplot,
+    dplyr,
+    ggpubr,
+    plotly,
+    scales,
+    ggrepel,
     ggraph,
     igraph,
-    pROC,
-    patchwork,
-    ggrepel,
-    rlang
+    methods,
+    grDevices,
+    stats,
+    rlang,
+    utils
 Suggests:
-    testthat,
+    testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    covr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Config/testthat/edition: 3
+VignetteBuilder: knitr

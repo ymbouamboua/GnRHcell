@@ -2,33 +2,37 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_embedding}
 \alias{plot_gnrh_embedding}
-\title{DimPlot Wrapper}
+\title{Plot GnRHcell metadata on cell embeddings}
 \usage{
 plot_gnrh_embedding(
-  obj,
+  object,
   group.by = "all",
   reduction = "umap",
   cols = NULL,
-  label = FALSE,
-  label.face = "plain",
-  dark = FALSE
+  style = "classic",
+  dark = FALSE,
+  ncol = NULL
 )
 }
 \arguments{
-\item{obj}{Seurat object.}
+\item{object}{A Seurat object processed by GnRHcell.}
 
-\item{group.by}{Metadata column used for grouping.}
+\item{group.by}{Metadata variable to plot. Use \code{"all"} to plot
+\code{gnrh_status}, \code{gnrh_truth}, and \code{gnrh_stage}.}
 
 \item{reduction}{Dimensional reduction to use.}
 
-\item{cols}{Optional colors.}
+\item{cols}{Optional color palette.}
 
-\item{label}{Logical; draw labels.}
-
-\item{label.face}{Font face for labels.}
+\item{style}{Theme style.}
 
 \item{dark}{Logical; use dark theme.}
+
+\item{ncol}{Number of columns when plotting multiple panels.}
+}
+\value{
+A ggplot2 or patchwork object.
 }
 \description{
-DimPlot Wrapper
+Visualizes GnRHcell metadata on a Seurat dimensional reduction.
 }

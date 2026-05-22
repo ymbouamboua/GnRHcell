@@ -2,48 +2,45 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_feature}
 \alias{plot_gnrh_feature}
-\title{Enhanced feature plot}
+\title{Plot GnRH feature maps}
 \usage{
 plot_gnrh_feature(
   object,
-  features,
+  features = "all",
+  feature_type = NULL,
   reduction = "umap",
-  cols = c("lightgrey", "red"),
-  raster = NULL,
-  pt.size = NULL,
-  order = TRUE,
-  dark = FALSE,
-  base_size = 12,
-  theme = c("classic", "minimal", "dark"),
-  ncol = NULL
+  ncol = 4,
+  style = "classic",
+  merge.leg = FALSE,
+  split.by = NULL,
+  title = NULL,
+  ...
 )
 }
 \arguments{
-\item{object}{A Seurat object.}
+\item{object}{A Seurat object processed by GnRHcell.}
 
-\item{features}{Features to visualize.}
+\item{features}{Features to plot, or \code{"all"}.}
+
+\item{feature_type}{Optional preset: \code{"core"}, \code{"modules"}, or \code{"all"}.}
 
 \item{reduction}{Dimensional reduction to use.}
 
-\item{cols}{Colors for low/high expression.}
+\item{ncol}{Number of columns.}
 
-\item{raster}{Logical; whether to rasterize points.}
+\item{style}{Theme style.}
 
-\item{pt.size}{Point size.}
+\item{merge.leg}{Logical; merge legends across panels.}
 
-\item{order}{Logical; whether to plot high-expression cells on top.}
+\item{split.by}{Optional metadata column for splitting.}
 
-\item{dark}{Logical; whether to use dark theme.}
+\item{title}{Optional title.}
 
-\item{base_size}{Base font size.}
-
-\item{theme}{Theme preset.}
-
-\item{ncol}{Number of columns for combined plots.}
+\item{...}{Additional arguments passed to \code{\link{cellfeature}}.}
 }
 \value{
-A ggplot object or patchwork object.
+ggplot2 or patchwork object.
 }
 \description{
-Wrapper around Seurat::FeaturePlot with GnRHcell styling.
+Wrapper around \code{\link{cellfeature}} for GnRHcell diagnostic features.
 }

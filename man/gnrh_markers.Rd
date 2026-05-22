@@ -2,70 +2,57 @@
 % Please edit documentation in R/markers.R
 \name{gnrh_markers}
 \alias{gnrh_markers}
-\title{GnRH marker detection pipeline}
+\title{Detect positive GnRH lineage markers}
 \usage{
 gnrh_markers(
-  obj,
+  object,
   group.by = "gnrh_status",
-  ident.1 = TRUE,
+  ident.1 = "pos",
   ident.2 = NULL,
   assay = "RNA",
   layer = "data",
-  min_cells = 5,
-  gnrh_gene = NULL,
-  coexpr_thresh = 0.3,
-  min_detect = 10,
-  coexpr.method = c("spearman", "cosine", "pearson"),
   methods = c("wilcox"),
-  coexpr_filter = c("none", "only", "annotate"),
+  coexpr.method = "spearman",
+  min_pct = 0.05,
+  min_fc = 0.25,
+  max_padj = 0.05,
+  coexpr_min = 0.25,
+  min_detect = 10,
   verbose = TRUE
 )
 }
 \arguments{
-\item{obj}{A Seurat object.}
+\item{object}{Seurat object}
 
-\item{group.by}{Metadata column defining groups.}
+\item{group.by}{Metadata column}
 
-\item{ident.1}{Identity/class of target group.}
+\item{ident.1}{Positive group}
 
-\item{ident.2}{Optional second group; defaults to all others.}
+\item{ident.2}{Optional comparison group}
 
-\item{assay}{Assay to use (default "RNA").}
+\item{assay}{Assay}
 
-\item{layer}{Data layer in Seurat assay (default "data").}
+\item{layer}{Layer}
 
-\item{min_cells}{Minimum number of cells required per group.}
+\item{methods}{DE methods}
 
-\item{gnrh_gene}{Optional reference GnRH gene. If NULL, auto-detected.}
+\item{coexpr.method}{Correlation method}
 
-\item{coexpr_thresh}{Coexpression threshold for filtering.}
+\item{min_pct}{Minimum detection fraction}
 
-\item{min_detect}{Minimum detection count per gene.}
+\item{min_fc}{Minimum log2FC}
 
-\item{coexpr.method}{Method for coexpression ("spearman", "cosine", "pearson").}
+\item{max_padj}{Maximum adjusted p-value}
 
-\item{methods}{Character vector of DE methods (e.g. "wilcox").}
+\item{coexpr_min}{Minimum coexpression}
 
-\item{coexpr_filter}{How to handle coexpression filtering:
-"none", "only", or "annotate".}
+\item{min_detect}{Minimum detected cells}
 
-\item{verbose}{Logical; print progress messages.}
+\item{verbose}{Print progress}
 }
 \value{
-A data.frame of ranked marker genes.
+Ranked marker table
 }
 \description{
-Runs a full differential expression + specificity + coexpression
-scoring pipeline for identifying GnRH-related marker genes in a
-Seurat object.
-}
-\details{
-The pipeline performs:
-\itemize{
-\item Differential expression across groups
-\item Gene filtering based on detection thresholds
-\item Specificity scoring between cell populations
-\item Coexpression with reference GnRH gene
-\item Composite marker scoring and ranking
-}
+Detect positive GnRH lineage markers
 }
