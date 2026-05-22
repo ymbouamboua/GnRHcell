@@ -2312,7 +2312,7 @@ cellviolin <- function(
 #'
 #' Creates a multi-panel quality-control dashboard summarizing GnRH
 #' detection results, diagnostic scores, threshold behavior, ROC
-#' performance, module-hit enrichment, and class composition.
+#' performance, module-hit enrichment, and status composition.
 #'
 #' @param object A Seurat object processed with \code{\link{detect_gnrh}}
 #' and \code{\link{gnrh_diagnostics}}. The object must contain
@@ -2328,11 +2328,11 @@ cellviolin <- function(
 #' The report includes:
 #' \itemize{
 #'   \item signal landscape: \code{GNRH1} expression versus composite score
-#'   \item score density distribution by GnRH class
+#'   \item score density distribution by GnRH status
 #'   \item threshold performance curve
 #'   \item ROC curve when two truth classes are available
 #'   \item module-hit signal versus score
-#'   \item GnRH class distribution
+#'   \item GnRH status distribution
 #'   \item enrichment across total module hits
 #' }
 #'
@@ -2428,7 +2428,7 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
   title_txt <- paste0("Signal landscape (", pct, "% GnRH+)")
 
   p1 <- ggplot2::ggplot(df, ggplot2::aes(expr, score)) +
-    ggplot2::geom_point(ggplot2::aes(color = class),
+    ggplot2::geom_point(ggplot2::aes(color = status),
       alpha = 0.8,size = 1.5) +
     ggplot2::labs(title = title_txt,
       x = "GNRH1 expression",
@@ -2438,7 +2438,7 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
     plot_theme(style = "test", leg.pos = c(0.2, 0.8))
 
   # PANEL 2: distribution
-  p2 <- ggplot2::ggplot(diag, ggplot2::aes(score, fill = class)) +
+  p2 <- ggplot2::ggplot(diag, ggplot2::aes(score, fill = status)) +
     ggplot2::geom_density(alpha = 0.4) +
     ggplot2::labs(title = "Score distribution", x = "Score", y = "Density") +
     ggplot2::scale_fill_manual(values = gnrh_colors(type = "status")) +
@@ -2478,7 +2478,7 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
     ggplot2::labs(title = "Module signal vs score", x = "Module hits", y = "Score") +
     plot_theme(style = "test")
 
-  # PANEL 6: class composition
+  # PANEL 6: status composition
 
   p6 <- plot_gnrh_distribution(object, group.by = "gnrh_status",
                                style = "test",
@@ -2486,11 +2486,11 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
                                cols = gnrh_colors("status"), label = T)
 
 
-  # PANEL 7: class  enrichment across module hits
+  # PANEL 7: status  enrichment across module hits
 
   diag$hits_total <- diag$core_hits + diag$mig_hits + diag$neuro_hits
 
-  p7 <- ggplot2::ggplot(diag, ggplot2::aes(x = factor(hits_total), fill = class)) +
+  p7 <- ggplot2::ggplot(diag, ggplot2::aes(x = factor(hits_total), fill = status)) +
     ggplot2::geom_bar(position = "fill", color = "black", linewidth = 0.2) +
     ggplot2::scale_y_continuous(labels = scales::percent_format()) +
     ggplot2::scale_fill_manual(values = gnrh_colors("status")) +

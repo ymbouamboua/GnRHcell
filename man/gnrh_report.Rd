@@ -23,17 +23,17 @@ A patchwork object containing the GnRHcell diagnostic report.
 \description{
 Creates a multi-panel quality-control dashboard summarizing GnRH
 detection results, diagnostic scores, threshold behavior, ROC
-performance, module-hit enrichment, and class composition.
+performance, module-hit enrichment, and status composition.
 }
 \details{
 The report includes:
 \itemize{
 \item signal landscape: \code{GNRH1} expression versus composite score
-\item score density distribution by GnRH class
+\item score density distribution by GnRH status
 \item threshold performance curve
 \item ROC curve when two truth classes are available
 \item module-hit signal versus score
-\item GnRH class distribution
+\item GnRH status distribution
 \item enrichment across total module hits
 }
 
