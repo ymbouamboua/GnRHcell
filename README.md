@@ -3,7 +3,8 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/inst/logo/main-log.png)
+\[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml/badge.svg)\]
+(<https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml>)
 <!-- badges: end -->
 
 # GnRHcell
@@ -24,7 +25,7 @@ The package provides an integrated framework for:
 - publication-ready graphics
 
 Built for **Seurat workflows**, `GnRHcell` is optimized for exploratory
-and reproducible analysis of rare neuroendocrine populations.
+and reproducible analysis of rare GnRH neuron populations.
 
 ------------------------------------------------------------------------
 
@@ -40,37 +41,17 @@ devtools::install_github("ymbouamboua/GnRHcell")
 # Quick Start
 
 ``` r
+suppressPackageStartupMessages({
 library(GnRHcell)
-```
-
-    ## Registered S3 method overwritten by 'pROC':
-    ##   method   from            
-    ##   plot.roc spatstat.explore
-
-``` r
 library(Seurat)
+})
 ```
 
     ## Warning: package 'Seurat' was built under R version 4.5.2
 
-    ## Loading required package: SeuratObject
-
     ## Warning: package 'SeuratObject' was built under R version 4.5.2
 
-    ## Loading required package: sp
-
     ## Warning: package 'sp' was built under R version 4.5.2
-
-    ## 'SeuratObject' was built with package 'Matrix' 1.7.4 but the current
-    ## version is 1.7.5; it is recomended that you reinstall 'SeuratObject' as
-    ## the ABI for 'Matrix' may have changed
-
-    ## 
-    ## Attaching package: 'SeuratObject'
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, t
 
 # Quick Start
 
@@ -80,7 +61,6 @@ library(Seurat)
 # Example: create a small Seurat object
 mat <- matrix(rpois(2000, lambda = 5), nrow = 100)
 obj <- CreateSeuratObject(mat)
-
 obj <- NormalizeData(obj)
 obj <- FindVariableFeatures(obj)
 obj <- ScaleData(obj)
@@ -96,17 +76,27 @@ obj <- run_gnrh(obj)
 
 Example console output:
 
-\[GNRH\] ==== STARTING GnRHcell PIPELINE ==== \[STEP\] \[1/3\] Detecting
-GnRH cells \[DONE\] Detection complete. Duration: 7.6s \[STEP\] \[2/3\]
-Assigning developmental stages \[DONE\] Staging complete. Duration: 2.3s
-\[INFO\] \[3/3\] Running diagnostics \[DONE\] Diagnostics complete.
-Duration: 1.1s
+``` text
+[GNRH] ==== STARTING GnRHcell PIPELINE ====
+[STEP] [1/3] Detecting GnRH cells
+[DONE] Detection complete. Duration: 7.6s
+[STEP] [2/3] Assigning developmental stages
+[DONE] Staging complete. Duration: 2.3s
+[INFO] [3/3] Running diagnostics
+[DONE] Diagnostics complete. Duration: 1.1s
 
-\[INFO\] PIPELINE SUMMARY \[INFO\] Status: \[INFO\] neg: 28452 \[INFO\]
-pos: 317 \[INFO\] Stage: \[INFO\] progenitor: 62 \[INFO\] migrating: 121
-\[INFO\] mature: 134
+[INFO] PIPELINE SUMMARY
+[INFO] Status:
+[INFO]   neg: 28452
+[INFO]   pos: 317
 
-\[DONE\] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 11.2s
+[INFO] Stage:
+[INFO]   progenitor: 62
+[INFO]   migrating: 121
+[INFO]   mature: 134
+
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 11.2s
+```
 
 ## Visualization
 
@@ -238,7 +228,6 @@ plot_network(
 - gnrh_colors()
 - cellpal()
 - plot_theme()
-- savefig()
 
 ## Dependencies
 

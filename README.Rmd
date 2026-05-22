@@ -5,7 +5,8 @@ output: github_document
 # GnRHcell
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml/badge.svg)]
+(https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 # GnRHcell
@@ -23,7 +24,7 @@ The package provides an integrated framework for:
 - network visualization
 - publication-ready graphics
 
-Built for **Seurat workflows**, `GnRHcell` is optimized for exploratory and reproducible analysis of rare neuroendocrine populations.
+Built for **Seurat workflows**, `GnRHcell` is optimized for exploratory and reproducible analysis of rare GnRH neuron populations.
 
 ---
 
@@ -43,8 +44,10 @@ devtools::install_github("ymbouamboua/GnRHcell")
 
 ```{r}
 
+suppressPackageStartupMessages({
 library(GnRHcell)
 library(Seurat)
+})
 
 ```
 
@@ -58,7 +61,6 @@ library(Seurat)
 # Example: create a small Seurat object
 mat <- matrix(rpois(2000, lambda = 5), nrow = 100)
 obj <- CreateSeuratObject(mat)
-
 obj <- NormalizeData(obj)
 obj <- FindVariableFeatures(obj)
 obj <- ScaleData(obj)
@@ -78,6 +80,7 @@ obj <- run_gnrh(obj)
 
 Example console output:
 
+```text
 [GNRH] ==== STARTING GnRHcell PIPELINE ====
 [STEP] [1/3] Detecting GnRH cells
 [DONE] Detection complete. Duration: 7.6s
@@ -90,14 +93,14 @@ Example console output:
 [INFO] Status:
 [INFO]   neg: 28452
 [INFO]   pos: 317
+
 [INFO] Stage:
 [INFO]   progenitor: 62
 [INFO]   migrating: 121
 [INFO]   mature: 134
 
 [DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 11.2s
-
-
+```
 
 ## Visualization
 
@@ -251,7 +254,6 @@ plot_network(
 * gnrh_colors()
 * cellpal()
 * plot_theme()
-* savefig()
 
 
 ## Dependencies
