@@ -31,7 +31,7 @@ Built for **Seurat workflows**, `GnRHcell` is optimized for exploratory and repr
 
 Install the development version from GitHub:
 
-```{r}
+```{r eval=FALSE}
 
 # install.packages("devtools")
 devtools::install_github("ymbouamboua/GnRHcell")
@@ -53,7 +53,7 @@ library(Seurat)
 
 ## 1. Preprocess Seurat object
 
-```{r}
+```{r eval=FALSE}
 
 # Example: create a small Seurat object
 mat <- matrix(rpois(2000, lambda = 5), nrow = 100)
@@ -70,7 +70,7 @@ obj <- RunUMAP(obj, dims = 1:20)
 
 ## 2. Run complete GnRH pipeline
 
-```{r}
+```{r eval=FALSE}
 
 obj <- run_gnrh(obj)
 
@@ -103,7 +103,7 @@ Example console output:
 
 ### Embedding visualization
 
-```{r}
+```{r eval=FALSE}
 
 p <- plot_gnrh_embedding(
   obj,
@@ -116,7 +116,7 @@ p
 
 ### Feature expression
 
-```{r}
+```{r eval=FALSE}
 
 p <- plot_gnrh_feature(
   obj,
@@ -131,7 +131,7 @@ p
 
 GnRH status by sample:
 
-```{r}
+```{r eval=FALSE}
 
 plot_gnrh_distribution(
   obj,
@@ -146,7 +146,7 @@ plot_gnrh_distribution(
 
 Developmental stages by sample:
 
-```{r}
+```{r eval=FALSE}
 
 plot_gnrh_distribution(
   obj,
@@ -161,7 +161,7 @@ plot_gnrh_distribution(
 
 ## Diagnostic dashboard
 
-```{r}
+```{r eval=FALSE}
 
 p <- gnrh_report(obj)
 p
@@ -182,7 +182,7 @@ Includes:
 
 Identify GnRH-associated markers:
 
-```{r}
+```{r eval=FALSE}
 
 markers <- gnrh_markers(obj)
 head(markers)
@@ -192,7 +192,7 @@ head(markers)
 
 Filter coexpressed markers:
 
-```{r}
+```{r eval=FALSE}
 
 df <- subset(markers, coexpr_flag == TRUE)
 
@@ -201,7 +201,7 @@ df <- subset(markers, coexpr_flag == TRUE)
 
 Coexpression ranking:
 
-```{r}
+```{r eval=FALSE}
 
 plot_gnrh_coexpr(
   df,
@@ -212,7 +212,7 @@ plot_gnrh_coexpr(
 
 ## Gene network
 
-```{r}
+```{r eval=FALSE}
 
 plot_network(
   markers,
@@ -271,7 +271,7 @@ Major dependencies:
 
 Run tests:
 
-```{r}
+```{r eval=FALSE}
 
 devtools::test()
 
@@ -279,7 +279,7 @@ devtools::test()
 
 Run full package checks:
 
-```{r}
+```{r eval=FALSE}
 
 devtools::check()
 
@@ -287,7 +287,7 @@ devtools::check()
 
 Rebuild README:
 
-```{r}
+```{r eval=FALSE}
 
 devtools::build_readme()
 
@@ -311,21 +311,4 @@ MIT License
 GnRHcell is under active development.
 Interfaces may evolve as methods are refined.
 
-
-Main fixes:
-- removed obsolete API (`dim_plot`, `score_gnrh_cells`)
-- aligned with your actual package functions
-- fixed `gnrh_colors("class")` → `gnrh_colors("status")`
-- added real `run_gnrh()` workflow
-- added diagnostic dashboard
-- added marker/network analysis
-- polished GitHub presentation style
-
-Then run:
-
-```r
-
-devtools::build_readme()
-
-```
 

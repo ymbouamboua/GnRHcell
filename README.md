@@ -1,56 +1,290 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # GnRHcell
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml)
-
+[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/inst/logo/main-log.png)
 <!-- badges: end -->
 
-## Installation
+# GnRHcell
 
-You can install the development version of GnRHcell from
-[GitHub](https://github.com/) with:
+**High-confidence detection, developmental staging, and marker discovery
+of GnRH neurons from single-cell RNA-seq data**
+
+`GnRHcell` is an R package for identifying rare **gonadotropin-releasing
+hormone (GnRH) neurons** in single-cell transcriptomic datasets.
+
+The package provides an integrated framework for:
+
+- high-confidence GnRH cell detection
+- developmental stage assignment
+- diagnostic performance evaluation
+- marker discovery and coexpression analysis
+- network visualization
+- publication-ready graphics
+
+Built for **Seurat workflows**, `GnRHcell` is optimized for exploratory
+and reproducible analysis of rare neuroendocrine populations.
+
+------------------------------------------------------------------------
+
+# Installation
+
+Install the development version from GitHub:
 
 ``` r
-# install.packages("pak")
-pak::pak("ymbouamboua/GnRHcell")
+# install.packages("devtools")
+devtools::install_github("ymbouamboua/GnRHcell")
 ```
 
-## Example
-
-This is a basic example which shows you how to solve a common problem:
+# Quick Start
 
 ``` r
 library(GnRHcell)
-#> Registered S3 method overwritten by 'pROC':
-#>   method   from            
-#>   plot.roc spatstat.explore
-## basic example code
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
+    ## Registered S3 method overwritten by 'pROC':
+    ##   method   from            
+    ##   plot.roc spatstat.explore
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+library(Seurat)
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this.
+    ## Warning: package 'Seurat' was built under R version 4.5.2
 
-You can also embed plots, for example:
+    ## Loading required package: SeuratObject
 
-<img src="man/figures/README-pressure-1.png" alt="" width="100%" />
+    ## Warning: package 'SeuratObject' was built under R version 4.5.2
 
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
+    ## Loading required package: sp
+
+    ## Warning: package 'sp' was built under R version 4.5.2
+
+    ## 'SeuratObject' was built with package 'Matrix' 1.7.4 but the current
+    ## version is 1.7.5; it is recomended that you reinstall 'SeuratObject' as
+    ## the ABI for 'Matrix' may have changed
+
+    ## 
+    ## Attaching package: 'SeuratObject'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, t
+
+# Quick Start
+
+## 1. Preprocess Seurat object
+
+``` r
+# Example: create a small Seurat object
+mat <- matrix(rpois(2000, lambda = 5), nrow = 100)
+obj <- CreateSeuratObject(mat)
+
+obj <- NormalizeData(obj)
+obj <- FindVariableFeatures(obj)
+obj <- ScaleData(obj)
+obj <- RunPCA(obj)
+obj <- RunUMAP(obj, dims = 1:20)
+```
+
+## 2. Run complete GnRH pipeline
+
+``` r
+obj <- run_gnrh(obj)
+```
+
+Example console output:
+
+\[GNRH\] ==== STARTING GnRHcell PIPELINE ==== \[STEP\] \[1/3\] Detecting
+GnRH cells \[DONE\] Detection complete. Duration: 7.6s \[STEP\] \[2/3\]
+Assigning developmental stages \[DONE\] Staging complete. Duration: 2.3s
+\[INFO\] \[3/3\] Running diagnostics \[DONE\] Diagnostics complete.
+Duration: 1.1s
+
+\[INFO\] PIPELINE SUMMARY \[INFO\] Status: \[INFO\] neg: 28452 \[INFO\]
+pos: 317 \[INFO\] Stage: \[INFO\] progenitor: 62 \[INFO\] migrating: 121
+\[INFO\] mature: 134
+
+\[DONE\] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 11.2s
+
+## Visualization
+
+### Embedding visualization
+
+``` r
+p <- plot_gnrh_embedding(
+  obj,
+  group.by = c("gnrh_status", "gnrh_stage")
+)
+
+p
+```
+
+### Feature expression
+
+``` r
+p <- plot_gnrh_feature(
+  obj,
+  feature_type = "all"
+)
+
+p
+```
+
+### Distribution plots
+
+GnRH status by sample:
+
+``` r
+plot_gnrh_distribution(
+  obj,
+  group.by = "gnrh_status",
+  split.by = "orig.ident",
+  proportion = TRUE,
+  label = FALSE,
+  cols = gnrh_colors("status")
+)
+```
+
+Developmental stages by sample:
+
+``` r
+plot_gnrh_distribution(
+  obj,
+  group.by = "gnrh_stage",
+  split.by = "orig.ident",
+  proportion = TRUE,
+  label = FALSE,
+  cols = gnrh_colors("stage")
+)
+```
+
+## Diagnostic dashboard
+
+``` r
+p <- gnrh_report(obj)
+p
+```
+
+Includes:
+
+- signal landscape
+- score distributions
+- threshold performance
+- ROC analysis
+- module signal summary
+- stage composition
+- classification diagnostics
+
+## Marker Discovery
+
+Identify GnRH-associated markers:
+
+``` r
+markers <- gnrh_markers(obj)
+head(markers)
+```
+
+Filter coexpressed markers:
+
+``` r
+df <- subset(markers, coexpr_flag == TRUE)
+```
+
+Coexpression ranking:
+
+``` r
+plot_gnrh_coexpr(
+  df,
+  coexp_cutoff = 0.3
+)
+```
+
+## Gene network
+
+``` r
+plot_network(
+  markers,
+  top_n = 50,
+  threshold = 0.1
+)
+```
+
+## Core Functions
+
+### Pipeline
+
+- run_gnrh() — complete detection/staging/diagnostics workflow
+- detect_gnrh() — GnRH cell detection
+- stage_gnrh() — developmental staging
+- gnrh_diagnostics() — performance diagnostics
+
+### Visualization
+
+- plot_gnrh_embedding()
+- plot_gnrh_feature()
+- plot_gnrh_distribution()
+- plot_gnrh_coexpr()
+- plot_network()
+- gnrh_report()
+
+### Marker analysis
+
+- gnrh_markers()
+
+### Utilities
+
+- gnrh_colors()
+- cellpal()
+- plot_theme()
+- savefig()
+
+## Dependencies
+
+Major dependencies:
+
+- Seurat
+- ggplot2
+- patchwork
+- ggrepel
+- plotly
+- pROC
+- igraph
+- Matrix
+
+## Development
+
+Run tests:
+
+``` r
+devtools::test()
+```
+
+Run full package checks:
+
+``` r
+devtools::check()
+```
+
+Rebuild README:
+
+``` r
+devtools::build_readme()
+```
+
+## Citation
+
+If you use GnRHcell, please cite:
+
+Yvon Mbouamboua. GnRHcell: High-confidence GnRH neuron detection and
+staging from single-cell RNA-seq data.
+
+## License
+
+MIT License
+
+## Status
+
+GnRHcell is under active development. Interfaces may evolve as methods
+are refined.
