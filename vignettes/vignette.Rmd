@@ -1,5 +1,5 @@
 ---
-title: "An integrated framework for GnRH neuron identification and developmental trajectory inference"
+title: "GnRHcell: GnRH neuron identification and developmental staging"
 author: "Yvon Mbouamboua & Paolo Giacobini"
 output: rmarkdown::html_vignette
 vignette: >
@@ -7,720 +7,520 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
 # Overview
 
-Gonadotropin-releasing hormone (GnRH) neurons are rare hypothalamic neuroendocrine cells essential for reproductive function. In single-cell RNA sequencing (scRNA-seq) datasets, their identification is challenging due to:
+`GnRHcell` is an R package for high-confidence detection, developmental staging, diagnostics, and marker discovery of gonadotropin-releasing hormone (GnRH) neurons from single-cell RNA-seq data.
 
-* low expression of GNRH1
-* transcriptional dropout
-* ambient RNA contamination
-* developmental heterogeneity
-* sparse transcriptomic profiles
+GnRH neurons are rare hypothalamic neuroendocrine cells essential for reproductive function. In scRNA-seq datasets, their identification is difficult because of:
 
-The `cellgnrh` R package provides a biologically informed framework for identifying and staging GnRH-expressing neurons from scRNA-seq datasets.
+- low or sparse `GNRH1` expression
+- transcriptional dropout
+- ambient RNA contamination
+- developmental heterogeneity
+- rare-cell abundance
+- incomplete neuroendocrine maturation signatures
 
-The workflow integrates:
-
-* sparse-aware normalization
-* developmental lineage scoring
-* migration signature detection
-* neuroendocrine maturation assessment
-* ambient RNA correction
-* adaptive thresholding
-* confidence classification
-* developmental stage inference
-
-The framework is specifically designed for rare neuronal populations where conventional marker-based filtering approaches often fail.
-
----
+`GnRHcell` is designed for Seurat-based workflows and integrates direct `GNRH1` expression, GnRH lineage markers, migration-associated programs, neuroendocrine maturation markers, neighborhood support, adaptive thresholding, diagnostics, and developmental stage inference.
 
 # Installation
 
 ```{r eval=FALSE}
-#remotes::install_github("ymbouamboua/cellgnrh")
+# install.packages("remotes")
+remotes::install_github("ymbouamboua/GnRHcell")
 ```
 
-# Load required libraries :
-
-```{r}
-# library(cellgnrh)
-# library(Seurat)
-# library(ggplot2)
+```{r eval=FALSE}
+library(GnRHcell)
+library(Seurat)
 ```
 
+# Input requirements
 
-Input Requirements
+`GnRHcell` expects a Seurat object containing:
 
-The workflow expects a Seurat object containing:
+- raw UMI counts
+- gene names
+- cell barcodes
+- a valid RNA assay
+- normalized data for plotting and downstream visualization
 
-* raw UMI counts
-* gene names
-* cell barcodes
+A typical object should contain a `counts` layer/slot and preferably a `data` layer/slot.
 
-Typical assay:
-
-```{r}
-#DefaultAssay(obj)
+```{r eval=FALSE}
+DefaultAssay(obj)
+dim(obj)
 ```
 
 # Example dataset
 
-To illustrate the methodology, we use the scRNA-seq dataset from Yafei Wang et al. (2022), comprising 29,623 cells from human pluripotent stem cell-derived GnRH neuron differentiation cultures. The count matrices are publicly available through Gene Expression Omnibus under accession number GSE212901. 
-
-```{r}
-
-# # Load Wang et al. scRNA-seq data
-# samples <- c("D22", "D24", "D26")
-# dir.data <- "/Users/yvon.mbouamboua/projects/singlecell/10x-data/data/Wang_GSE212901_RAW"
-# 
-# seurat.list <- lapply(samples, function(x) {
-#   counts <- Read10X(file.path(dir.data, x))
-#   CreateSeuratObject(counts = counts, project = x)
-# })
-# names(seurat.list) <- samples
-# 
-# # Quality control
-# obj <- merge(seurat.list[[1]], y = seurat.list[-1])
-# obj[["percent.mt"]] <- PercentageFeatureSet(obj, pattern = "^MT-")
-# 
-# obj <- subset(
-#   obj,
-#   subset = nFeature_RNA > 1000 &
-#            nCount_RNA > 1500 &
-#            percent.mt < 20
-# )
-# 
-# # Standard preprocessing and integration
-# obj <- NormalizeData(obj)
-# obj <- FindVariableFeatures(obj)
-# obj <- ScaleData(obj)
-# obj <- RunPCA(obj)
-# 
-# obj <- IntegrateLayers(
-#   object = obj,
-#   method = HarmonyIntegration,
-#   orig.reduction = "pca",
-#   new.reduction = "harmony"
-# )
-# 
-# # JoinLayers
-# obj <- JoinLayers(obj)
-# 
-# # Clustering and visualization
-# obj <- FindNeighbors(obj, reduction = "harmony", dims = 1:30)
-# obj <- FindClusters(obj, resolution = 0.2)
-# obj <- RunUMAP(obj, reduction = "harmony", dims = 1:30, min.dist = 0.3, spread = 0.5)
-# DimPlot(obj, group.by = "seurat_clusters")
-# 
-# # Save integrated data
-# saveRDS(obj, file.path(dir.data, "wang.rds"))
-
-```
-
-
-Inspect dimensions:
-
-```{r}
-#dim(obj)
-```
-
-
-# Step 1 — Detect GnRH-expressing cells
-
-Run the main detection pipeline:
-
-```{r}
-# obj <- gnrh_detect(
-#   obj,
-#   assay = "RNA",
-#   layer = "counts",
-#   min_umi = 2,
-#   mad_factor = 2,
-#   score_q = 0.85,
-#   min_counts = 500,
-#   verbose = TRUE
-# )
-```
-
-## Biological logic of the pipeline
-
-The detection framework integrates multiple biological modules.
-
-
-### Core developmental identity markers
-
-The core developmental module captures transcription factors and developmental regulators known to participate in hypothalamic specification and GnRH neuronal differentiation.
-
-| Gene | Biological role |  Key references |
-|--------------|--------------------|----------------------------------------|
-| GNRH1 | Encodes gonadotropin-releasing hormone; defining marker of GnRH neurons | Wray S. (2001); Herbison AE. (2018) |
-| FEZF1 | Required for olfactory system development and GnRH neuron migration|Kotan et al. (2014)|
-| ISL1 | LIM-homeodomain factor involved in neuronal differentiation | Catela et al. (2016) |
-|OTX2|Controls forebrain and hypothalamic development|Diaczok et al. (2011)|
-|SIX3/SIX6|Forebrain patterning and hypothalamic specification|Larder et al. (2011)|
-|DLX1/2/5/6|GABAergic and olfactory placode developmental programs|Long et al. (2009)|
-
-
-
-### Migration program markers
-
-GnRH neurons originate in the olfactory placode and migrate toward the hypothalamus during embryogenesis.
-
-| Gene | Biological role |  Key references |
-|--------------|--------------------|----------------------------------------|
-|ANOS1|Axonal guidance and neuronal migration; associated with Kallmann syndrome|Hardelin et al. (1992)|
-|PROKR2/PROK2|Regulate migratory guidance pathways|Pitteloud et al. (2007)|
-|NRP1/NRP2|Semaphorin receptors involved in axon guidance|Cariboni et al. (2007)|
-|SEMA3A/SEMA3C/SEMA3F|Guidance cues for olfactory and GnRH migration|Young et al. (2012)|
-|ROBO1/ROBO2|Slit-Robo migratory signaling|Andrews et al. (2006)|
-|L1CAM|Neuronal adhesion and migration|Schwarting et al. (2004)|
-|DCX|Immature migrating neuron marker|Gleeson et al. (1999)|
-
-
-
-### Neuroendocrine maturation markers
-
-These genes characterize differentiated neurosecretory neuronal states.
-
-| Gene | Biological role |  Key references |
-|--------------|--------------------|----------------------------------------|
-|KISS1R|Puberty and reproductive axis regulation|Seminara et al. (2003)|
-|TAC3/TACR3|Neurokinin B signaling in reproductive control|Topaloglu et al. (2009|
-|GNRHR|GnRH receptor signaling|Millar et al. (2004)|
-|PCSK1/PCSK2|Prohormone processing enzymes|Seidah and Chretien (1999)|
-|CHGA/CHGB|Neurosecretory granule markers|Helle et al. (2007)|
-|SCG2|Secretory granule protein|Bartolomucci et al. (2011)|
-|CPE|Peptide processing and vesicle trafficking|Fricker (1988)|
-|VGF|Neuroendocrine secretory pathway marker|Levi et al. (2004)|
-|SYP/RAB3A|Synaptic vesicle biology|Sudhof (1995)|
-
-## Sparse-aware composite scoring
-
-The GnRH confidence score integrates multiple biological modules:
-
-
-$S_i = w_1 G_i + w_2 C_i + w_3 M_i + w_4 N_i$
-
-where:
-
-* $S_i$ = composite GnRH score for cell i
-* $G_i$ = normalized GNRH1 expression
-* $C_i$ = developmental core module score
-* $M_i$ = migration module score
-* $N_i$ = neuroendocrine maturation score
-
-Default weights:
-
-$S_i = 2.5G_i + 2.0C_i + 1.0M_i + 1.5N_i$
-
-The weighting scheme prioritizes direct GNRH1 detection while retaining biologically informative auxiliary programs.
-
-
-## Module score computation
-
-For a module containing k genes:
-
-$M_{module,i} = \frac{1}{k} \sum_{j=1}^{k} E_{ij}$
-
-where:
-
-* $E_{ij}$ is normalized expression of gene $j$ in cell $i$
-* module scores are computed after library-size normalization and log transformation.
-
-Sparse-aware averaging reduces instability caused by transcriptional dropout.
-
-
-## Adaptive thresholding
-
-Primary thresholds are estimated using robust statistics:
-
-$T = \mathrm{median}(S) + \lambda \times MAD(S)$
-
-where:
-
-* $MAD$ is the median absolute deviation
-* $\lambda$ corresponds to the user-defined mad_factor
-
-Fallback quantile thresholding:
-
-$T_q = Q_q(S)$
-
-where:
-
-* $Q_q$ is the score quantile
-* $q$ corresponds to parameter $score_q$
-
-This hybrid strategy stabilizes classification in highly sparse datasets.
-
-
-## Ambient RNA correction
-
-Ambient contamination is estimated from low-complexity droplets:
-
-$A_g = \frac{1}{n} \sum_{i \in D} E_{ig}$
-
-where:
-
-* $A_g$ is estimated ambient abundance for gene $g$
-* $D$ represents low-UMI droplets
-
-Corrected expression:
-
-$E'_{ig} = \max(E_{ig} - A_g, 0)$
-
-This procedure reduces false-positive detection caused by ambient GNRH1 transcripts.
-
-
-## Developmental stage assignment
-
-Cells are assigned to developmental states using dominant biological programs.
-
-For stage-specific module scores:
-
-$Stage_i = \arg\max_k (M_{ik})$
-
-where:
-
-* $M_{ik}$ is the score of stage program $k$ in cell $i$
-
-Stages represent progressive developmental transitions:
-
-$progenitor \rightarrow migratory \rightarrow transitional \rightarrow mature \rightarrow secretory$
-
-## Adaptive thresholding
-
-Thresholds are determined dynamically using:
-
-* median + MAD
-* quantile fallback
-* composite confidence filtering
-
-This allows robust detection under sparse expression regimes.
-
-
-The final confidence score integrates:
-
-* direct GNRH1 expression
-* developmental identity
-* migration signatures
-* neuroendocrine maturation
-
-The weighted model:
+As an example, the package can be applied to the scRNA-seq dataset from Wang et al. (2022), which profiled human pluripotent stem cell-derived GnRH neuron differentiation cultures. The count matrices are available through GEO accession `GSE212901`.
 
 ```{r eval=FALSE}
-# score =
-#   2.5 * GNRH1 +
-#   2.0 * Core +
-#   1.0 * Migration +
-#   1.5 * Neuroendocrine
+samples <- c("D22", "D24", "D26")
+dir.data <- "path/to/Wang_GSE212901_RAW"
+
+seurat.list <- lapply(samples, function(x) {
+  counts <- Read10X(file.path(dir.data, x))
+  CreateSeuratObject(counts = counts, project = x)
+})
+
+names(seurat.list) <- samples
+
+obj <- merge(seurat.list[[1]], y = seurat.list[-1])
+obj[["percent.mt"]] <- PercentageFeatureSet(obj, pattern = "^MT-")
+
+obj <- subset(
+  obj,
+  subset = nFeature_RNA > 1000 &
+    nCount_RNA > 1500 &
+    percent.mt < 20
+)
+
+obj <- NormalizeData(obj)
+obj <- FindVariableFeatures(obj)
+obj <- ScaleData(obj)
+obj <- RunPCA(obj)
+obj <- RunUMAP(obj, dims = 1:30)
 ```
 
+# Run the complete GnRHcell pipeline
 
-## Cell classification
+The main entry point is `run_gnrh()`.
 
-Cells are classified into:
+```{r eval=FALSE}
 
-| Class | Description |
-|--------------|--------------------|
-| gnrh_neg | no detectable GnRH identity | 
-| gnrh_low|weak/intermediate evidence|
-| gnrh_high | high-confidence GnRH neuron |
+data(hpsc_gnrh)
 
-## Detection results
+hpsc_gnrh <- run_gnrh(hpsc_gnrh)
 
-Inspect classification counts:
-
-```{r}
-#table(obj$gnrh_class)
 ```
 
-Detected lineage
+The pipeline runs:
 
-```{r}
-#table(obj$gnrh_detected)
+1. GnRH neuron detection with `detect_gnrh()`
+2. developmental stage assignment with `stage_gnrh()`
+3. diagnostic analysis with `gnrh_diagnostics()`
+4. runtime and summary reporting
+
+Example console output:
+
+```text
+[GNRH] ==== STARTING GnRHcell PIPELINE ====
+[STEP] [1/3] Detecting GnRH cells
+[DONE] Detection complete. Duration: 7.6s
+[STEP] [2/3] Assigning developmental stages
+[DONE] Staging complete. Duration: 2.3s
+[INFO] [3/3] Running diagnostics
+[DONE] Diagnostics complete. Duration: 1.1s
+[INFO] PIPELINE SUMMARY
+[INFO] Status:
+[INFO]   neg: 28452
+[INFO]   pos: 317
+[INFO] Stage:
+[INFO]   identity: 62
+[INFO]   migrating: 121
+[INFO]   mature: 134
+[INFO]   secreting: 0
+[INFO]   non-gnrh: 28452
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 11.2s
 ```
 
-## Visualization
+# Detection model
 
-UMAP Classification
+`detect_gnrh()` uses a composite evidence framework combining:
 
-```{r}
-#plot_gnrh_umap(obj)
-```
+- direct `GNRH1` expression
+- core GnRH lineage markers
+- migration and axon-guidance markers
+- neuroendocrine maturation markers
+- ambient RNA correction
+- k-nearest-neighbor support
+- adaptive score thresholding
 
-Threshold Diagnostics
+The default detection logic is designed to reduce false positives caused by isolated `GNRH1` transcripts while retaining rare GnRH-like cells with broader biological support.
 
-```{r}
-#plot_gnrh_threshold(obj)
-```
+# Marker modules
 
-Threshold Optimization Curve
+## Core GnRH identity module
 
-```{r}
-#plot_gnrh_threshold_curve(obj)
-```
+The core module contains developmental and lineage-associated genes such as:
 
-ROC Analysis
+- `GNRH1`
+- `FEZF1`
+- `ISL1`
+- `OTX2`
+- `SIX3`
+- `SIX6`
+- `DLX1`
+- `DLX2`
+- `DLX5`
+- `DLX6`
 
-```{r}
-#plot_gnrh_roc(obj)
-```
+## Migration module
 
-Feature Visualization
+GnRH neurons originate near the olfactory placode and migrate toward the hypothalamus. Migration-related markers include:
 
-```{r}
-# plot_gnrh_feature(
-#   obj,
-#   gene = c("gnrh_expr", "gnrh_score")
-# )
-```
+- `ANOS1`
+- `PROKR2`
+- `PROK2`
+- `NRP1`
+- `NRP2`
+- `SEMA3A`
+- `SEMA3C`
+- `SEMA3F`
+- `ROBO1`
+- `ROBO2`
+- `L1CAM`
+- `DCX`
 
+## Neuroendocrine module
 
-Violin plot
+Neuroendocrine maturation markers include:
 
-```{r}
-#plot_gnrh_violin(obj)
-```
+- `KISS1R`
+- `TAC3`
+- `TACR3`
+- `GNRHR`
+- `PCSK1`
+- `PCSK2`
+- `SCG2`
+- `CHGA`
+- `CHGB`
+- `CPE`
+- `VGF`
+- `SYP`
+- `RAB3A`
 
+# Composite score
 
-# Step 2 — Developmental staging
+For each cell, `GnRHcell` computes a composite score integrating expression and marker support:
 
-After lineage detection, cells can be assigned developmental states.
-
-```{r}
-#obj <- gnrh_stage(obj)
-```
-
-## GnRH developmental stages
-
-The staging framework models progressive maturation.
-
-| Class | Description |
-|--------------|--------------------|
-| progenitor | early neural progenitors | 
-| migratory|active migratory neurons|
-| transitional | lineage transition state |
-|mature|differentiated neuroendocrine neurons|
-|secretory|hormone-secreting state|
-|other|non-GnRH lineage|
-
-
-## Probabilistic classification
-
-Instead of hard thresholding only, this estimates the probability that each cell belongs to the GnRH lineage.
-
-This is highly valuable for:
-
-* transitional states
-* developmental continua
-* low-depth datasets
-* noisy droplet data
-
-$P(\mathrm{GnRH}_i) = \frac{1}{1 + e^{-k(S_i - \mu)}}$
+$begin:math:display$
+S\_i \=
+2\.5G\_i \+
+2\.0C\_i \+
+1\.0M\_i \+
+1\.5N\_i \+
+1\.0A\_i \+
+0\.75K\_i
+$end:math:display$
 
 where:
 
-* $S_i$ is the composite GnRH score
-* $\mu$ is the score midpoint
-* $k$ controls classification sharpness
+- $begin:math:text$S\_i$end:math:text$ is the GnRH score for cell $begin:math:text$i$end:math:text$
+- $begin:math:text$G\_i$end:math:text$ is normalized `GNRH1` expression
+- $begin:math:text$C\_i$end:math:text$ is the core lineage module score
+- $begin:math:text$M\_i$end:math:text$ is the migration module score
+- $begin:math:text$N\_i$end:math:text$ is the neuroendocrine module score
+- $begin:math:text$A\_i$end:math:text$ is ambient-corrected signal support
+- $begin:math:text$K\_i$end:math:text$ is kNN neighborhood support
 
+The score is standardized before classification.
 
-```{r}
-# obj = gnrh_probability(
-#   obj,
-#   score_col = "gnrh_score",
-#   midpoint = NULL,
-#   slope = 2,
-#   threshold = 0.5,
-#   verbose = TRUE
-# )
+# Adaptive thresholding
+
+Expression and score thresholds are estimated adaptively from the dataset.
+
+The expression threshold is estimated from non-zero normalized `GNRH1` expression using a robust median absolute deviation strategy:
+
+$begin:math:display$
+T \= median\(x\) \+ \\lambda MAD\(x\)
+$end:math:display$
+
+where:
+
+- $begin:math:text$x$end:math:text$ is non-zero normalized `GNRH1` expression
+- $begin:math:text$\\lambda$end:math:text$ is controlled by `mad_factor`
+
+A quantile fallback is used when robust estimation is not possible.
+
+# Developmental staging
+
+After detection, `stage_gnrh()` assigns cells to the dominant developmental program.
+
+Current stages are:
+
+- `identity`
+- `migrating`
+- `mature`
+- `secreting`
+- `non-gnrh`
+
+```{r eval=FALSE}
+
+table(hpsc_gnrh$gnrh_stage)
+```
+
+Non-GnRH cells are assigned to `non-gnrh`.
+
+# Diagnostic report
+
+`gnrh_report()` generates a multi-panel diagnostic dashboard.
+
+```{r eval=FALSE}
+
+p <- gnrh_report(hpsc_gnrh)
+p
+
+```
+
+The report summarizes:
+
+- `GNRH1` expression versus GnRH score
+- score distributions
+- threshold performance curve
+- ROC analysis when truth labels are available
+- module hit enrichment
+- GnRH class/status composition
+
+# Embedding visualization
+
+Plot GnRH status and stage on a Seurat embedding:
+
+```{r eval=FALSE}
+
+p <- plot_gnrh_embedding(
+  hpsc_gnrh,
+  group.by = c("gnrh_status", "gnrh_stage")
+)
+
+p
+
+```
+
+# Feature visualization
+
+Plot GnRH diagnostic features:
+
+```{r eval=FALSE}
+
+p <- plot_gnrh_feature(
+  hpsc_gnrh,
+  feature_type = "all"
+)
+
+p
+
+```
+
+Common GnRH diagnostic features include:
+
+- `gnrh_raw`
+- `gnrh_expr`
+- `gnrh_score`
+- `gnrh_knn`
+- `gnrh_core_hits`
+- `gnrh_mig_hits`
+- `gnrh_neuro_hits`
+
+# Distribution plots
+
+GnRH status by sample:
+
+```{r eval=FALSE}
+
+plot_gnrh_distribution(
+  hpsc_gnrh,
+  group.by = "gnrh_status",
+  split.by = "orig.ident",
+  proportion = TRUE,
+  label = FALSE,
+  cols = gnrh_colors("status")
+)
+
+```
+
+GnRH stage by sample:
+
+```{r eval=FALSE}
+
+plot_gnrh_distribution(
+  hpsc_gnrh,
+  group.by = "gnrh_stage",
+  split.by = "orig.ident",
+  proportion = TRUE,
+  label = FALSE,
+  cols = gnrh_colors("stage")
+)
+
+```
+
+# Marker discovery
+
+Identify GnRH-associated markers:
+
+```{r eval=FALSE}
+
+markers <- gnrh_markers(hpsc_gnrh)
+head(markers)
+
+```
+
+The marker table may include:
+
+- differential expression statistics
+- detection frequency
+- specificity metrics
+- coexpression with `GNRH1`
+- composite marker scores
+- coexpression flags
+
+# Coexpression visualization
+
+Filter coexpressed markers:
+
+```{r eval=FALSE}
+
+df <- subset(markers, coexpr_flag == TRUE)
+
+```
+
+Plot top coexpressed genes:
+
+```{r eval=FALSE}
+
+plot_gnrh_coexpr(
+  df,
+  coexp_cutoff = 0.3
+)
+
+```
+
+# Gene network
+
+Build a marker similarity network:
+
+```{r eval=FALSE}
+
+plot_network(
+  markers,
+  top_n = 50,
+  threshold = 0.1
+)
+
 ```
 
 
-## Stage visualization
+# Stored metadata
 
-UMAP Staging
+After running `run_gnrh()`, the Seurat object contains additional metadata columns such as:
 
-```{r}
-# plot_gnrh_umap(
-#   obj,
-#   group.by = "gnrh_stage"
-# )
-```
+```{r eval=FALSE}
 
-Stage Score Distributions
-
-```{r}
-#plot_gnrh_stage_scores(obj)
-```
-
-
-## Marker gene identification
-
-```{r}
-
-# markers <- gnrh_markers(
-#   obj,
-#   group.by = "gnrh_predicted",
-#   ident.1 = gnrh_pos,
-#   ident.2 = gnrh_neg,
-#   verbose = TRUE
-# )
-
-#head(markers)
+grep("^gnrh", colnames(hpsc_gnrh@meta.data), value = TRUE)
 
 ```
 
+Common fields include:
 
-Markers are ranked based on:
+- `gnrh_status`
+- `gnrh_stage`
+- `gnrh_score`
+- `gnrh_expr`
+- `gnrh_raw`
+- `gnrh_core_hits`
+- `gnrh_mig_hits`
+- `gnrh_neuro_hits`
+- `gnrh_knn`
+- `gnrh_truth`
 
-* differential expression
-* specificity
-* co-expression with GNRH1
+Runtime and diagnostic information are stored in:
 
-
-## Network visualization
-
-The package also supports exploratory coexpression analysis.
-
-Star Network
-
-```{r}
-#plot_star_network(df)
+```{r eval=FALSE}
+names(hpsc_gnrh@misc$gnrh)
 ```
 
-Similarity Network
+# Extract run information
 
-```{r}
-#plot_similarity_network(df)
-```
+```{r eval=FALSE}
 
+run_info <- extract_gnrh_run_info(
+  obj,
+  dataset_name = "example_dataset"
+)
 
-## Diagnostic metadata
+run_info
 
-The pipeline stores rich metadata inside the Seurat object.
-
-Available fields:
-
-```{r}
-#names(obj@meta.data)
-```
-
-Diagnostic layer:
-
-```{r}
-#head(obj@misc$gnrh_diag)
-```
-
-Threshold sweep:
-
-```{r}
-#head(obj@misc$gnrh_threshold_curve)
-```
-
-Stored parameters:
-
-```{r}
-#obj@misc$gnrh_params
 ```
 
 # Recommended workflow
 
-```{r}
-# obj <- NormalizeData(obj)
-# obj <- RunPCA(obj)
-# obj <- RunUMAP(obj, dims = 1:30)
-# obj <- cellgnrh(obj)
-# obj <- gnrh_stage(obj)
-# plot_gnrh_umap(obj)
-# plot_gnrh_threshold(obj)
+```{r eval=FALSE}
+
+obj <- NormalizeData(obj)
+obj <- FindVariableFeatures(obj)
+obj <- ScaleData(obj)
+obj <- RunPCA(obj)
+obj <- RunUMAP(obj, dims = 1:30)
+obj <- run_gnrh(obj)
+gnrh_report(obj)
+plot_gnrh_embedding(obj, group.by = c("gnrh_status", "gnrh_stage"))
+plot_gnrh_feature(obj, feature_type = "all")
+markers <- gnrh_markers(obj)
+df <- subset(markers, coexpr_flag == TRUE)
+plot_gnrh_coexpr(df, coexp_cutoff = 0.3)
+plot_network(markers, top_n = 50, threshold = 0.1)
+
 ```
 
+# Best practices
 
-# Interpretation notes
+For droplet-based scRNA-seq, a typical starting configuration is:
 
-High-confidence cells
+```{r eval=FALSE}
 
-gnrh_high cells represent the strictest classification
-and are recommended for downstream biological analysis.
+obj <- run_gnrh(
+  obj,
+  min_umi = 2,
+  min_counts = 500,
+  mad_factor = 2,
+  score_q = 0.9
+)
 
-Low-confidence cells
-
-gnrh_low cells may represent:
-
-* transitional states
-* partial lineage commitment
-* ambient contamination
-* low-depth sequencing
-
-These should be interpreted cautiously.
-
-
-Best Practices
-
-Recommended settings for droplet-based scRNA-seq:
-
-```{r}
-# min_umi = 2
-# mad_factor = 2
-# score_q = 0.85
-# min_counts = 500
 ```
 
-For low-depth datasets:
+For lower-depth datasets, consider relaxing thresholds:
 
-```{r}
-# min_counts = 200
-# score_q = 0.75
+```{r eval=FALSE}
+
+obj <- run_gnrh(
+  obj,
+  min_umi = 1,
+  min_counts = 200,
+  score_q = 0.75
+)
+
 ```
 
-
-## Cross-species transfer learning
-
-The goal is to project GnRH lineage signatures learned in one species (human or mouse) onto another species using ortholog mapping and conserved module scoring.
-
-A lightweight implementation can be fully compatible with Seurat.
-
-```{r}
-# query_obj = gnrh_transfer_learning(
-#   ref_obj,
-#   query_obj,
-#   ref_species = "human",
-#   query_species = "mouse",
-#   ortholog_table = NULL,
-#   assay = "RNA",
-#   reduction = "cca",
-#   dims = 1:30,
-#   k.anchor = 5,
-#   verbose = TRUE
-# )
-```
-
-
-## Future extensions
-
-Future versions of cellgnrh may incorporate machine learning and graph-based methods for improved rare-cell detection and developmental lineage modeling.
-
-### Probabilistic classification
-
-Current classification is based on adaptive thresholding of composite GnRH lineage scores. However, neuronal identity often exists along continuous developmental trajectories rather than discrete states.
-
-Future implementations may therefore include probabilistic lineage inference models:
-
-$P(\mathrm{GnRH}_i) = \frac{1}{1 + e^{-k(S_i - \mu)}}$
-
-where:
-
-- $(P(\mathrm{GnRH}i))$ is the probability that cell $(i)$ belongs to the GnRH lineage
-- $(S_i)$ is the composite GnRH score
-- $(\mu)$ is the score midpoint
-- $(k)$ controls classification sharpness
-
-Probabilistic modeling could improve:
-
-- transitional state detection
-- uncertainty estimation
-- low-depth dataset analysis
-- sparse transcriptomic classification
-
-### Cross-species transfer learning
-
-Because major developmental programs governing GnRH neuronal differentiation are evolutionarily conserved, future versions may support cross-species transfer learning.
-
-This framework would project lineage signatures learned in one species (e.g. mouse) onto another species (e.g. human) using ortholog mapping and shared latent representations.
-
-Potential applications include:
-
-- comparative developmental neurobiology
-- human–mouse lineage projection
-- evolutionary conservation analysis
-- annotation transfer across datasets
-
-### Graph neural networks
-
-Single-cell transcriptomic datasets are naturally represented as cell-cell neighborhood graphs. Future versions of cellgnrh may therefore incorporate graph neural network (GNN) architectures for neighborhood-aware lineage inference.
-
-Graph-based models could leverage local transcriptomic topology to improve classification robustness under sparse expression conditions.
-
-A graph convolutional framework may be formulated as:
-
-$H_i^{(l+1)} = \sigma\left(\sum{j \in \mathcal{N}(i)}W^{(l)} H_j^{(l)}\right)$
-
-where:
-
-- $(H_i)$ represents the latent embedding of cell $(i)$
-- $(\mathcal{N}(i))$ denotes neighboring cells
-- $(W^{(l)})$ are learnable graph weights
-- $(\sigma)$ is a nonlinear activation function
-
-Such approaches may improve:
-
-- developmental trajectory inference
-- migratory lineage reconstruction
-- neighborhood-aware classification
-- rare-cell recovery
-- continuous maturation modeling
-
-Potential future implementations may include:
-
-- graph convolutional networks (GCN)
-- graph attention networks (GAT)
-- variational graph autoencoders
-- semi-supervised lineage propagation models
-
-
+All threshold choices should be validated using the diagnostic report and biological marker context.
 
 # Reproducibility
 
-The workflow stores:
+`GnRHcell` stores:
 
-* thresholds
-* module scores
-* confidence scores
-* diagnostic tables
-* ROC metrics
-* staging assignments
+- detection parameters
+- thresholds
+- module scores
+- diagnostic tables
+- stage assignments
+- runtime information
+- session information
 
-allowing full downstream reproducibility.
-
-
-
-
-# Suggested methodological references
-
-Single-Cell RNA-seq Analysis
-
-* Stuart T, Butler A, et al. Comprehensive Integration of Single-Cell Data. Cell. 2019.
-* Hafemeister C, Satija R. Normalization and variance stabilization of single-cell RNA-seq data using regularized negative binomial regression. Genome Biology. 2019.
-* Lun ATL, McCarthy DJ, Marioni JC. A step-by-step workflow for low-level analysis of single-cell RNA-seq data. F1000Research. 2016.
-
-Ambient RNA Correction
-
-* Young MD, Behjati S. SoupX removes ambient RNA contamination from droplet-based single-cell RNA sequencing data. GigaScience. 2020.
-* Yang S, et al. Decontamination of ambient RNA in single-cell RNA-seq with DecontX. Genome Biology. 2020.
-
-Robust Statistics
-
-* Rousseeuw PJ, Croux C. Alternatives to the Median Absolute Deviation. Journal of the American Statistical Association. 1993.
-
-Developmental GnRH Biology
-
-* Wray S. Development of gonadotropin-releasing hormone-1 neurons. Frontiers in Neuroendocrinology. 2001.
-* Herbison AE. The Gonadotropin-Releasing Hormone Neuron and Its Role in the Control of Puberty. Endocrine Reviews. 2018.
-* Cariboni A, Maggi R, Parnavelas JG. From nose to fertility: the long migratory journey of gonadotropin-releasing hormone neurons. Trends in Neurosciences. 2007.
-
-# Citation
-
-If you use cellgnrh in published work, please cite:
-
-Mbouamboua Y. cellgnrh: Detection and Staging of GnRH-Expressing Cells from Single-Cell RNA-seq Data.
-
-In addition, please cite the relevant biological and computational references listed above.
-
+This supports reproducible downstream analysis.
 
 # Session information
 
-```{r}
-sessionInfo()
-```
+```{r eval=FALSE}
 
+sessionInfo()
+
+```

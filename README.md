@@ -1,7 +1,7 @@
 
 # GnRHcell
 
-<img src="inst/figures/GnRHcell-logo.png" align="right" width="180" />
+<img src="inst/figures/GnRHcell.png" align="right" width="180" />
 
 <!-- badges: start -->
 

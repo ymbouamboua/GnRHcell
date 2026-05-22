@@ -1396,7 +1396,6 @@ plot_gnrh_embedding <- function(object,
                                 dark = FALSE,
                                 ncol = NULL) {
 
-  #allowed <- c("gnrh_status","gnrh_class","gnrh_truth","gnrh_stage")
   allowed <- c("gnrh_status","gnrh_truth","gnrh_stage")
 
   if (identical(group.by, "all")) group.by <- allowed
@@ -1404,7 +1403,6 @@ plot_gnrh_embedding <- function(object,
 
   cmap <- list(
     gnrh_status = gnrh_colors("status"),
-    #gnrh_class  = gnrh_colors("class"),
     gnrh_truth  = gnrh_colors("truth"),
     gnrh_stage  = gnrh_colors("stage")
   )
@@ -2436,14 +2434,14 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
       x = "GNRH1 expression",
       y = "GnRH composite score"
     ) +
-    ggplot2::scale_color_manual(values = gnrh_colors(type = "class")) +
+    ggplot2::scale_color_manual(values = gnrh_colors(type = "status")) +
     plot_theme(style = "test", leg.pos = c(0.2, 0.8))
 
   # PANEL 2: distribution
   p2 <- ggplot2::ggplot(diag, ggplot2::aes(score, fill = class)) +
     ggplot2::geom_density(alpha = 0.4) +
     ggplot2::labs(title = "Score distribution", x = "Score", y = "Density") +
-    ggplot2::scale_fill_manual(values = gnrh_colors(type = "class")) +
+    ggplot2::scale_fill_manual(values = gnrh_colors(type = "status")) +
     plot_theme(style = "test", leg.pos = c(0.3, 0.8))
 
   # PANEL 3: threshold curve
@@ -2482,10 +2480,10 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
 
   # PANEL 6: class composition
 
-  p6 <- plot_gnrh_distribution(object, group.by = "gnrh_class",
+  p6 <- plot_gnrh_distribution(object, group.by = "gnrh_status",
                                style = "test",
                                plot.ttl = "Class distribution",
-                               cols = gnrh_colors("class"), label = T)
+                               cols = gnrh_colors("status"), label = T)
 
 
   # PANEL 7: class  enrichment across module hits
@@ -2495,7 +2493,7 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
   p7 <- ggplot2::ggplot(diag, ggplot2::aes(x = factor(hits_total), fill = class)) +
     ggplot2::geom_bar(position = "fill", color = "black", linewidth = 0.2) +
     ggplot2::scale_y_continuous(labels = scales::percent_format()) +
-    ggplot2::scale_fill_manual(values = gnrh_colors("class")) +
+    ggplot2::scale_fill_manual(values = gnrh_colors("status")) +
     ggplot2::labs(title = "Enrichment across module hits",
                   x = "Total hits", y = "Fraction") +
     plot_theme(style = "test", leg.pos = "none", x.ang = 90)
