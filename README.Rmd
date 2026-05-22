@@ -3,9 +3,14 @@ output: github_document
 ---
 
 
-<img src="man/figures/GnRHcell.png" align="right" width="180"/>
-
 # GnRHcell
+
+<p align="center">
+
+  <img src="man/figures/GnRHcell.png" width="220"/>
+
+</p>
+
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml)

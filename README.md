@@ -1,7 +1,11 @@
 
-<img src="man/figures/GnRHcell.png" align="right" width="180"/>
-
 # GnRHcell
+
+<p align="center">
+
+<img src="man/figures/GnRHcell.png" width="220"/>
+
+</p>
 
 <!-- badges: start -->
 
