@@ -1,5 +1,5 @@
 
-<img src="man/figures/GnRHcell.png" align="right" width="180"/>
+<img src="man/figures/GnRHcell_logo.png" align="right" width="180"/>
 
 # GnRHcell
 
