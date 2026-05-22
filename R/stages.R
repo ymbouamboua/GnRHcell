@@ -110,9 +110,9 @@ stage_gnrh <- function(
 
   stage <- assign_stage(scores)
 
-  if ("gnrh_class" %in% colnames(object[[]])) {
+  if ("gnrh_status" %in% colnames(object[[]])) {
 
-    neg <- object$gnrh_class %in% c("neg")
+    neg <- object$gnrh_status %in% c("neg")
     stage[neg] <- "non-gnrh"
   }
 
@@ -139,13 +139,16 @@ stage_gnrh <- function(
 
   object@misc$gnrh_stage_modules <- modules
 
-  log(
-    paste(
-      names(table(object$gnrh_stage)),
-      table(object$gnrh_stage),
-      collapse = " | "
-    )
-  )
+  # if ("gnrh_stage" %in% colnames(object[[]])) {
+  #
+  #   log("Stage:")
+  #
+  #   stage_tab <- table(object$gnrh_stage)
+  #
+  #   for (nm in names(stage_tab)) {
+  #     log(sprintf("  %s: %d", nm, stage_tab[[nm]]))
+  #   }
+  # }
 
   log("==== GNRH STAGING DONE ====")
 

@@ -20,11 +20,7 @@ cellpal(
 \arguments{
 \item{n}{Integer. Number of colors to return.}
 
-\item{preset}{Character. Name of a predefined palette. Options include:
-"base", "journal", "ggsci_npg", "ggsci_aaas", "nature", "science", "nejm", "lancet",
-"jama", "bmj", "jco", "ggsci_ucscgb", "mult", "tableau", "bright", "pastel",
-"contrast", "earth", "tube", "tol", "simpsons", "futurama", "rickandmorty",
-"startrek", "tron", "frontiers", "flatui", "ggsci_gsea". Default NULL.}
+\item{preset}{Character. Name of a predefined palette. Default NULL.}
 
 \item{theme}{Character. Thematic palettes: "viridis", "magma", "plasma", "inferno", "cividis", or any RColorBrewer palette name.}
 

@@ -5,6 +5,8 @@
 
 \[![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml/badge.svg)\]
 (<https://github.com/ymbouamboua/GnRHcell/.github/workflows/R-CMD-check.yaml>)
+
+[![Reproducibility](https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/.github/workflows/reproducibility.yaml)
 <!-- badges: end -->
 
 # GnRHcell
@@ -79,23 +81,32 @@ Example console output:
 ``` text
 [GNRH] ==== STARTING GnRHcell PIPELINE ====
 [STEP] [1/3] Detecting GnRH cells
-[DONE] Detection complete. Duration: 7.6s
+[INFO] ==== GNRH DETECTION START ====
+[INFO] Using assay: RNA
+[INFO] Matrix loaded: 33538 genes by 29708 cells
+[INFO] Running diagnostics
+[INFO] ==== GNRH DETECTION DONE ====
+[DONE] Detection complete. Duration: 6.1s
 [STEP] [2/3] Assigning developmental stages
-[DONE] Staging complete. Duration: 2.3s
+[INFO] ==== GNRH STAGING START ====
+[INFO] ==== GNRH STAGING DONE ====
 [INFO] [3/3] Running diagnostics
-[DONE] Diagnostics complete. Duration: 1.1s
-
+[INFO] Running diagnostics
+[DONE] Assigning stages complete. Duration: 6.1s
 [INFO] PIPELINE SUMMARY
 [INFO] Status:
-[INFO]   neg: 28452
-[INFO]   pos: 317
-
+[INFO]   neg: 26651
+[INFO]   pos: 3057
+[INFO] Truth:
+[INFO]   neg: 27080
+[INFO]   pos: 2628
 [INFO] Stage:
-[INFO]   progenitor: 62
-[INFO]   migrating: 121
-[INFO]   mature: 134
-
-[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 11.2s
+[INFO]   identity: 1128
+[INFO]   migrating: 1857
+[INFO]   mature: 69
+[INFO]   secreting: 3
+[INFO]   non-gnrh: 26651
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 7.6s
 ```
 
 ## Visualization

@@ -415,11 +415,7 @@ dark_theme <- function(
 #' and reverse the palette order.
 #'
 #' @param n Integer. Number of colors to return.
-#' @param preset Character. Name of a predefined palette. Options include:
-#'   "base", "journal", "ggsci_npg", "ggsci_aaas", "nature", "science", "nejm", "lancet",
-#'   "jama", "bmj", "jco", "ggsci_ucscgb", "mult", "tableau", "bright", "pastel",
-#'   "contrast", "earth", "tube", "tol", "simpsons", "futurama", "rickandmorty",
-#'   "startrek", "tron", "frontiers", "flatui", "ggsci_gsea". Default NULL.
+#' @param preset Character. Name of a predefined palette. Default NULL.
 #' @param theme Character. Thematic palettes: "viridis", "magma", "plasma", "inferno", "cividis", or any RColorBrewer palette name.
 #' @param base_colors Character vector. User-defined colors. Overrides preset/theme if provided.
 #' @param space Character. Color interpolation space: "Lab", "rgb", or "HCL".
@@ -453,64 +449,7 @@ cellpal <- function(
              "#1B9D77", "#86CC84", "#D3EC90", "#FBF583", "#E7C715", "#F0A957", "#F57994",
              "#E7298A", "#A90D55", "#52587E", "#17CDD3", "#8ECDE0", "#BC6298", "#AE2373",
              "#5E4EA1", "#7E8D86", "#507C51", "#1F5917", "#BEC603", "#C5DD3B", "#A8DA83",
-             "#8DD3C7"),
-    journal = c("#E64B35", "#4DBBD5", "#00A087", "#3C5488", "#F39B7F"),
-    ggsci_npg = c("#E64B35", "#4DBBD5","#00A087", "#3C5488", "#F39B7F", "#8491B4",
-                  "#91D1C2",  "#DC0000","#7E6148",  "#B09C85"),
-    ggsci_aaas = c("#3B4992", "#EE0000","#008B45", "#631879","#008280", "#BB0021",
-                   "#5F559B", "#A20056","#808180", "#1B1919"),
-    nature = c("#E64B35", "#4DBBD5", "#00A087", "#3C5488", "#F39B7F"),
-    science = c("#3B4992", "#EE0000", "#008B45", "#631879", "#008280"),
-    nejm = c("#BC3C29", "#0072B5", "#E18727", "#20854E", "#7876B1"),
-    lancet = c("#00468B", "#ED0000", "#42B540", "#0099B4", "#925E9F"),
-    jama = c("#374E55", "#DF8F44", "#00A1D5", "#B24745", "#79AF97"),
-    bmj = c("#2A6EBB", "#F0AB00", "#C50084", "#7D5CC6", "#E37222"),
-    jco = c("#0073C2", "#EFC000", "#868686", "#CD534C", "#7AA6DC"),
-    ggsci_ucscgb = c("#FF0000", "#FF9900","#FFCC00","#00FF00", "#6699FF",  "#CC33FF",
-                     "#99991E", "#999999",  "#FF00CC","#CC0000", "#FFCCCC",  "#FFFF00",
-                     "#CCFF00", "#358000",  "#0000CC","#99CCFF", "#00FFFF",  "#CCFFFF",
-                     "#9900CC", "#CC99FF",  "#996600","#666600", "#666666",  "#CCCCCC",
-                     "#79CC3D", "#CCCC99"),
-
-    mult = c("grey85","#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
-             "#FC8D59","#EF6548","#D7301F","#B30000","#7F0000",
-             "#4575B4","#74ADD1","#ABD9E9","#E0F3F8","#FFFFBF",
-             "#FEE090","#FDAE61","#F46D43","#D73027",
-             "#FDE725","#AADC32","#5DC863","#27AD81","#21908C",
-             "#2C728E","#3B528B","#472D7B","#440154"),
-    tableau = c("#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD",
-                "#8C564B", "#E377C2", "#BCBD22", "#17BECF",
-                "#AEC7E8", "#FFBB78", "#98DF8A", "#FF9896", "#C5B0D5",
-                "#C49C94", "#F7B6D2", "#DBDB8D", "#9EDAE5"),
-    bright = c("#E6194B", "#3CB44B", "#FFE119", "#4363D8", "#F58231",
-               "#911EB4", "#42D4F4", "#F032E6", "#BFEF45", "#FABEBE"),
-    pastel = c("#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF",
-               "#E6C0E9", "#D9C3A1", "#C4E5F5", "#F6D7A7", "#D1E8E2"),
-    contrast = c("#1B9E77", "#D95F02", "#7570B3", "#E7298A",
-                 "#66A61E", "#E6AB02", "#A6761D"),
-    earth = c("#A6611A", "#DFC27D", "#80CDC1", "#018571",
-              "#E5E5E5", "#F5F5F5", "#B2182B", "#D6604D"),
-    tube = c("#B36305", "#E32017", "#FFD300", "#00782A", "#F3A9BB",
-             "#A0A5A9", "#9B0056", "#000000", "#003688", "#0098D4",
-             "#95CDBA", "#00A4A7", "#EE7C0E", "#84B817", "#E21836",
-             "#7156A5"),
-    tol = c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933","#DDCC77",
-            "#CC6677", "#882255", "#AA4499", "#DDDDDD","#E69F00", "#56B4E9"),
-    simpsons = c("#FED439", "#709AE1", "#8A9197", "#D2AF81", "#FD7446", "#D5E4A2",
-                 "#197EC0", "#F05C3B", "#46732E", "#71D0F5", "#370335", "#075149",
-                 "#C80813", "#91331F", "#1A9993", "#FD8CC1"),
-    futurama = c("#FF6F00", "#C71000", "#008EA0", "#8A4198", "#5A9599", "#FF6348",
-                 "#84D7E1", "#FF95A8", "#3D3B25", "#ADE2D0", "#1A5354", "#3F4041"),
-    rickandmorty = c("#FAFD7C", "#82491E", "#24325F", "#B7E4F9", "#FB6467", "#526E2D",
-                     "#E762D7", "#E89242", "#FAE48B", "#A6EEE6", "#917C5D", "#69C8EC"),
-    startrek = c("#CC0C00", "#5C88DA", "#84BD00", "#FFCD00", "#7C878E", "#00B5E2", "#00AF66"),
-    tron = c("#FF410D", "#6EE2FF", "#F7C530", "#95CC5E", "#D0DFE6", "#F79D1E", "#748AA6"),
-    frontiers = c("#D51317", "#F39200", "#EFD500", "#95C11F", "#007B3D", "#31B7BC",
-                  "#0094CD", "#164194", "#6F286A", "#706F6F"),
-    flatui = c("#c0392b", "#d35400", "#f39c12", "#27ae60", "#16a085", "#2980b9",
-               "#8e44ad", "#2c3e50", "#7f8c8d", "#bdc3c7"),
-    ggsci_gsea = c("#4500AD",  "#2700D1","#6B58EF", "#8888FF","#C7C1FF", "#D5D5FF",
-                   "#FFC0E5", "#FF8989","#FF7080", "#FF5A5A","#EF4040", "#D60C00")
+             "#8DD3C7")
   )
 
   # determine base colors
