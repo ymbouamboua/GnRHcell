@@ -39,10 +39,10 @@
 #'   \item \code{gnrh_core_hits}
 #'   \item \code{gnrh_mig_hits}
 #'   \item \code{gnrh_neuro_hits}
-#'   \item \code{gnrh_truth}
+#'   \item \code{gnrh_confident}
 #' }
 #'
-#' If fewer than two truth classes are present, threshold performance
+#' If fewer than two confident classes are present, threshold performance
 #' metrics are skipped and a warning is issued.
 #'
 #' Performance metrics are computed across evenly spaced thresholds:
@@ -81,7 +81,7 @@ gnrh_diagnostics <- function(
     "gnrh_core_hits",
     "gnrh_mig_hits",
     "gnrh_neuro_hits",
-    "gnrh_truth"
+    "gnrh_confident"
   )
 
   missing_cols <- setdiff(required_cols, colnames(md))
@@ -93,11 +93,11 @@ gnrh_diagnostics <- function(
     )
   }
 
-  # recover truth
-  truth <- md$gnrh_truth
+  # recover confident
+  confident <- md$gnrh_confident
 
-  truth <- factor(
-    as.character(truth),
+  confident <- factor(
+    as.character(confident),
     levels = c("neg", "pos")
   )
 
@@ -111,7 +111,7 @@ gnrh_diagnostics <- function(
     core_hits  = md$gnrh_core_hits,
     mig_hits   = md$gnrh_mig_hits,
     neuro_hits = md$gnrh_neuro_hits,
-    truth      = truth,
+    confident      = confident,
     stringsAsFactors = FALSE
   )
 
@@ -125,15 +125,15 @@ gnrh_diagnostics <- function(
 
   ok <- is.finite(score) &
     !is.na(score) &
-    !is.na(truth)
+    !is.na(confident)
 
   score <- score[ok]
-  truth <- truth[ok]
+  confident <- confident[ok]
 
-  if (length(unique(truth)) < 2) {
+  if (length(unique(confident)) < 2) {
 
     warning(
-      "ROC/curve skipped: truth has <2 classes"
+      "ROC/curve skipped: confident has <2 classes"
     )
 
     return(object)
@@ -149,12 +149,12 @@ gnrh_diagnostics <- function(
 
     pred <- score >= t
 
-    truth_bin <- truth == "pos"
+    confident_bin <- confident == "pos"
 
-    TP <- sum(pred & truth_bin)
-    FP <- sum(pred & !truth_bin)
-    FN <- sum(!pred & truth_bin)
-    TN <- sum(!pred & !truth_bin)
+    TP <- sum(pred & confident_bin)
+    FP <- sum(pred & !confident_bin)
+    FN <- sum(!pred & confident_bin)
+    TN <- sum(!pred & !confident_bin)
 
     sens <- TP / (TP + FN + 1e-9)
     spec <- TN / (TN + FP + 1e-9)

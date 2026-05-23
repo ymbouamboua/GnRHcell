@@ -208,9 +208,9 @@
 }
 
 
-#' Compute high-confidence GnRH truth labels
+#' Compute high-confidence GnRH confident labels
 #'
-#' Internal helper that derives high-confidence GnRH truth labels
+#' Internal helper that derives high-confidence GnRH confident labels
 #' from marker hits and raw GnRH expression.
 #'
 #' A cell is labeled \code{"pos"} when it has at least two core
@@ -224,7 +224,7 @@
 #'
 #' @keywords internal
 #' @noRd
-.compute_gnrh_truth <- function(md, min_umi) {
+.compute_gnrh_confident <- function(md, min_umi) {
 
   required <- c(
     "gnrh_core_hits",
@@ -237,19 +237,19 @@
 
   if (length(missing) > 0) {
     stop(
-      "Missing required columns for gnrh_truth: ",
+      "Missing required columns for gnrh_confident: ",
       paste(missing, collapse = ", ")
     )
   }
 
-  truth <- (
+  gnrh_confident <- (
     md$gnrh_core_hits >= 2 &
       (md$gnrh_mig_hits >= 1 | md$gnrh_neuro_hits >= 1) &
       md$gnrh_raw >= min_umi
   )
 
   factor(
-    ifelse(truth, "pos", "neg"),
+    ifelse(gnrh_confident, "pos", "neg"),
     levels = c("neg", "pos")
   )
 }
@@ -296,7 +296,7 @@
 #' expression and GnRH classification labels.
 #'
 #' @param object A Seurat object containing \code{gnrh_expr} and
-#' \code{gnrh_class} metadata columns.
+#' \code{gnrh_status} metadata columns.
 #'
 #' @return Data frame with false-positive rate (\code{fpr}) and
 #' true-positive rate (\code{tpr}).
@@ -307,18 +307,17 @@
 
   expr <- object$gnrh_expr
 
-  #truth <- object$gnrh_class %in% c("high", "low")
-  truth <- object$gnrh_class %in% c("pos")
+  true_gnrh <- object$gnrh_status %in% c("pos")
 
-  truth <- factor(truth, levels = c(FALSE, TRUE))
+  true_gnrh <- factor(true_gnrh, levels = c(FALSE, TRUE))
 
-  if (length(unique(truth)) != 2) {
-    stop("ROC requires 2 classes: found ",
-         paste(unique(truth), collapse = ", "))
+  if (length(unique(true_gnrh)) != 2) {
+    stop("ROC requires 2 true_gnrh: found ",
+         paste(unique(true_gnrh), collapse = ", "))
   }
 
   roc <- pROC::roc(
-    response = truth,
+    response = true_gnrh,
     predictor = expr,
     quiet = TRUE
   )
@@ -429,7 +428,7 @@
 
     summary = list(
       status = if ("gnrh_status" %in% colnames(md)) .count_factor(md$gnrh_status) else NULL,
-      truth  = if ("gnrh_truth" %in% colnames(md)) .count_factor(md$gnrh_truth) else NULL,
+      confident  = if ("gnrh_confident" %in% colnames(md)) .count_factor(md$gnrh_confident) else NULL,
       stage  = if ("gnrh_stage" %in% colnames(md)) .count_factor(md$gnrh_stage) else NULL
     ),
 

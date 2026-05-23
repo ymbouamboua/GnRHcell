@@ -49,10 +49,10 @@ Required metadata columns:
 \item \code{gnrh_core_hits}
 \item \code{gnrh_mig_hits}
 \item \code{gnrh_neuro_hits}
-\item \code{gnrh_truth}
+\item \code{gnrh_confident}
 }
 
-If fewer than two truth classes are present, threshold performance
+If fewer than two confident classes are present, threshold performance
 metrics are skipped and a warning is issued.
 
 Performance metrics are computed across evenly spaced thresholds:

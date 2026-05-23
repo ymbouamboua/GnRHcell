@@ -32,7 +32,7 @@
 #'   \item{\code{gnrh_mig_hits}}{Number of migration marker hits.}
 #'   \item{\code{gnrh_neuro_hits}}{Number of neuroendocrine marker hits.}
 #'   \item{\code{gnrh_knn}}{Neighborhood support score.}
-#'   \item{\code{gnrh_truth}}{High-confidence truth classification.}
+#'   \item{\code{gnrh_confident}}{High-confidence gnrh_confident classification.}
 #' }
 #'
 #' Detection parameters and classification diagnostics are stored in
@@ -174,8 +174,8 @@ detect_gnrh <- function(
   object$gnrh_neuro_hits <- mod$hits$neuro
   object$gnrh_knn        <- knn
 
-  # truth (single source of truth)
-  object$gnrh_truth <- .compute_gnrh_truth(object[[]], min_umi)
+  # gnrh_confident (single source of gnrh_confident)
+  object$gnrh_confident <- .compute_gnrh_confident(object[[]], min_umi)
 
   # params + diagnostics
   object@misc$gnrh_params <- list(
@@ -183,13 +183,7 @@ detect_gnrh <- function(
     min_counts = min_counts,
     score_q = score_q,
     expr_thr = expr_thr,
-    score_thr = cls$thr,
-    marker_rules = c(
-      "core >= 2 & GNRH UMI >= min_umi",
-      "core >= 2 & migration >= 1",
-      "core >= 1 & neuroendocrine >= 2 & GNRH UMI >= min_umi",
-      "core >= 2 & KNN support > 0.05"
-    )
+    score_thr = cls$thr
   )
 
   object@misc$gnrh$classify_rules <- cls$rules

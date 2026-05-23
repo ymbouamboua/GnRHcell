@@ -63,9 +63,7 @@ validate_input <- function(
 
   obj_assay <- object[[assay]]
 
-  # -------------------------
   # Assay5 (Seurat v5)
-  # -------------------------
   if (inherits(obj_assay, "Assay5")) {
 
     layer_names <- SeuratObject::Layers(obj_assay)
@@ -75,9 +73,7 @@ validate_input <- function(
 
   } else {
 
-    # -------------------------
     # Old Assay
-    # -------------------------
     slots <- slotNames(obj_assay)
 
     has_counts <- "counts" %in% slots &&

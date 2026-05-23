@@ -89,7 +89,7 @@ Added metadata columns include:
 \item{\code{gnrh_mig_hits}}{Number of migration marker hits.}
 \item{\code{gnrh_neuro_hits}}{Number of neuroendocrine marker hits.}
 \item{\code{gnrh_knn}}{Neighborhood support score.}
-\item{\code{gnrh_truth}}{High-confidence truth classification.}
+\item{\code{gnrh_confident}}{High-confidence gnrh_confident classification.}
 }
 
 Detection parameters and classification diagnostics are stored in
