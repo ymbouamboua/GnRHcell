@@ -108,12 +108,13 @@ gnrh_diagnostics <- function(
     expr       = md$gnrh_expr,
     score      = md$gnrh_score,
     status     = md$gnrh_status,
+    confident  = md$gnrh_confident,
     core_hits  = md$gnrh_core_hits,
     mig_hits   = md$gnrh_mig_hits,
     neuro_hits = md$gnrh_neuro_hits,
-    confident      = confident,
     stringsAsFactors = FALSE
   )
+
 
   object@misc$gnrh$diagnostics <- diag
 

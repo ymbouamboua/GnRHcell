@@ -511,11 +511,11 @@ cellpal <- function(
 #' Returns named color palettes for GnRHcell metadata variables.
 #'
 #' @param type Palette type. One of \code{"status"},
-#' \code{"truth"}, or \code{"stage"}.
+#' \code{"confident"}, or \code{"stage"}.
 #'
 #' @return Named character vector of colors.
 #' @export
-gnrh_colors <- function(type = c("status","truth","stage")) {
+gnrh_colors <- function(type = c("status","confident","stage")) {
 
   switch(
     match.arg(type),
@@ -1403,7 +1403,7 @@ plot_gnrh_embedding <- function(object,
 
   cmap <- list(
     gnrh_status = gnrh_colors("status"),
-    gnrh_truth  = gnrh_colors("truth"),
+    gnrh_truth  = gnrh_colors("confident"),
     gnrh_stage  = gnrh_colors("stage")
   )
 
@@ -2370,55 +2370,50 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
   curve <- g$threshold_curve
 
 
-  # SAFE ROC PREP
-  # roc_plot <- NULL
-  # if (!is.null(diag$truth) && length(unique(diag$truth)) == 2) {
-  #
-  #   roc_obj <- pROC::roc(diag$truth, diag$expr, quiet = TRUE)
-  #
-  #   df_roc <- data.frame(
-  #     fpr = 1 - roc_obj$specificities,
-  #     tpr = roc_obj$sensitivities
-  #   )
-  #
-  #   roc_plot <-
-  #     ggplot2::ggplot(df_roc, ggplot2::aes(fpr, tpr)) +
-  #     ggplot2::geom_line(color = "red") +
-  #     ggplot2::geom_abline(linetype = "dashed") +
-  #     ggplot2::labs(
-  #       title = paste0("ROC (AUC=", round(pROC::auc(roc_obj), 3), ")"),
-  #       x = "FPR",
-  #       y = "TPR"
-  #     ) +
-  #     plot_theme(style = style)
-  # }
-
   roc_plot <- NULL
 
-  if (!is.null(diag$truth) && length(unique(stats::na.omit(diag$truth))) == 2) {
+  roc_ref <- NULL
 
-    roc_obj <- pROC::roc(
-      response = diag$truth,
-      predictor = diag$score,
-      levels = c("neg", "pos"),
-      quiet = TRUE
+  if ("confident" %in% colnames(diag)) {
+    roc_ref <- diag$confident
+  } else if ("status" %in% colnames(diag)) {
+    roc_ref <- diag$status
+  }
+
+  if (!is.null(roc_ref)) {
+
+    roc_ref <- factor(
+      as.character(roc_ref),
+      levels = c("neg", "pos")
     )
 
-    df_roc <- data.frame(
-      fpr = 1 - roc_obj$specificities,
-      tpr = roc_obj$sensitivities
-    )
+    ok <- !is.na(roc_ref) & is.finite(diag$score)
 
-    roc_plot <-
-      ggplot2::ggplot(df_roc, ggplot2::aes(fpr, tpr)) +
-      ggplot2::geom_line(color = "#EF476F") +
-      ggplot2::geom_abline(linetype = "dashed") +
-      ggplot2::labs(
-        title = paste0("ROC (AUC=", round(pROC::auc(roc_obj), 3), ")"),
-        x = "False positive rate",
-        y = "True positive rate"
-      ) +
-      plot_theme(style = style)
+    if (length(unique(roc_ref[ok])) == 2) {
+
+      roc_obj <- pROC::roc(
+        response = roc_ref[ok],
+        predictor = diag$score[ok],
+        levels = c("neg", "pos"),
+        quiet = TRUE
+      )
+
+      df_roc <- data.frame(
+        fpr = 1 - roc_obj$specificities,
+        tpr = roc_obj$sensitivities
+      )
+
+      roc_plot <-
+        ggplot2::ggplot(df_roc, ggplot2::aes(fpr, tpr)) +
+        ggplot2::geom_line(color = "#EF476F") +
+        ggplot2::geom_abline(linetype = "dashed") +
+        ggplot2::labs(
+          title = paste0("ROC (AUC=", round(pROC::auc(roc_obj), 3), ")"),
+          x = "False positive rate",
+          y = "True positive rate"
+        ) +
+        plot_theme(style = style)
+    }
   }
 
   # PANEL 1: expression vs score
@@ -2428,17 +2423,17 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
   title_txt <- paste0("Signal landscape (", pct, "% GnRH+)")
 
   p1 <- ggplot2::ggplot(df, ggplot2::aes(expr, score)) +
-    ggplot2::geom_point(ggplot2::aes(color = status),
-      alpha = 0.8,size = 1.5) +
+    ggplot2::geom_point(ggplot2::aes(color = class),
+                        alpha = 0.8,size = 1.5) +
     ggplot2::labs(title = title_txt,
-      x = "GNRH1 expression",
-      y = "GnRH composite score"
+                  x = "GNRH1 expression",
+                  y = "GnRH composite score"
     ) +
     ggplot2::scale_color_manual(values = gnrh_colors(type = "status")) +
     plot_theme(style = "test", leg.pos = c(0.2, 0.8))
 
   # PANEL 2: distribution
-  p2 <- ggplot2::ggplot(diag, ggplot2::aes(score, fill = status)) +
+  p2 <- ggplot2::ggplot(diag, ggplot2::aes(score, fill = class)) +
     ggplot2::geom_density(alpha = 0.4) +
     ggplot2::labs(title = "Score distribution", x = "Score", y = "Density") +
     ggplot2::scale_fill_manual(values = gnrh_colors(type = "status")) +
@@ -2478,19 +2473,19 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
     ggplot2::labs(title = "Module signal vs score", x = "Module hits", y = "Score") +
     plot_theme(style = "test")
 
-  # PANEL 6: status composition
+  # PANEL 6: class composition
 
-  p6 <- plot_gnrh_distribution(object, group.by = "gnrh_status",
+  p6 <- plot_gnrh_distribution(object, group.by = "gnrh_class",
                                style = "test",
                                plot.ttl = "Class distribution",
                                cols = gnrh_colors("status"), label = T)
 
 
-  # PANEL 7: status  enrichment across module hits
+  # PANEL 7: class  enrichment across module hits
 
   diag$hits_total <- diag$core_hits + diag$mig_hits + diag$neuro_hits
 
-  p7 <- ggplot2::ggplot(diag, ggplot2::aes(x = factor(hits_total), fill = status)) +
+  p7 <- ggplot2::ggplot(diag, ggplot2::aes(x = factor(hits_total), fill = class)) +
     ggplot2::geom_bar(position = "fill", color = "black", linewidth = 0.2) +
     ggplot2::scale_y_continuous(labels = scales::percent_format()) +
     ggplot2::scale_fill_manual(values = gnrh_colors("status")) +
@@ -2533,6 +2528,7 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
 
   final_plot
 }
+
 
 
 

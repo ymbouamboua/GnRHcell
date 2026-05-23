@@ -4,11 +4,11 @@
 \alias{gnrh_colors}
 \title{GnRHcell color palettes}
 \usage{
-gnrh_colors(type = c("status", "truth", "stage"))
+gnrh_colors(type = c("status", "confident", "stage"))
 }
 \arguments{
 \item{type}{Palette type. One of \code{"status"},
-\code{"truth"}, or \code{"stage"}.}
+\code{"confident"}, or \code{"stage"}.}
 }
 \value{
 Named character vector of colors.
