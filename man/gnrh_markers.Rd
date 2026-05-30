@@ -9,16 +9,17 @@ gnrh_markers(
   group.by = "gnrh_status",
   ident.1 = "pos",
   ident.2 = NULL,
-  assay = "RNA",
+  assay = NULL,
   layer = "data",
-  methods = c("wilcox"),
+  methods = "wilcox",
   coexpr.method = "spearman",
-  min_pct = 0.05,
+  min_pct = 0.01,
   min_fc = 0.25,
   max_padj = 0.05,
-  coexpr_min = 0.25,
-  min_detect = 10,
-  verbose = TRUE
+  coexpr_min = 0.15,
+  min_detect = 3,
+  verbose = TRUE,
+  ...
 )
 }
 \arguments{

@@ -11,6 +11,7 @@ plot_gnrh_runtime_curve(
   metric = "total_sec",
   style = "classic",
   x.ang = 45,
+  txtsize = 10,
   show_points = TRUE
 )
 }

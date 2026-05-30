@@ -2988,7 +2988,7 @@ plot_network <- function(df, top_n = 25, threshold = 0.4) {
 plot_gnrh_coexpr <- function(
     df,
     coexp_cutoff = 0.25,
-    txtsize = 12
+    txtsize = 10
 ) {
 
   # Remove self-gene + apply cutoff
@@ -3037,6 +3037,7 @@ plot_gnrh_runtime_curve <- function(
     metric = "total_sec",
     style = "classic",
     x.ang = 45,
+    txtsize = 10,
     show_points = TRUE
 ) {
   stats <- .load_gnrh_stats(files = files, dir = dir, pattern = pattern)
@@ -3075,7 +3076,7 @@ plot_gnrh_runtime_curve <- function(
       vjust = -0.7,
       size = 3
     ) +
-    plot_theme(style = style, x.ang = x.ang) +
+    plot_theme(style = style, x.ang = x.ang, txtsize = txtsize) +
     ggplot2::labs(
       title = "GnRHcell runtime across datasets",
       x = "Dataset",
@@ -3101,6 +3102,7 @@ plot_gnrh_detected <- function(
     pattern = "_gnrh_run_info\\.tsv$",
     style = "classic",
     x.ang = 45,
+    txtsize = 10,
     debug = TRUE
 ) {
 
@@ -3134,7 +3136,7 @@ plot_gnrh_detected <- function(
       vjust = -0.3,
       size = 4
     ) +
-    plot_theme(style = style, x.ang = x.ang) +
+    plot_theme(style = style, x.ang = x.ang, txtsize = txtsize) +
     ggplot2::labs(
       title = "Detected GnRH cells",
       x = "Dataset",

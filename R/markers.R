@@ -189,30 +189,31 @@ gnrh_markers <- function(
     group.by = "gnrh_status",
     ident.1 = "pos",
     ident.2 = NULL,
-    assay = "RNA",
+    assay = NULL,
     layer = "data",
-    methods = c("wilcox"),
+    methods = "wilcox",
     coexpr.method = "spearman",
-    min_pct = 0.05,
+    min_pct = 0.01,
     min_fc = 0.25,
     max_padj = 0.05,
-    coexpr_min = 0.25,
-    min_detect = 10,
-    verbose = TRUE
+    coexpr_min = 0.15,
+    min_detect = 3,
+    verbose = TRUE,
+    ...
 ) {
 
   stopifnot(inherits(object, "Seurat"))
 
-  if (verbose) {
-    message("=== GnRH marker discovery ===")
+  if (is.null(assay)) {
+    assay <- Seurat::DefaultAssay(object)
   }
 
-  # -------------------------------------------------------
-  # Matrix
-  # -------------------------------------------------------
+  log <- .msg(verbose)
+
+  log("GnRH marker discovery", type = "header")
 
   expr <- SeuratObject::GetAssayData(
-    object,
+    object = object,
     assay = assay,
     layer = layer
   )
@@ -221,25 +222,13 @@ gnrh_markers <- function(
     expr <- methods::as(expr, "dgCMatrix")
   }
 
-  rownames(expr) <- make.unique(
-    rownames(expr)
-  )
+  rownames(expr) <- make.unique(rownames(expr))
 
-  # -------------------------------------------------------
-  # GnRH gene
-  # -------------------------------------------------------
-
-  gnrh_gene <- .find_gnrh_gene(
-    rownames(expr)
-  )
+  gnrh_gene <- .find_gnrh_gene(rownames(expr))
 
   if (is.na(gnrh_gene)) {
-    stop("GNRH1 not found")
+    stop("GNRH1 not found.", call. = FALSE)
   }
-
-  # -------------------------------------------------------
-  # Groups
-  # -------------------------------------------------------
 
   grp <- .get_cells(
     object = object,
@@ -249,55 +238,48 @@ gnrh_markers <- function(
   )
 
   if (length(grp$cells_1) < 5) {
-    stop("Too few positive cells")
+    stop("Too few positive cells.", call. = FALSE)
+  }
+
+  if (length(grp$cells_2) < 5) {
+    stop("Too few comparison cells.", call. = FALSE)
   }
 
   SeuratObject::Idents(object) <- grp$groups
 
-  # -------------------------------------------------------
-  # Differential expression
-  # -------------------------------------------------------
-
   all_res <- lapply(methods, function(m) {
 
-    if (verbose) {
-      message("Running: ", m)
-    }
+    log("Running DE method:", m, type = "step")
 
     mk <- Seurat::FindMarkers(
       object = object,
       ident.1 = ident.1,
       ident.2 = ident.2,
       assay = assay,
-      slot = layer,
       test.use = m,
-      logfc.threshold = 0,
-      min.pct = 0.01
+      ...
     )
+
+    if (!nrow(mk)) {
+      return(NULL)
+    }
 
     mk$gene <- rownames(mk)
     mk$method <- m
-
     mk
   })
 
-  de <- .aggregate_de(
-    do.call(rbind, all_res)
-  )
+  all_res <- all_res[!vapply(all_res, is.null, logical(1))]
 
-  # -------------------------------------------------------
-  # Detection filter
-  # -------------------------------------------------------
+  if (!length(all_res)) {
+    stop("No markers detected by Seurat::FindMarkers().", call. = FALSE)
+  }
 
-  keep <- Matrix::rowSums(
-    expr > 0
-  ) >= min_detect
+  de <- .aggregate_de(do.call(rbind, all_res))
 
-  expr <- expr[
-    keep,
-    ,
-    drop = FALSE
-  ]
+  keep <- Matrix::rowSums(expr > 0) >= min_detect
+
+  expr <- expr[keep, , drop = FALSE]
 
   de <- de[
     de$gene %in% rownames(expr),
@@ -305,9 +287,9 @@ gnrh_markers <- function(
     drop = FALSE
   ]
 
-  # -------------------------------------------------------
-  # Specificity
-  # -------------------------------------------------------
+  if (!nrow(de)) {
+    stop("No markers passed min_detect filtering.", call. = FALSE)
+  }
 
   spec <- .compute_specificity(
     expr = expr,
@@ -316,18 +298,11 @@ gnrh_markers <- function(
     cells_2 = grp$cells_2
   )
 
-  idx <- match(
-    de$gene,
-    spec$gene
-  )
+  idx <- match(de$gene, spec$gene)
 
   de$pct1 <- spec$pct1[idx]
   de$pct2 <- spec$pct2[idx]
   de$spec <- spec$spec[idx]
-
-  # -------------------------------------------------------
-  # Coexpression
-  # -------------------------------------------------------
 
   coexpr <- .compute_coexpr(
     expr = expr,
@@ -336,27 +311,12 @@ gnrh_markers <- function(
     method = coexpr.method
   )
 
-  de$coexpr <- coexpr[
-    de$gene
-  ]
+  de$coexpr <- coexpr[de$gene]
+  de$coexpr[is.na(de$coexpr)] <- 0
 
-  # -------------------------------------------------------
-  # True / false coexpression flag
-  # -------------------------------------------------------
-
-  de$coexpr_flag <- (
-    de$coexpr >= coexpr_min
-  )
-
-  # -------------------------------------------------------
-  # Composite score
-  # -------------------------------------------------------
+  de$coexpr_flag <- de$coexpr >= coexpr_min
 
   de <- .compute_score(de)
-
-  # -------------------------------------------------------
-  # Final filtering
-  # -------------------------------------------------------
 
   de <- de[
     de$pct1 >= min_pct &
@@ -367,43 +327,17 @@ gnrh_markers <- function(
     drop = FALSE
   ]
 
-  # -------------------------------------------------------
-  # Ranking
-  # -------------------------------------------------------
-
-  de <- de[
-    order(-de$score),
-    ,
-    drop = FALSE
-  ]
-
-  de <- de[
-    !duplicated(de$gene),
-    ,
-    drop = FALSE
-  ]
+  de <- de[order(-de$score), , drop = FALSE]
+  de <- de[!duplicated(de$gene), , drop = FALSE]
 
   rownames(de) <- de$gene
 
-  # -------------------------------------------------------
-  # Store
-  # -------------------------------------------------------
-
   object@misc$gnrh_markers <- de
 
-  if (verbose) {
+  log("Markers detected:", nrow(de), type = "done")
 
-    message(
-      "Markers detected: ",
-      nrow(de)
-    )
-
-    if (nrow(de) > 0) {
-      message(
-        "Top marker: ",
-        de$gene[1]
-      )
-    }
+  if (nrow(de) > 0) {
+    log("Top marker:", de$gene[1], type = "info")
   }
 
   de

@@ -10,6 +10,7 @@ plot_gnrh_detected(
   pattern = "_gnrh_run_info\\\\.tsv$",
   style = "classic",
   x.ang = 45,
+  txtsize = 10,
   debug = TRUE
 )
 }

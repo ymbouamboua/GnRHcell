@@ -4,7 +4,7 @@
 \alias{plot_gnrh_coexpr}
 \title{Plot GnRH coexpression markers}
 \usage{
-plot_gnrh_coexpr(df, coexp_cutoff = 0.25, txtsize = 12)
+plot_gnrh_coexpr(df, coexp_cutoff = 0.25, txtsize = 10)
 }
 \arguments{
 \item{df}{A marker table returned by \code{\link{gnrh_markers}}.
