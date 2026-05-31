@@ -18,7 +18,7 @@ plot_gnrh_embedding(
 \item{object}{A Seurat object processed by GnRHcell.}
 
 \item{group.by}{Metadata variable to plot. Use \code{"all"} to plot
-\code{gnrh_status}, \code{gnrh_truth}, and \code{gnrh_stage}.}
+\code{gnrh_status}, \code{gnrh_confident}, and \code{gnrh_stage}.}
 
 \item{reduction}{Dimensional reduction to use.}
 
