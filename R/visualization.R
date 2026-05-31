@@ -526,8 +526,8 @@ gnrh_colors <- function(type = c("status","confident","stage")) {
       neg = "#B0B0B0"    # neutral cool gray
     ),
 
-    # truth labels
-    truth = c(
+    # confident labels
+    confident = c(
       pos = "#E63946",   # strong biologically "true positive"
       neg = "#B0B0B0"
     ),
@@ -1379,7 +1379,7 @@ cellmap <- function(
 #'
 #' @param object A Seurat object processed by GnRHcell.
 #' @param group.by Metadata variable to plot. Use \code{"all"} to plot
-#' \code{gnrh_status}, \code{gnrh_truth}, and \code{gnrh_stage}.
+#' \code{gnrh_status}, \code{gnrh_confident}, and \code{gnrh_stage}.
 #' @param reduction Dimensional reduction to use.
 #' @param cols Optional color palette.
 #' @param style Theme style.
@@ -1396,14 +1396,14 @@ plot_gnrh_embedding <- function(object,
                                 dark = FALSE,
                                 ncol = NULL) {
 
-  allowed <- c("gnrh_status","gnrh_truth","gnrh_stage")
+  allowed <- c("gnrh_status","gnrh_confident","gnrh_stage")
 
   if (identical(group.by, "all")) group.by <- allowed
   stopifnot(all(group.by %in% allowed))
 
   cmap <- list(
     gnrh_status = gnrh_colors("status"),
-    gnrh_truth  = gnrh_colors("confident"),
+    gnrh_confident  = gnrh_colors("confident"),
     gnrh_stage  = gnrh_colors("stage")
   )
 
@@ -1684,7 +1684,7 @@ plot_gnrh_feature <- function(
 
   stopifnot(inherits(object, "Seurat"))
 
-  # feature resolution logic (single source of truth)
+  # feature resolution logic (single source of confident)
   if (!is.null(feature_type)) {
     features <- .gnrh_features(feature_type)
   }
