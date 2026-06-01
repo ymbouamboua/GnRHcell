@@ -2845,6 +2845,10 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
       fill = .data[["hits"]]
     )
   ) +
+    ggplot2::geom_tile(
+      color = "white",
+      linewidth = 0.4
+    ) +
     ggplot2::geom_text(
       ggplot2::aes(label = round(.data[["hits"]], 2)),
       size = 3
@@ -2892,6 +2896,8 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
     p9 <- ggplot2::ggplot(param_df) +
       ggplot2::geom_rect(
         ggplot2::aes(
+          xmin = 0,
+          xmax = 1,
           ymin = .data[["y"]] - 0.45,
           ymax = .data[["y"]] + 0.45
         ),
