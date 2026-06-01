@@ -28,6 +28,8 @@ plot_gnrh_runtime_curve(
 
 \item{x.ang}{X-axis label angle.}
 
+\item{txtsize}{Base text size.}
+
 \item{show_points}{Logical; show points on the curve.}
 }
 \value{

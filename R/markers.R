@@ -181,6 +181,7 @@
 #' @param coexpr_min Minimum coexpression
 #' @param min_detect Minimum detected cells
 #' @param verbose Print progress
+#' @param ... Additional arguments passed to \code{Seurat::FindMarkers()}.
 #'
 #' @return Ranked marker table
 #' @export

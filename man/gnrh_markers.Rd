@@ -50,6 +50,8 @@ gnrh_markers(
 \item{min_detect}{Minimum detected cells}
 
 \item{verbose}{Print progress}
+
+\item{...}{Additional arguments passed to \code{Seurat::FindMarkers()}.}
 }
 \value{
 Ranked marker table

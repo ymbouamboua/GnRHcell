@@ -25,6 +25,8 @@ plot_gnrh_detected(
 
 \item{x.ang}{X-axis text angle.}
 
+\item{txtsize}{Base text size.}
+
 \item{debug}{Print loaded table.}
 }
 \value{

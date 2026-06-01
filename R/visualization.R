@@ -522,13 +522,13 @@ gnrh_colors <- function(type = c("status","confident","stage")) {
 
     # binary detection
     status = c(
-      pos = "#FF4D6D",   # vivid GnRH positive (raspberry red)
-      neg = "#B0B0B0"    # neutral cool gray
+      pos = "#FF4D6D",
+      neg = "#B0B0B0"
     ),
 
     # confident labels
     confident = c(
-      pos = "#E63946",   # strong biologically "true positive"
+      pos = "#E63946",
       neg = "#B0B0B0"
     ),
 
@@ -1388,45 +1388,87 @@ cellmap <- function(
 #'
 #' @return A ggplot2 or patchwork object.
 #' @export
-plot_gnrh_embedding <- function(object,
-                                group.by = "all",
-                                reduction = "umap",
-                                cols = NULL,
-                                style = "classic",
-                                dark = FALSE,
-                                ncol = NULL) {
+plot_gnrh_embedding <- function(
+    object,
+    group.by = "all",
+    reduction = "umap",
+    cols = NULL,
+    style = "classic",
+    dark = FALSE,
+    ncol = NULL
+) {
 
-  allowed <- c("gnrh_status","gnrh_confident","gnrh_stage")
-
-  if (identical(group.by, "all")) group.by <- allowed
-  stopifnot(all(group.by %in% allowed))
-
-  cmap <- list(
-    gnrh_status = gnrh_colors("status"),
-    gnrh_confident  = gnrh_colors("confident"),
-    gnrh_stage  = gnrh_colors("stage")
+  allowed <- c(
+    "gnrh_status",
+    "gnrh_confident",
+    "gnrh_stage"
   )
 
-  if (length(group.by) == 1) {
-    return(cellmap(object, group.by = group.by,
-                   reduction = reduction,
-                   cols = cols %||% cmap[[group.by]],
-                    style = style,
-                   dark = dark)
+  available <- allowed[
+    allowed %in% colnames(object@meta.data)
+  ]
+
+  if (!length(available)) {
+    stop(
+      "No GnRH metadata columns found. Expected one of: ",
+      paste(allowed, collapse = ", "),
+      call. = FALSE
     )
   }
 
-  plots <- lapply(group.by, \(g)
-                  cellmap(object, group.by = g,
-                           reduction = reduction,
-                           cols = cmap[[g]],
-                          style = style,
-                          dark = dark)
+  if (identical(group.by, "all")) {
+    group.by <- available
+  }
+
+  missing <- setdiff(group.by, available)
+
+  if (length(missing)) {
+    stop(
+      "Missing metadata column(s): ",
+      paste(missing, collapse = ", "),
+      "\nAvailable GnRH columns: ",
+      paste(available, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  cmap <- list(
+    gnrh_status = gnrh_colors("status"),
+    gnrh_confident = gnrh_colors("confident"),
+    gnrh_stage = gnrh_colors("stage")
   )
 
-  patchwork::wrap_plots(plots, ncol = ncol)
-}
+  if (length(group.by) == 1) {
+    g <- group.by[1]
 
+    return(
+      cellmap(
+        object,
+        group.by = g,
+        reduction = reduction,
+        cols = cols %||% cmap[[g]],
+        style = style,
+        dark = dark
+      )
+    )
+  }
+
+  plots <- lapply(group.by, function(g) {
+    cellmap(
+      object,
+      group.by = g,
+      reduction = reduction,
+      cols = cmap[[g]],
+      style = style,
+      dark = dark
+    )
+  })
+
+  patchwork::wrap_plots(
+    plots,
+    ncol = ncol
+  )
+}
 
 #' Cell Feature Plot for Seurat Objects
 #'
@@ -2503,7 +2545,14 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
       )
 
       roc_plot <-
-        ggplot2::ggplot(df_roc, ggplot2::aes(fpr, tpr)) +
+        roc_plot <-
+        ggplot2::ggplot(
+          df_roc,
+          ggplot2::aes(
+            x = .data[["fpr"]],
+            y = .data[["tpr"]]
+          )
+        ) +
         ggplot2::geom_line(
           color = "#EF476F",
           linewidth = 0.8
@@ -2531,9 +2580,15 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
 
   pct <- round(mean(diag$status == "pos", na.rm = TRUE) * 100, 1)
 
-  p1 <- ggplot2::ggplot(diag, ggplot2::aes(expr, score)) +
+  p1 <- ggplot2::ggplot(
+    diag,
+    ggplot2::aes(
+      x = .data[["expr"]],
+      y = .data[["score"]]
+    )
+  ) +
     ggplot2::geom_point(
-      ggplot2::aes(color = status),
+      ggplot2::aes(color = .data[["status"]]),
       alpha = 0.75,
       size = 1.3
     ) +
@@ -2564,9 +2619,15 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
     stage_diag <- diag
     stage_diag$stage <- stage_df$gnrh_stage
 
-    p2 <- ggplot2::ggplot(stage_diag, ggplot2::aes(expr, score)) +
+    p2 <- ggplot2::ggplot(
+      stage_diag,
+      ggplot2::aes(
+        x = .data[["expr"]],
+        y = .data[["score"]]
+      )
+    ) +
       ggplot2::geom_point(
-        ggplot2::aes(color = stage),
+        ggplot2::aes(color = .data[["stage"]]),
         alpha = 0.75,
         size = 1.2
       ) +
@@ -2594,7 +2655,13 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
   # Panel 3: score distribution
   # -------------------------------------------------------#
 
-  p3 <- ggplot2::ggplot(diag, ggplot2::aes(score, fill = status)) +
+  p3 <- ggplot2::ggplot(
+    diag,
+    ggplot2::aes(
+      x = .data[["score"]],
+      fill = .data[["status"]]
+    )
+  ) +
     ggplot2::geom_density(alpha = 0.45) +
     ggplot2::scale_fill_manual(
       values = status_cols,
@@ -2623,15 +2690,18 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
 
     best <- curve$threshold[which.max(curve$F1)]
 
-    p4 <- ggplot2::ggplot(curve, ggplot2::aes(threshold)) +
+    p4 <- ggplot2::ggplot(
+      curve,
+      ggplot2::aes(x = .data[["threshold"]])
+    ) +
       ggplot2::geom_line(
-        ggplot2::aes(y = sensitivity, color = "Sensitivity")
+        ggplot2::aes(y = .data[["sensitivity"]], color = "Sensitivity")
       ) +
       ggplot2::geom_line(
-        ggplot2::aes(y = specificity, color = "Specificity")
+        ggplot2::aes(y = .data[["specificity"]], color = "Specificity")
       ) +
       ggplot2::geom_line(
-        ggplot2::aes(y = F1, color = "F1")
+        ggplot2::aes(y = .data[["F1"]], color = "F1")
       ) +
       ggplot2::geom_vline(
         xintercept = best,
@@ -2677,10 +2747,13 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
 
   p6 <- ggplot2::ggplot(
     diag,
-    ggplot2::aes(hits_total, score)
+    ggplot2::aes(
+      x = .data[["hits_total"]],
+      y = .data[["score"]]
+    )
   ) +
     ggplot2::geom_point(
-      ggplot2::aes(color = status),
+      ggplot2::aes(color = .data[["status"]]),
       alpha = 0.6,
       size = 1
     ) +
@@ -2703,7 +2776,10 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
 
   p7 <- ggplot2::ggplot(
     diag,
-    ggplot2::aes(factor(hits_total), fill = status)
+    ggplot2::aes(
+      x = factor(.data[["hits_total"]]),
+      fill = .data[["status"]]
+    )
   ) +
     ggplot2::geom_bar(
       position = "fill",
@@ -2750,19 +2826,27 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
   )
 
   module_sum <- stats::aggregate(
-    hits ~ status + module,
-    data = module_df,
+    module_df$hits,
+    by = list(
+      status = module_df$status,
+      module = module_df$module
+    ),
     FUN = mean,
     na.rm = TRUE
   )
 
+  colnames(module_sum)[3] <- "hits"
+
   p8 <- ggplot2::ggplot(
     module_sum,
-    ggplot2::aes(module, status, fill = hits)
+    ggplot2::aes(
+      x = .data[["module"]],
+      y = .data[["status"]],
+      fill = .data[["hits"]]
+    )
   ) +
-    ggplot2::geom_tile(color = "white", linewidth = 0.4) +
     ggplot2::geom_text(
-      ggplot2::aes(label = round(hits, 2)),
+      ggplot2::aes(label = round(.data[["hits"]], 2)),
       size = 3
     ) +
     ggplot2::scale_fill_gradient(
@@ -2808,10 +2892,8 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
     p9 <- ggplot2::ggplot(param_df) +
       ggplot2::geom_rect(
         ggplot2::aes(
-          xmin = 0,
-          xmax = 1,
-          ymin = y - 0.45,
-          ymax = y + 0.45
+          ymin = .data[["y"]] - 0.45,
+          ymax = .data[["y"]] + 0.45
         ),
         fill = "#F7F7F7",
         color = "grey85",
@@ -2820,8 +2902,8 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
       ggplot2::geom_text(
         ggplot2::aes(
           x = 0.03,
-          y = y,
-          label = parameter
+          y = .data[["y"]],
+          label = .data[["parameter"]]
         ),
         hjust = 0,
         fontface = "bold",
@@ -2830,8 +2912,8 @@ gnrh_report <- function(object, style = "test", verbose = TRUE) {
       ggplot2::geom_text(
         ggplot2::aes(
           x = 0.55,
-          y = y,
-          label = value
+          y = .data[["y"]],
+          label = .data[["value"]]
         ),
         hjust = 0,
         size = 3
@@ -3027,6 +3109,7 @@ plot_gnrh_coexpr <- function(
 #' @param style Plot theme style passed to \code{plot_theme()}.
 #' @param x.ang X-axis label angle.
 #' @param show_points Logical; show points on the curve.
+#' @param txtsize Base text size.
 #'
 #' @return A \code{ggplot2} object.
 #' @export
@@ -3093,6 +3176,7 @@ plot_gnrh_runtime_curve <- function(
 #' @param style Plot style.
 #' @param x.ang X-axis text angle.
 #' @param debug Print loaded table.
+#' @param txtsize Base text size.
 #'
 #' @return A ggplot2 object.
 #' @export
