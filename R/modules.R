@@ -41,8 +41,8 @@
       "KISS1R","TAC3","TACR3",
       "GNRHR","PCSK1","PCSK2",
       "SCG2","CHGA","CHGB",
-      "CPE","VGF","SYP","RAB3A",
-      "ESR1","PGR","AR" # hormone
+      "CPE","VGF","SYP","RAB3A"
+      #"ESR1","PGR","AR" # hormone
     ), genes)
   )
 }
