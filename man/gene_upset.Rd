@@ -48,6 +48,18 @@ Perform overlap analysis between multiple gene sets, export overlap
 tables, compute unique/common genes, and generate publication-quality
 Venn or UpSet plots depending on the number of gene sets.
 }
+\details{
+Prior to overlap analysis, gene symbols are standardized by:
+\itemize{
+\item removing duplicated entries,
+\item removing missing values,
+\item removing empty strings,
+\item converting all gene symbols to uppercase.
+}
+
+This ensures robust overlap comparisons across datasets originating
+from different species or annotation conventions.
+}
 \examples{
 \dontrun{
 gene_sets <- list(

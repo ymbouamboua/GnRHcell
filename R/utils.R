@@ -633,6 +633,18 @@ extract_gnrh_run_info <- function(object,
 #' @return A list containing cleaned gene sets, overlap tables, unique genes,
 #'   common genes, and the generated plot.
 #'
+#' @details
+#' Prior to overlap analysis, gene symbols are standardized by:
+#' \itemize{
+#'   \item removing duplicated entries,
+#'   \item removing missing values,
+#'   \item removing empty strings,
+#'   \item converting all gene symbols to uppercase.
+#' }
+#'
+#' This ensures robust overlap comparisons across datasets originating
+#' from different species or annotation conventions.
+#'
 #' @examples
 #' \dontrun{
 #' gene_sets <- list(
@@ -701,7 +713,9 @@ gene_upset <- function(
     x <- unique(as.character(x))
     x <- x[!is.na(x)]
     x <- x[x != ""]
-    sort(x)
+    # standardisation
+    x <- toupper(x)
+    sort(unique(x))
   })
 
   summary_df <- data.frame(
@@ -920,4 +934,115 @@ gene_upset <- function(
     unique_summary = unique_summary,
     venn_plot = plot
   )
+}
+
+
+#' Build gene sets from marker tables
+#'
+#' Reads marker tables from multiple datasets and extracts unique gene
+#' symbols into a named list suitable for overlap analysis, UpSet plots,
+#' Venn diagrams, or marker comparison workflows.
+#'
+#' Gene names are automatically standardized to uppercase to ensure
+#' consistent comparisons across species and datasets.
+#'
+#' @param files Named character vector containing marker table filenames.
+#' Names correspond to dataset identifiers and values correspond to file
+#' names.
+#' @param dir Character. Directory containing marker tables.
+#' @param gene_col Character. Name of the column containing gene symbols.
+#' Default is \code{"gene"}.
+#'
+#' @details
+#' For each dataset:
+#' \itemize{
+#'   \item Marker tables are imported using
+#'   \code{\link[utils]{read.delim}}.
+#'   \item Missing values and empty gene names are removed.
+#'   \item Duplicate genes are removed.
+#'   \item Gene symbols are converted to uppercase.
+#'   \item Gene symbols are sorted alphabetically.
+#' }
+#'
+#' This standardization ensures robust overlap analysis between datasets
+#' originating from different species or annotation conventions.
+#'
+#' @return
+#' A named list where each element contains a character vector of unique
+#' gene symbols for a dataset.
+#'
+#' @examples
+#' \dontrun{
+#'
+#' files <- c(
+#'   "HuDeCa Nose" = "gnrh_nose_markers.tsv",
+#'   "HPSC Wang 2022" = "gnrh_wang_markers.tsv",
+#'   "Human HypoMap" = "gnrh_human_hypomap_markers.tsv"
+#' )
+#'
+#' gene_sets <- build_gene_sets(
+#'   files = files,
+#'   dir = file.path(outdir, "tables")
+#' )
+#'
+#' names(gene_sets)
+#' lengths(gene_sets)
+#'
+#' }
+#'
+#' @seealso
+#' \code{\link{gene_upset}},
+#' \code{\link{gnrh_marker_programs}}
+#'
+#' @export
+build_gene_sets <- function(
+    files,
+    dir,
+    gene_col = "gene"
+) {
+
+  if (is.null(names(files))) {
+    stop("'files' must be a named vector.", call. = FALSE)
+  }
+
+  gene_sets <- stats::setNames(
+
+    lapply(names(files), function(dataset) {
+
+      file <- file.path(dir, files[[dataset]])
+
+      if (!file.exists(file)) {
+        warning("Missing file: ", file, call. = FALSE)
+        return(character(0))
+      }
+
+      tab <- utils::read.delim(
+        file,
+        sep = "\t",
+        stringsAsFactors = FALSE
+      )
+
+      if (!gene_col %in% colnames(tab)) {
+        warning(
+          "Column '", gene_col,
+          "' not found in ", dataset,
+          call. = FALSE
+        )
+        return(character(0))
+      }
+
+      genes <- unique(as.character(tab[[gene_col]]))
+
+      genes <- genes[!is.na(genes)]
+      genes <- genes[genes != ""]
+
+      genes <- toupper(genes)
+
+      sort(unique(genes))
+    }),
+
+    names(files)
+  )
+
+  gene_sets
 }
