@@ -606,3 +606,318 @@ extract_gnrh_run_info <- function(object,
   )
 }
 
+
+
+#' Gene Set Overlap Analysis and Visualization
+#'
+#' Perform overlap analysis between multiple gene sets, export overlap
+#' tables, compute unique/common genes, and generate publication-quality
+#' Venn or UpSet plots depending on the number of gene sets.
+#'
+#' @param gene_sets A named list of gene vectors. Each element should contain
+#'   a character vector of gene symbols.
+#' @param min_size Integer. Minimum intersection size to display in the UpSet
+#'   plot. Default is \code{1}.
+#' @param venn_title Character string specifying the plot title.
+#'   Default is \code{"Overlap of Gene Sets"}.
+#' @param outdir Output directory where CSV tables and figures will be saved.
+#'   Default is current working directory.
+#' @param save_plot Logical indicating whether plots should be exported.
+#'   Default is \code{TRUE}.
+#' @param plot_width Numeric width of exported figures in inches.
+#'   Default is \code{10}.
+#' @param plot_height Numeric height of exported figures in inches.
+#'   Default is \code{8}.
+#' @param dpi Numeric resolution for PNG export. Default is \code{600}.
+#'
+#' @return A list containing cleaned gene sets, overlap tables, unique genes,
+#'   common genes, and the generated plot.
+#'
+#' @examples
+#' \dontrun{
+#' gene_sets <- list(
+#'   Dataset_A = c("GNRH1", "KISS1", "TAC3"),
+#'   Dataset_B = c("GNRH1", "TAC3", "PAX6"),
+#'   Dataset_C = c("GNRH1", "DLX1", "DLX2")
+#' )
+#'
+#' results <- gene_upset(
+#'   gene_sets = gene_sets,
+#'   venn_title = "GnRH Marker Overlap",
+#'   outdir = "results/gene_overlap"
+#' )
+#'
+#' results$venn_plot
+#' }
+#'
+#' @export
+gene_upset <- function(
+    gene_sets,
+    min_size = 1,
+    venn_title = "Overlap of Gene Sets",
+    outdir = ".",
+    save_plot = TRUE,
+    plot_width = 10,
+    plot_height = 8,
+    dpi = 600
+) {
+
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("Package 'ggplot2' is required.", call. = FALSE)
+  }
+
+  if (!requireNamespace("ggVennDiagram", quietly = TRUE)) {
+    stop("Package 'ggVennDiagram' is required.", call. = FALSE)
+  }
+
+  if (!requireNamespace("ComplexUpset", quietly = TRUE)) {
+    stop("Package 'ComplexUpset' is required.", call. = FALSE)
+  }
+
+  if (!is.list(gene_sets)) {
+    stop("'gene_sets' must be a named list.", call. = FALSE)
+  }
+
+  if (is.null(names(gene_sets)) || any(names(gene_sets) == "")) {
+    stop("'gene_sets' must be a named list.", call. = FALSE)
+  }
+
+  if (length(gene_sets) < 2) {
+    stop("'gene_sets' must contain at least two gene sets.", call. = FALSE)
+  }
+
+  min_size <- as.integer(min_size)
+  if (is.na(min_size) || min_size < 1) {
+    min_size <- 1L
+  }
+
+  if (!dir.exists(outdir)) {
+    dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  labels <- names(gene_sets)
+
+  gene_sets <- lapply(gene_sets, function(x) {
+    x <- unique(as.character(x))
+    x <- x[!is.na(x)]
+    x <- x[x != ""]
+    sort(x)
+  })
+
+  summary_df <- data.frame(
+    dataset = labels,
+    n_genes = vapply(gene_sets, length, integer(1)),
+    stringsAsFactors = FALSE
+  )
+
+  utils::write.csv(
+    summary_df,
+    file.path(outdir, "gene_set_sizes.csv"),
+    row.names = FALSE
+  )
+
+  combs <- utils::combn(labels, 2, simplify = FALSE)
+
+  pairwise_results <- list()
+  pairwise_summary <- data.frame(
+    dataset1 = character(0),
+    dataset2 = character(0),
+    n_overlap = integer(0),
+    stringsAsFactors = FALSE
+  )
+
+  for (cmb in combs) {
+
+    overlap <- intersect(gene_sets[[cmb[1]]], gene_sets[[cmb[2]]])
+    pair_name <- paste(cmb, collapse = "_vs_")
+
+    pairwise_results[[pair_name]] <- overlap
+
+    safe_pair_name <- gsub("[^A-Za-z0-9_\\-]+", "_", pair_name)
+
+    utils::write.csv(
+      data.frame(gene = overlap),
+      file.path(outdir, paste0("genes_", safe_pair_name, ".csv")),
+      row.names = FALSE
+    )
+
+    pairwise_summary <- rbind(
+      pairwise_summary,
+      data.frame(
+        dataset1 = cmb[1],
+        dataset2 = cmb[2],
+        n_overlap = length(overlap),
+        stringsAsFactors = FALSE
+      )
+    )
+  }
+
+  utils::write.csv(
+    pairwise_summary,
+    file.path(outdir, "pairwise_overlap_summary.csv"),
+    row.names = FALSE
+  )
+
+  common_all <- Reduce(intersect, gene_sets)
+
+  utils::write.csv(
+    data.frame(gene = common_all),
+    file.path(outdir, "genes_common_all.csv"),
+    row.names = FALSE
+  )
+
+  unique_results <- list()
+  unique_summary <- data.frame(
+    dataset = character(0),
+    n_unique = integer(0),
+    stringsAsFactors = FALSE
+  )
+
+  for (lbl in labels) {
+
+    others <- gene_sets[names(gene_sets) != lbl]
+
+    unique_genes <- setdiff(
+      gene_sets[[lbl]],
+      Reduce(union, others)
+    )
+
+    unique_results[[lbl]] <- unique_genes
+
+    safe_lbl <- gsub("[^A-Za-z0-9_\\-]+", "_", lbl)
+
+    utils::write.csv(
+      data.frame(gene = unique_genes),
+      file.path(outdir, paste0("genes_unique_", safe_lbl, ".csv")),
+      row.names = FALSE
+    )
+
+    unique_summary <- rbind(
+      unique_summary,
+      data.frame(
+        dataset = lbl,
+        n_unique = length(unique_genes),
+        stringsAsFactors = FALSE
+      )
+    )
+  }
+
+  utils::write.csv(
+    unique_summary,
+    file.path(outdir, "unique_gene_summary.csv"),
+    row.names = FALSE
+  )
+
+  old_theme <- ggplot2::theme_set(
+    ggplot2::theme_bw(base_size = 14)
+  )
+
+  on.exit(
+    ggplot2::theme_set(old_theme),
+    add = TRUE
+  )
+
+  if (length(gene_sets) <= 5) {
+
+    plot <- ggVennDiagram::ggVennDiagram(
+      gene_sets,
+      label_alpha = 0,
+      edge_size = 0.5,
+      label = "count"
+    ) +
+      ggplot2::scale_fill_gradient(
+        low = "white",
+        high = "#0072B2"
+      ) +
+      ggplot2::labs(
+        title = venn_title,
+        fill = "Genes"
+      ) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          hjust = 0.5,
+          face = "bold",
+          size = 16
+        ),
+        text = ggplot2::element_text(),
+        legend.position = "right"
+      )
+
+  } else {
+
+    all_genes <- unique(unlist(gene_sets, use.names = FALSE))
+
+    df_upset <- data.frame(
+      gene = all_genes,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+
+    for (lbl in labels) {
+      df_upset[[lbl]] <- all_genes %in% gene_sets[[lbl]]
+    }
+
+    plot <- ComplexUpset::upset(
+      df_upset,
+      intersect = labels,
+      min_size = min_size,
+      width_ratio = 0.15,
+      base_annotations = list(
+        "Intersection size" =
+          ComplexUpset::intersection_size(
+            counts = TRUE,
+            text = list(size = 4)
+          )
+      ),
+      set_sizes = ComplexUpset::upset_set_size(),
+      sort_sets = "descending",
+      sort_intersections_by = "cardinality"
+    ) +
+      ggplot2::labs(
+        title = venn_title,
+        x = "Intersecting gene sets",
+        y = "Number of genes"
+      ) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          hjust = 0.5,
+          face = "bold",
+          size = 16
+        ),
+        axis.title = ggplot2::element_text(face = "bold"),
+        text = ggplot2::element_text(size = 12)
+      )
+  }
+
+  if (save_plot) {
+
+    ggplot2::ggsave(
+      filename = file.path(outdir, "gene_overlap_plot.pdf"),
+      plot = plot,
+      width = plot_width,
+      height = plot_height,
+      dpi = dpi,
+      bg = "white"
+    )
+
+    ggplot2::ggsave(
+      filename = file.path(outdir, "gene_overlap_plot.png"),
+      plot = plot,
+      width = plot_width,
+      height = plot_height,
+      dpi = dpi,
+      bg = "white"
+    )
+  }
+
+  list(
+    gene_sets = gene_sets,
+    summary = summary_df,
+    pairwise = pairwise_results,
+    pairwise_summary = pairwise_summary,
+    common_all = common_all,
+    unique = unique_results,
+    unique_summary = unique_summary,
+    venn_plot = plot
+  )
+}

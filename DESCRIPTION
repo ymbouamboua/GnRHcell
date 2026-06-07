@@ -28,6 +28,8 @@ Imports:
     RColorBrewer,
     colorspace,
     viridisLite,
+    ggVennDiagram,
+    ComplexUpset,
     cowplot,
     dplyr,
     ggpubr,

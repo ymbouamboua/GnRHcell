@@ -26,7 +26,8 @@ utils::globalVariables(
     "log_padj",
     "dataset", "pos", "runtime",
     "value", "fill", "lab",
-    "module"
+    "module",
+    "count"
   )
 )
 
@@ -36,7 +37,6 @@ GNRH_DEFAULT_SCORE_Q <- 0.85
 CELL_RASTER_THRESHOLD <- 1e5
 CELL_DEFAULT_THEME <- "classic"
 CELL_DEFAULT_BASE_SIZE <- 12
-
 
 
 # Global package options
