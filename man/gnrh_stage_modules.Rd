@@ -66,7 +66,21 @@ Front Neuroendocrinol. 2010.
 
 Schwanzel-Fukuda M, Pfaff DW. Origin of luteinizing hormone-releasing
 hormone neurons. Nature. 1989.
+
+Stevenson EL, Corella KM, Chung WCJ. Ontogenesis of
+gonadotropin-releasing hormone neurons. Front Endocrinol. 2013.
+
+Cho HJ, Shan Y, Whittington NC, Wray S. Nasal placode development,
+GnRH neuronal migration and Kallmann syndrome. Front Cell Dev Biol. 2019.
+
+Taroc EZM, Prasad A, Lin JM, Forni PE. GnRH-1 neural migration
+from the nose to the brain is independent from Slit2, Robo3 and NELL2.
+Front Cell Neurosci. 2019.
+
+Li Q et al. Expression of genes for kisspeptin, neurokinin B and
+dynorphin in the hypothalamus. Front Endocrinol. 2020.
 }
 \seealso{
 \code{\link{gnrh_marker_programs}}
+\code{\link{gnrh_stage_gene_references}}
 }

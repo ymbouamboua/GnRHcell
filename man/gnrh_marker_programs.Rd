@@ -48,16 +48,56 @@ high confidence. Default is \code{1}.}
 \value{
 A named list with four elements:
 \describe{
-\item{\code{candidate_table}}{Data frame containing all evaluated marker
-candidates with dataset, gene, uniqueness, known marker status,
-developmental program, GNRH1 co-expression status, specificity score, and
-confidence level.}
-\item{\code{high_confidence}}{Subset of \code{candidate_table} classified
-as high-confidence candidate markers.}
-\item{\code{summary}}{Summary table of candidate genes grouped by dataset,
-developmental program, and confidence level.}
-\item{\code{split_by_dataset_program}}{List of candidate genes split by
-dataset and developmental program.}
+\item{\code{candidate_table}}{
+Data frame containing all evaluated marker candidates. Columns are:
+\describe{
+\item{\code{dataset}}{
+Dataset where the candidate marker was detected.
+}
+\item{\code{gene}}{
+Candidate marker gene symbol, standardized to uppercase.
+}
+\item{\code{is_unique}}{
+Logical value indicating whether the gene is unique to one dataset
+according to \code{\link{gene_upset}}.
+}
+\item{\code{known_status}}{
+Biological annotation of the gene. Values include
+\code{"known_GnRH_or_developmental"},
+\code{"candidate_novel"}, \code{"generic_neuronal"}, and
+\code{"unknown_or_context_specific"}.
+}
+\item{\code{program}}{
+Developmental program assigned using
+\code{\link{gnrh_stage_modules}}. Values include
+\code{"identity"}, \code{"migrating"}, \code{"mature"},
+\code{"secreting"}, or \code{"unassigned"}.
+}
+\item{\code{coexpr_GNRH1}}{
+Logical value indicating whether the gene is co-expressed with
+\code{GNRH1} according to the marker table co-expression column.
+}
+\item{\code{specificity_score}}{
+Numeric marker specificity score. Higher values indicate stronger
+enrichment in GnRH-positive cells.
+}
+\item{\code{confidence_level}}{
+Final confidence category assigned by the function:
+\code{"high"}, \code{"medium"}, or \code{"low"}.
+}
+}
+}
+\item{\code{high_confidence}}{
+Subset of \code{candidate_table} classified as high-confidence
+candidate markers.
+}
+\item{\code{summary}}{
+Summary table of candidate genes grouped by dataset, developmental
+program, and confidence level.
+}
+\item{\code{split_by_dataset_program}}{
+List of candidate genes split by dataset and developmental program.
+}
 }
 }
 \description{
@@ -90,6 +130,12 @@ program, specificity score greater than or equal to
 than or equal to \code{min_medium_score}, and not classified as generic.
 \item \code{low}: all remaining candidates.
 }
+
+Biologically, \code{candidate_table} separates reference GnRH markers,
+generic neuronal markers, potentially novel GnRH-associated markers, and
+context-specific candidates. Computationally, genes are prioritized by
+dataset specificity, GNRH1 co-expression, developmental program membership,
+and marker specificity score.
 }
 \examples{
 \dontrun{

@@ -3379,9 +3379,9 @@ plot_gnrh_marker_programs <- function(
         ggplot2::ggplot(
           df,
           ggplot2::aes(
-            x = program,
-            y = n_genes,
-            fill = confidence_level
+            x = .data$program,
+            y = .data$n_genes,
+            fill = .data$confidence_level
           )
         ) +
           ggplot2::geom_col(width = 0.75) +
@@ -3407,10 +3407,10 @@ plot_gnrh_marker_programs <- function(
         ggplot2::ggplot(
           df,
           ggplot2::aes(
-            x = program,
-            y = dataset,
-            size = n_genes,
-            color = confidence_level
+            x = .data$program,
+            y = .data$dataset,
+            size = .data$n_genes,
+            color = .data$confidence_level
           )
         ) +
           ggplot2::geom_point(alpha = 0.85) +
@@ -3436,14 +3436,14 @@ plot_gnrh_marker_programs <- function(
         ggplot2::ggplot(
           df,
           ggplot2::aes(
-            x = program,
-            y = dataset,
-            fill = n_genes
+            x = .data$program,
+            y = .data$dataset,
+            fill = .data$n_genes
           )
         ) +
           ggplot2::geom_tile(color = "white", linewidth = 0.4) +
           ggplot2::geom_text(
-            ggplot2::aes(label = n_genes),
+            ggplot2::aes(label = .data$n_genes),
             size = 3
           ) +
           ggplot2::scale_fill_gradient(
@@ -3480,10 +3480,10 @@ plot_gnrh_marker_programs <- function(
   ggplot2::ggplot(
     df,
     ggplot2::aes(
-      x = program,
-      y = gene,
-      color = confidence_level,
-      size = specificity_score
+      x = .data$program,
+      y = .data$gene,
+      color = .data$confidence_level,
+      size = .data$specificity_score
     )
   ) +
     ggplot2::geom_point(alpha = 0.85) +
@@ -3503,6 +3503,5 @@ plot_gnrh_marker_programs <- function(
       size = "Specificity score"
     )
 }
-
 
 
