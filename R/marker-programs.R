@@ -59,6 +59,7 @@
 #'
 #' @seealso
 #' \code{\link{gnrh_marker_programs}}
+#' \code{\link{gnrh_stage_gene_references}}
 #'
 #' @references
 #' Wray S. Development of gonadotropin-releasing hormone-1 neurons.
@@ -66,6 +67,19 @@
 #'
 #' Schwanzel-Fukuda M, Pfaff DW. Origin of luteinizing hormone-releasing
 #' hormone neurons. Nature. 1989.
+#'
+#' Stevenson EL, Corella KM, Chung WCJ. Ontogenesis of
+#' gonadotropin-releasing hormone neurons. Front Endocrinol. 2013.
+#'
+#' Cho HJ, Shan Y, Whittington NC, Wray S. Nasal placode development,
+#' GnRH neuronal migration and Kallmann syndrome. Front Cell Dev Biol. 2019.
+#'
+#' Taroc EZM, Prasad A, Lin JM, Forni PE. GnRH-1 neural migration
+#' from the nose to the brain is independent from Slit2, Robo3 and NELL2.
+#' Front Cell Neurosci. 2019.
+#'
+#' Li Q et al. Expression of genes for kisspeptin, neurokinin B and
+#' dynorphin in the hypothalamus. Front Endocrinol. 2020.
 #'
 #' @export
 #'
@@ -108,6 +122,57 @@ gnrh_stage_modules <- function() {
 }
 
 
+#' GnRH developmental marker gene references
+#'
+#' Returns a gene-level reference table for the curated developmental
+#' programs used by \code{\link{gnrh_stage_modules}}.
+#'
+#' @return A data frame with gene, program, evidence_class, and references.
+#' @export
+gnrh_stage_gene_references <- function() {
+
+  modules <- gnrh_stage_modules()
+
+  ref_map <- list(
+    identity = paste(
+      "Wray 2010; Stevenson et al. 2013; Cho et al. 2019",
+      sep = "; "
+    ),
+    migrating = paste(
+      "Schwanzel-Fukuda & Pfaff 1989; Wray 2010;",
+      "Cho et al. 2019; Taroc et al. 2019"
+    ),
+    mature = paste(
+      "Wray 2010; Li et al. 2020"
+    ),
+    secreting = paste(
+      "Wray 2010; Li et al. 2020"
+    )
+  )
+
+  evidence_map <- list(
+    identity = "developmental_identity",
+    migrating = "migration_guidance",
+    mature = "neuroendocrine_maturation",
+    secreting = "secretory_function"
+  )
+
+  out <- lapply(names(modules), function(program) {
+    data.frame(
+      gene = modules[[program]],
+      program = program,
+      evidence_class = evidence_map[[program]],
+      references = ref_map[[program]],
+      stringsAsFactors = FALSE
+    )
+  })
+
+  out <- do.call(rbind, out)
+  rownames(out) <- NULL
+  out
+}
+
+
 
 
 #' Classify GnRH marker candidates into developmental programs
@@ -146,16 +211,56 @@ gnrh_stage_modules <- function() {
 #'
 #' @return A named list with four elements:
 #' \describe{
-#'   \item{\code{candidate_table}}{Data frame containing all evaluated marker
-#'   candidates with dataset, gene, uniqueness, known marker status,
-#'   developmental program, GNRH1 co-expression status, specificity score, and
-#'   confidence level.}
-#'   \item{\code{high_confidence}}{Subset of \code{candidate_table} classified
-#'   as high-confidence candidate markers.}
-#'   \item{\code{summary}}{Summary table of candidate genes grouped by dataset,
-#'   developmental program, and confidence level.}
-#'   \item{\code{split_by_dataset_program}}{List of candidate genes split by
-#'   dataset and developmental program.}
+#'   \item{\code{candidate_table}}{
+#'     Data frame containing all evaluated marker candidates. Columns are:
+#'     \describe{
+#'       \item{\code{dataset}}{
+#'         Dataset where the candidate marker was detected.
+#'       }
+#'       \item{\code{gene}}{
+#'         Candidate marker gene symbol, standardized to uppercase.
+#'       }
+#'       \item{\code{is_unique}}{
+#'         Logical value indicating whether the gene is unique to one dataset
+#'         according to \code{\link{gene_upset}}.
+#'       }
+#'       \item{\code{known_status}}{
+#'         Biological annotation of the gene. Values include
+#'         \code{"known_GnRH_or_developmental"},
+#'         \code{"candidate_novel"}, \code{"generic_neuronal"}, and
+#'         \code{"unknown_or_context_specific"}.
+#'       }
+#'       \item{\code{program}}{
+#'         Developmental program assigned using
+#'         \code{\link{gnrh_stage_modules}}. Values include
+#'         \code{"identity"}, \code{"migrating"}, \code{"mature"},
+#'         \code{"secreting"}, or \code{"unassigned"}.
+#'       }
+#'       \item{\code{coexpr_GNRH1}}{
+#'         Logical value indicating whether the gene is co-expressed with
+#'         \code{GNRH1} according to the marker table co-expression column.
+#'       }
+#'       \item{\code{specificity_score}}{
+#'         Numeric marker specificity score. Higher values indicate stronger
+#'         enrichment in GnRH-positive cells.
+#'       }
+#'       \item{\code{confidence_level}}{
+#'         Final confidence category assigned by the function:
+#'         \code{"high"}, \code{"medium"}, or \code{"low"}.
+#'       }
+#'     }
+#'   }
+#'   \item{\code{high_confidence}}{
+#'     Subset of \code{candidate_table} classified as high-confidence
+#'     candidate markers.
+#'   }
+#'   \item{\code{summary}}{
+#'     Summary table of candidate genes grouped by dataset, developmental
+#'     program, and confidence level.
+#'   }
+#'   \item{\code{split_by_dataset_program}}{
+#'     List of candidate genes split by dataset and developmental program.
+#'   }
 #' }
 #'
 #' @details
@@ -175,6 +280,12 @@ gnrh_stage_modules <- function() {
 #'   than or equal to \code{min_medium_score}, and not classified as generic.
 #'   \item \code{low}: all remaining candidates.
 #' }
+#'
+#' Biologically, \code{candidate_table} separates reference GnRH markers,
+#' generic neuronal markers, potentially novel GnRH-associated markers, and
+#' context-specific candidates. Computationally, genes are prioritized by
+#' dataset specificity, GNRH1 co-expression, developmental program membership,
+#' and marker specificity score.
 #'
 #' @examples
 #' \dontrun{
@@ -207,6 +318,7 @@ gnrh_stage_modules <- function() {
 #' \code{\link{gnrh_markers}}
 #'
 #' @export
+#'
 gnrh_marker_programs <- function(
     files,
     results,
@@ -391,7 +503,19 @@ gnrh_marker_programs <- function(
 
     df$dataset <- dataset
     df$is_unique <- df$gene %in% unique_genes
-    df$coexpr_GNRH1 <- df[[coexpr_col]] == TRUE
+
+    coexpr_value <- df[[coexpr_col]]
+
+    df$coexpr_GNRH1 <- if (is.logical(coexpr_value)) {
+      coexpr_value
+    } else if (is.numeric(coexpr_value)) {
+      coexpr_value > 0
+    } else {
+      tolower(as.character(coexpr_value)) %in% c("true", "t", "yes", "y", "1")
+    }
+
+    df$coexpr_GNRH1[is.na(df$coexpr_GNRH1)] <- FALSE
+
     df$known_status <- vapply(
       df$gene,
       classify_known_status,
