@@ -1,3 +1,6 @@
 .Rproj.user
 inst/doc
 .positai
+echo ".Rhistory" >> .gitignore
+.Rhistory
+.Rhistory

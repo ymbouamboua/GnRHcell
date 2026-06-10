@@ -1,5 +1,5 @@
 
-<img src="man/figures/GnRHcell.png" align="right" width="180"/>
+<img src="man/figures/GnRHcell.png" align="right" width="220"/>
 
 # GnRHcell
 
@@ -185,6 +185,91 @@ markers <- gnrh_markers(obj)
 head(markers)
 ```
 
+## Marker Program Discovery
+
+GnRHcell can identify and prioritize candidate GnRH markers across
+multiple datasets by integrating:
+
+- differential expression
+- GNRH1 co-expression
+- dataset-specific markers
+- developmental program assignment
+- marker specificity scoring
+
+Build gene sets
+
+``` r
+files <- c(
+  "HuDeCa Nose" = "gnrh_nose_markers.tsv",
+  "HPSC Wang 2022" = "gnrh_wang_markers.tsv",
+  "Human HypoMap" = "gnrh_human_hypomap_markers.tsv"
+)
+
+gene_sets <- build_gene_sets(
+  files = files,
+  dir = file.path(outdir, "tables")
+)
+```
+
+## Compute marker overlap
+
+``` r
+overlap <- gene_upset(
+  gene_sets = gene_sets,
+  outdir = file.path(outdir, "marker_overlap")
+)
+```
+
+## Identify candidate GnRH marker programs
+
+``` r
+programs <- gnrh_marker_programs(
+  files = files,
+  results = overlap,
+  outdir = outdir
+)
+```
+
+View candidate markers:
+
+``` r
+head(programs$candidate_table)
+```
+
+View high-confidence markers:
+
+``` r
+head(programs$high_confidence)
+```
+
+## Visualize marker programs
+
+``` r
+plot_gnrh_marker_programs(
+  programs,
+  table = "summary",
+  type = "bar"
+)
+```
+
+``` r
+plot_gnrh_marker_programs(
+  programs,
+  table = "summary",
+  type = "tile"
+)
+```
+
+Outputs include:
+
+- candidate marker table
+- high-confidence marker list
+- developmental program summary
+- dataset-specific marker programs
+- publication-ready visualizations
+
+## Genes co-expressed with GNRH1
+
 Filter coexpressed markers:
 
 ``` r
@@ -232,9 +317,14 @@ plot_network(
 
 - gnrh_markers()
 
-### Marker programs
+### \### Cross-dataset marker discovery
 
+- build_gene_sets()
+- gene_upset()
 - gnrh_marker_programs()
+- gnrh_stage_modules()
+- gnrh_stage_gene_references()
+- plot_gnrh_marker_programs()
 
 ### Utilities
 
