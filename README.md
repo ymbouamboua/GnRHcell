@@ -232,6 +232,10 @@ plot_network(
 
 - gnrh_markers()
 
+### Marker programs
+
+- gnrh_marker_programs()
+
 ### Utilities
 
 - gnrh_colors()
