@@ -10,7 +10,7 @@ cellmap(
   reduction = "umap",
   dims = c(1, 2),
   shuffle = FALSE,
-  raster = NULL,
+  raster = FALSE,
   stroke.size = NULL,
   raster.dpi = c(2048, 2048),
   alpha = 1,

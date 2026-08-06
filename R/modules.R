@@ -1,34 +1,54 @@
 # ==============================================================================
 # MODULE V1
 # ==============================================================================
+#' Build GnRH detection marker modules
+#'
+#' Internal helper that maps predefined GnRH-associated marker
+#' genes to the genes available in the input expression matrix.
+#'
+#' The returned modules are used by \code{\link{detect_gnrh}}
+#' to support GnRH neuron detection through core identity,
+#' migration, and neuroendocrine marker signals.
+#'
+#' @param genes Character vector of gene names present in the
+#' expression matrix.
+#'
+#' @return A named list of character vectors containing matched genes:
+#' \describe{
+#'   \item{\code{core}}{Core GnRH lineage and identity markers.}
+#'   \item{\code{mig}}{Migration and axon-guidance markers.}
+#'   \item{\code{neuro}}{Neuroendocrine and neuronal function markers.}
+#' }
+#'
+#' @keywords internal
+#' @noRd
+.gnrh_modules <- function(genes) {
 
-# .gnrh_modules <- function(genes) {
-#
-#   list(
-#
-#     core = .match_genes(c(
-#       "GNRH1","FEZF1","ISL1",
-#       "OTX2","SIX3","SIX6",
-#       "DLX1","DLX2","DLX5","DLX6"
-#     ), genes),
-#
-#     mig = .match_genes(c(
-#       "ANOS1","PROKR2","PROK2",
-#       "NRP1","NRP2","SEMA3A",
-#       "SEMA3C","SEMA3F",
-#       "ROBO1","ROBO2",
-#       "L1CAM","DCX"
-#     ), genes),
-#
-#     neuro = .match_genes(c(
-#       "KISS1R","TAC3","TACR3",
-#       "GNRHR","PCSK1","PCSK2",
-#       "SCG2","CHGA","CHGB",
-#       "CPE","VGF","SYP","RAB3A"
-#       #"ESR1","PGR","AR" # hormone
-#     ), genes)
-#   )
-# }
+  list(
+
+    core = .match_genes(c(
+      "GNRH1","FEZF1","ISL1",
+      "OTX2","SIX3","SIX6",
+      "DLX1","DLX2","DLX5","DLX6"
+    ), genes),
+
+    mig = .match_genes(c(
+      "ANOS1","PROKR2","PROK2",
+      "NRP1","NRP2","SEMA3A",
+      "SEMA3C","SEMA3F",
+      "ROBO1","ROBO2",
+      "L1CAM","DCX"
+    ), genes),
+
+    neuro = .match_genes(c(
+      "KISS1R","TAC3","TACR3",
+      "GNRHR","PCSK1","PCSK2",
+      "SCG2","CHGA","CHGB",
+      "CPE","VGF","SYP","RAB3A"
+      #"ESR1","PGR","AR" # hormone
+    ), genes)
+  )
+}
 
 
 # build_stage_modules <- function(genes) {
@@ -120,65 +140,43 @@
 # MODULE V2
 # ==============================================================================
 
-
-#' Build GnRH detection marker modules
-#'
-#' Internal helper that maps predefined GnRH-associated marker
-#' genes to the genes available in the input expression matrix.
-#'
-#' The returned modules are used by \code{\link{detect_gnrh}}
-#' to support GnRH neuron detection through core identity,
-#' migration, and neuroendocrine marker signals.
-#'
-#' @param genes Character vector of gene names present in the
-#' expression matrix.
-#'
-#' @return A named list of character vectors containing matched genes:
-#' \describe{
-#'   \item{\code{core}}{Core GnRH lineage and identity markers.}
-#'   \item{\code{mig}}{Migration and axon-guidance markers.}
-#'   \item{\code{neuro}}{Neuroendocrine and neuronal function markers.}
-#' }
-#'
-#' @keywords internal
-#' @noRd
-.gnrh_modules <- function(genes) {
-
-  list(
-    core = .match_genes(c(
-      "GNRH1",
-      "ISL1",
-      "SIX3", "SIX6",
-      "DLX1","DLX2","DLX5", "DLX6",
-      "OTX2",
-      "KISS1R"
-    ), genes),
-
-    mig = .match_genes(c(
-      "ANOS1", "PROK2", "PROKR2",
-      "FGFR1", "FGF8", "IL17RD", "HS6ST1",
-      "SEMA3A", "SEMA3C", "SEMA3F",
-      "NRP1", "NRP2",
-      "ROBO1", "ROBO2", "ROBO3",
-      "L1CAM", "NCAM1", "CNTN2",
-      "GAP43", "STMN2", "STMN3", "PLXNA3" ,"SLIT1",
-      "MAP1B", "RIPOR2", "SPOCK1", "UNC5D"
-    ), genes),
-
-    neuro = .match_genes(c(
-      "GNRH1",
-      "KISS1R", "TAC3", "TACR3", "TAC1",
-      "GNRHR",
-      "PCSK1", "PCSK2", "CPE",
-      "SCG2", "SCG5", "CHGA", "CHGB", "VGF",
-      "SYP", "VAMP2", "SNAP25",
-      "RAB3A", "RAB3B", "RAB3C",
-      "PTPRN", "BAIAP3", "DOC2B",
-      "ECEL1", "RASD1",
-      "HCN1", "NALCN", "SCN3A"
-    ), genes)
-  )
-}
+# .gnrh_modules <- function(genes) {
+#
+#   list(
+#     core = .match_genes(c(
+#       "GNRH1",
+#       "ISL1",
+#       "SIX3", "SIX6",
+#       "DLX1","DLX2","DLX5", "DLX6",
+#       "OTX2",
+#       "KISS1R"
+#     ), genes),
+#
+#     mig = .match_genes(c(
+#       "ANOS1", "PROK2", "PROKR2",
+#       "FGFR1", "FGF8", "IL17RD", "HS6ST1",
+#       "SEMA3A", "SEMA3C", "SEMA3F",
+#       "NRP1", "NRP2",
+#       "ROBO1", "ROBO2", "ROBO3",
+#       "L1CAM", "NCAM1", "CNTN2",
+#       "GAP43", "STMN2", "STMN3", "PLXNA3" ,"SLIT1",
+#       "MAP1B", "RIPOR2", "SPOCK1", "UNC5D"
+#     ), genes),
+#
+#     neuro = .match_genes(c(
+#       "GNRH1",
+#       "KISS1R", "TAC3", "TACR3", "TAC1",
+#       "GNRHR",
+#       "PCSK1", "PCSK2", "CPE",
+#       "SCG2", "SCG5", "CHGA", "CHGB", "VGF",
+#       "SYP", "VAMP2", "SNAP25",
+#       "RAB3A", "RAB3B", "RAB3C",
+#       "PTPRN", "BAIAP3", "DOC2B",
+#       "ECEL1", "RASD1",
+#       "HCN1", "NALCN", "SCN3A"
+#     ), genes)
+#   )
+# }
 
 
 

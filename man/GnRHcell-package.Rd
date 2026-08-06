@@ -8,6 +8,15 @@
 \description{
 Provides tools to detect, score, and stage GnRH-like cells in single-cell RNA-seq data using gene modules, adaptive scoring, ambient RNA correction, and Seurat-compatible workflows.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://ymbouamboua.github.io/GnRHcell/}
+  \item \url{https://github.com/ymbouamboua/GnRHcell}
+  \item Report bugs at \url{https://github.com/ymbouamboua/GnRHcell/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Yvon Mbouamboua \email{yvon.mbouamboua@gmail.com}
 

@@ -1,152 +1,91 @@
+GnRHcell
+================
 
-<img src="man/figures/GnRHcell.png" align="right" width="220"/>
+<div align="center">
 
-# GnRHcell
+<img src="man/figures/GnRHcell.png" width="500" alt="GnRHcell logo">
 
-<!-- badges: start -->
+### High-confidence detection, developmental staging, and marker discovery of GnRH neurons from single-cell RNA-seq data
 
 [![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml)
 [![Reproducibility](https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml)
-<!-- badges: end -->
+[![pkgdown](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://ymbouamboua.github.io/GnRHcell/)
+[![License:
+MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**High-confidence detection, developmental staging, and marker discovery
-of GnRH neurons from single-cell RNA-seq data**
+</div>
 
-`GnRHcell` is an R package for identifying rare **gonadotropin-releasing
-hormone (GnRH) neurons** in single-cell transcriptomic datasets.
+`GnRHcell` is an R package for identifying rare gonadotropin-releasing
+hormone (GnRH) neurons in single-cell transcriptomic datasets.
 
-The package provides an integrated framework for:
+It provides:
 
-- high-confidence GnRH cell detection
-- developmental stage assignment
-- diagnostic performance evaluation
-- marker discovery and coexpression analysis
-- network visualization
-- publication-ready graphics
+- high-confidence GnRH-cell detection;
+- developmental-stage assignment;
+- diagnostic performance evaluation;
+- marker discovery and `GNRH1` co-expression analysis;
+- cross-dataset marker-program analysis;
+- publication-ready visualizations.
 
-Built for **Seurat workflows**, `GnRHcell` is optimized for exploratory
-and reproducible analysis of rare GnRH neuron populations.
+The package integrates naturally with
+[Seurat](https://satijalab.org/seurat/) workflows. Full documentation is
+available at
+[ymbouamboua.github.io/GnRHcell](https://ymbouamboua.github.io/GnRHcell/).
 
-------------------------------------------------------------------------
-
-# Installation
+## Installation
 
 Install the development version from GitHub:
+
+``` r
+# install.packages("pak")
+pak::pak("ymbouamboua/GnRHcell")
+```
+
+Alternatively:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("ymbouamboua/GnRHcell")
 ```
 
-# Quick Start
+## Quick start
 
 ``` r
-suppressPackageStartupMessages({
 library(GnRHcell)
 library(Seurat)
-})
-```
 
-    ## Warning: package 'Seurat' was built under R version 4.5.2
-
-    ## Warning: package 'SeuratObject' was built under R version 4.5.2
-
-    ## Warning: package 'sp' was built under R version 4.5.2
-
-# Quick Start
-
-## 1. Preprocess Seurat object
-
-``` r
-# Example: create a small Seurat object
-mat <- matrix(rpois(2000, lambda = 5), nrow = 100)
-obj <- CreateSeuratObject(mat)
-obj <- NormalizeData(obj)
-obj <- FindVariableFeatures(obj)
-obj <- ScaleData(obj)
-obj <- RunPCA(obj)
-obj <- RunUMAP(obj, dims = 1:20)
-```
-
-## 2. Run complete GnRH pipeline
-
-``` r
+# `obj` is a normalized Seurat object with a dimensional reduction.
 obj <- run_gnrh(obj)
 ```
 
-Example console output:
+The resulting metadata include GnRH detection, confidence, and
+developmental-stage assignments.
 
-``` text
-[GNRH] ==== STARTING GnRHcell PIPELINE ====
-[STEP] [1/3] Detecting GnRH cells
-[INFO] ==== GNRH DETECTION START ====
-[INFO] Using assay: RNA
-[INFO] Matrix loaded: 33538 genes by 29708 cells
-[INFO] Running diagnostics
-[INFO] ==== GNRH DETECTION DONE ====
-[DONE] Detection complete. Duration: 6.1s
-[STEP] [2/3] Assigning developmental stages
-[INFO] ==== GNRH STAGING START ====
-[INFO] ==== GNRH STAGING DONE ====
-[INFO] [3/3] Running diagnostics
-[INFO] Running diagnostics
-[DONE] Assigning stages complete. Duration: 6.1s
-[INFO] PIPELINE SUMMARY
-[INFO] Status:
-[INFO]   neg: 26651
-[INFO]   pos: 3057
-[INFO] Truth:
-[INFO]   neg: 27080
-[INFO]   pos: 2628
-[INFO] Stage:
-[INFO]   identity: 1128
-[INFO]   migrating: 1857
-[INFO]   mature: 69
-[INFO]   secreting: 3
-[INFO]   non-gnrh: 26651
-[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 7.6s
+``` r
+table(obj$gnrh_status)
+table(obj$gnrh_confident)
+table(obj$gnrh_stage)
 ```
 
 ## Visualization
 
-### Embedding visualization
+### Embedding
 
 ``` r
-p <- plot_gnrh_embedding(
+plot_gnrh_embedding(
   obj,
-  group.by = c("gnrh_status", "gnrh_stage")
+  group.by = c("gnrh_status", "gnrh_confident", "gnrh_stage"),
+  reduction = "umap"
 )
-
-p
 ```
 
 ### Feature expression
 
 ``` r
-p <- plot_gnrh_feature(
-  obj,
-  feature_type = "all"
-)
-
-p
+plot_gnrh_feature(obj, feature_type = "all", reduction = "umap")
 ```
 
-### Distribution plots
-
-GnRH status by sample:
-
-``` r
-plot_gnrh_distribution(
-  obj,
-  group.by = "gnrh_status",
-  split.by = "orig.ident",
-  proportion = TRUE,
-  label = FALSE,
-  cols = gnrh_colors("status")
-)
-```
-
-Developmental stages by sample:
+### Distribution across samples
 
 ``` r
 plot_gnrh_distribution(
@@ -159,207 +98,101 @@ plot_gnrh_distribution(
 )
 ```
 
-## Diagnostic dashboard
+### Diagnostic report
 
 ``` r
-p <- gnrh_report(obj)
-p
+gnrh_report(obj)
 ```
 
-Includes:
+The report summarizes signal distributions, threshold performance,
+module activity, stage composition, and classification diagnostics.
 
-- signal landscape
-- score distributions
-- threshold performance
-- ROC analysis
-- module signal summary
-- stage composition
-- classification diagnostics
+## GnRH-specific gene discovery
 
-## Marker Discovery
-
-Identify GnRH-associated markers:
+Identify genes enriched in confident GnRH cells relative to a
+biologically relevant control population:
 
 ``` r
-markers <- gnrh_markers(obj)
-head(markers)
+genes <- find_gnrh_genes(
+  object = obj,
+  annotation_col = "ann1",
+  control_label = "Neuronal",
+  donor_col = "status"
+)
+
+head(genes$candidates)
 ```
 
-## Marker Program Discovery
+The returned results combine differential expression, GNRH1
+co-expression, specificity, and donor recurrence. Consult
+`?find_gnrh_genes` for the available thresholds and returned tables.
 
-GnRHcell can identify and prioritize candidate GnRH markers across
-multiple datasets by integrating:
+### Co-expression and network visualization
 
-- differential expression
-- GNRH1 co-expression
-- dataset-specific markers
-- developmental program assignment
-- marker specificity scoring
+``` r
+coexpressed <- subset(genes$markers, coexpr_flag %in% TRUE)
 
-Build gene sets
+plot_gnrh_coexpr(coexpressed, coexp_cutoff = 0.3)
+plot_network(genes$markers, top_n = 50, threshold = 0.1)
+```
+
+## Cross-dataset marker programs
 
 ``` r
 files <- c(
-  "HuDeCa Nose" = "gnrh_nose_markers.tsv",
-  "HPSC Wang 2022" = "gnrh_wang_markers.tsv",
+  "HuDeCa Nose" = "gnrh_human_nose_markers.tsv",
+  "HPSC Wang 2022" = "gnrh_human_hpsc_markers.tsv",
   "Human HypoMap" = "gnrh_human_hypomap_markers.tsv"
 )
 
-gene_sets <- build_gene_sets(
-  files = files,
-  dir = file.path(outdir, "tables")
-)
-```
+marker_dir <- file.path(outdir, "markers")
+gene_sets <- build_gene_sets(files = files, dir = marker_dir)
 
-## Compute marker overlap
-
-``` r
 overlap <- gene_upset(
   gene_sets = gene_sets,
-  outdir = file.path(outdir, "marker_overlap")
+  outdir = file.path(outdir, "comparisons", "marker_overlap")
 )
-```
 
-## Identify candidate GnRH marker programs
-
-``` r
 programs <- gnrh_marker_programs(
   files = files,
   results = overlap,
   outdir = outdir
 )
-```
 
-View candidate markers:
-
-``` r
 head(programs$candidate_table)
-```
-
-View high-confidence markers:
-
-``` r
 head(programs$high_confidence)
 ```
 
-## Visualize marker programs
-
 ``` r
-plot_gnrh_marker_programs(
-  programs,
-  table = "summary",
-  type = "bar"
-)
+plot_gnrh_marker_programs(programs, table = "summary", type = "bar")
+plot_gnrh_marker_programs(programs, table = "summary", type = "tile")
 ```
 
-``` r
-plot_gnrh_marker_programs(
-  programs,
-  table = "summary",
-  type = "tile"
-)
-```
+## Main functions
 
-Outputs include:
+- Pipeline: `run_gnrh()`, `detect_gnrh()`, `stage_gnrh()`,
+  `gnrh_diagnostics()`
+- Marker analysis: `find_gnrh_genes()`, `gnrh_markers()`
+- Cross-dataset analysis: `build_gene_sets()`, `gene_upset()`,
+  `gnrh_marker_programs()`
+- Visualization: `plot_gnrh_embedding()`, `plot_gnrh_feature()`,
+  `plot_gnrh_distribution()`, `gnrh_report()`
+- Utilities: `gnrh_colors()`, `cellpal()`, `plot_theme()`
 
-- candidate marker table
-- high-confidence marker list
-- developmental program summary
-- dataset-specific marker programs
-- publication-ready visualizations
-
-## Genes co-expressed with GNRH1
-
-Filter coexpressed markers:
-
-``` r
-df <- subset(markers, coexpr_flag == TRUE)
-```
-
-Coexpression ranking:
-
-``` r
-plot_gnrh_coexpr(
-  df,
-  coexp_cutoff = 0.3
-)
-```
-
-## Gene network
-
-``` r
-plot_network(
-  markers,
-  top_n = 50,
-  threshold = 0.1
-)
-```
-
-## Core Functions
-
-### Pipeline
-
-- run_gnrh() — complete detection/staging/diagnostics workflow
-- detect_gnrh() — GnRH cell detection
-- stage_gnrh() — developmental staging
-- gnrh_diagnostics() — performance diagnostics
-
-### Visualization
-
-- plot_gnrh_embedding()
-- plot_gnrh_feature()
-- plot_gnrh_distribution()
-- plot_gnrh_coexpr()
-- plot_network()
-- gnrh_report()
-
-### Marker analysis
-
-- gnrh_markers()
-
-### \### Cross-dataset marker discovery
-
-- build_gene_sets()
-- gene_upset()
-- gnrh_marker_programs()
-- gnrh_stage_modules()
-- gnrh_stage_gene_references()
-- plot_gnrh_marker_programs()
-
-### Utilities
-
-- gnrh_colors()
-- cellpal()
-- plot_theme()
-
-## Dependencies
-
-Major dependencies:
-
-- Seurat
-- ggplot2
-- patchwork
-- ggrepel
-- plotly
-- pROC
-- igraph
-- Matrix
+See the [function
+reference](https://ymbouamboua.github.io/GnRHcell/reference/) for the
+complete API.
 
 ## Development
 
-Run tests:
-
 ``` r
+devtools::document()
 devtools::test()
-```
-
-Run full package checks:
-
-``` r
 devtools::check()
+pkgdown::build_site()
 ```
 
-Rebuild README:
+Rebuild `README.md` after editing this source file:
 
 ``` r
 devtools::build_readme()
@@ -367,16 +200,16 @@ devtools::build_readme()
 
 ## Citation
 
-If you use GnRHcell, please cite:
+If you use `GnRHcell`, please cite:
 
-Yvon Mbouamboua. GnRHcell: High-confidence GnRH neuron detection and
-staging from single-cell RNA-seq data.
+> Mbouamboua Y. *GnRHcell: high-confidence GnRH neuron detection and
+> developmental staging from single-cell RNA-seq data.*
 
 ## License
 
-MIT License
+`GnRHcell` is available under the [MIT License](LICENSE).
 
-## Status
+## Development status
 
-GnRHcell is under active development. Interfaces may evolve as methods
-are refined.
+`GnRHcell` is under active development. Interfaces may evolve as the
+methods are refined.

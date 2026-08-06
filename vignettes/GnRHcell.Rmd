@@ -1,7 +1,12 @@
 ---
 title: "GnRHcell: GnRH neuron identification and developmental staging"
-author: "Yvon Mbouamboua & Paolo Giacobini"
-output: rmarkdown::html_vignette
+author:
+  - name: Yvon Mbouamboua
+  - name: Paolo Giacobini
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: false
 vignette: >
   %\VignetteIndexEntry{GnRHcell}
   %\VignetteEngine{knitr::rmarkdown}
@@ -12,7 +17,10 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE
+  eval = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 6
 )
 ```
 
@@ -200,48 +208,51 @@ Neuroendocrine maturation markers include:
 - `SYP`
 - `RAB3A`
 
+
 # Composite score
 
-For each cell, `GnRHcell` computes a composite score integrating expression and marker support:
+For each cell, `GnRHcell` computes a composite score integrating
+expression and marker support:
 
-$begin:math:display$
-S\_i \=
-2\.5G\_i \+
-2\.0C\_i \+
-1\.0M\_i \+
-1\.5N\_i \+
-1\.0A\_i \+
-0\.75K\_i
-$end:math:display$
+$$
+S_i =
+2.5G_i +
+2.0C_i +
+1.0M_i +
+1.5N_i +
+1.0A_i +
+0.75K_i
+$$
 
 where:
 
-- $begin:math:text$S\_i$end:math:text$ is the GnRH score for cell $begin:math:text$i$end:math:text$
-- $begin:math:text$G\_i$end:math:text$ is normalized `GNRH1` expression
-- $begin:math:text$C\_i$end:math:text$ is the core lineage module score
-- $begin:math:text$M\_i$end:math:text$ is the migration module score
-- $begin:math:text$N\_i$end:math:text$ is the neuroendocrine module score
-- $begin:math:text$A\_i$end:math:text$ is ambient-corrected signal support
-- $begin:math:text$K\_i$end:math:text$ is kNN neighborhood support
+- $S_i$ is the GnRH score for cell $i$;
+- $G_i$ is normalized `GNRH1` expression;
+- $C_i$ is the core-lineage module score;
+- $M_i$ is the migration-module score;
+- $N_i$ is the neuroendocrine-module score;
+- $A_i$ is the ambient-corrected signal support;
+- $K_i$ is the k-nearest-neighbor support.
 
-The score is standardized before classification.
+The resulting score is standardized before classification.
+
+
 
 # Adaptive thresholding
 
-Expression and score thresholds are estimated adaptively from the dataset.
+Expression and score thresholds are estimated adaptively from each
+dataset. The expression threshold is estimated from non-zero normalized
+`GNRH1` expression using:
 
-The expression threshold is estimated from non-zero normalized `GNRH1` expression using a robust median absolute deviation strategy:
+$$
+T = \operatorname{median}(x) +
+\lambda\,\operatorname{MAD}(x)
+$$
 
-$begin:math:display$
-T \= median\(x\) \+ \\lambda MAD\(x\)
-$end:math:display$
+where $x$ represents non-zero normalized `GNRH1` expression and
+$\lambda$ is controlled by `mad_factor`. A quantile-based fallback is
+used when robust estimation is not possible.
 
-where:
-
-- $begin:math:text$x$end:math:text$ is non-zero normalized `GNRH1` expression
-- $begin:math:text$\\lambda$end:math:text$ is controlled by `mad_factor`
-
-A quantile fallback is used when robust estimation is not possible.
 
 # Developmental staging
 
@@ -373,6 +384,42 @@ The marker table may include:
 - coexpression with `GNRH1`
 - composite marker scores
 - coexpression flags
+
+
+# GnRH-specific gene discovery
+
+`find_gnrh_genes()` identifies genes enriched in confident GnRH cells
+relative to a biologically relevant control population. It combines
+differential expression, `GNRH1` co-expression, cellular specificity,
+and recurrence across donors.
+
+```{r marker-discovery}
+genes <- find_gnrh_genes(
+  object = hpsc_gnrh,
+  annotation_col = "ann1",
+  control_label = "Neuronal",
+  donor_col = "orig.ident"
+)
+
+head(genes$candidates)
+```
+
+The returned object contains:
+
+- differential-expression results;
+- `GNRH1` co-expression frequencies;
+- specificity scores;
+- donor-level detection frequencies;
+- prioritized candidate genes.
+
+The lower-level `gnrh_markers()` function remains available when only
+the original marker table is required.
+
+```{r legacy-markers}
+markers <- gnrh_markers(hpsc_gnrh)
+head(markers)
+```
+
 
 # Coexpression visualization
 

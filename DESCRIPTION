@@ -47,9 +47,13 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
+    testthat,
     covr
 LazyDataCompression: xz
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3
+URL: https://ymbouamboua.github.io/GnRHcell/,
+    https://github.com/ymbouamboua/GnRHcell
+BugReports: https://github.com/ymbouamboua/GnRHcell/issues
 VignetteBuilder: knitr

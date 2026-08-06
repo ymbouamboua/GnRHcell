@@ -4,3 +4,5 @@ inst/doc
 echo ".Rhistory" >> .gitignore
 .Rhistory
 .Rhistory
+/doc/
+/Meta/
