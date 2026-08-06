@@ -8,7 +8,7 @@ output:
     toc: true
     number_sections: false
 vignette: >
-  %\VignetteIndexEntry{GnRHcell}
+  %\VignetteIndexEntry{GnRHcell: GnRH neuron identification and developmental staging}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

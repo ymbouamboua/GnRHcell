@@ -38,7 +38,71 @@ It provides:
 - cross-dataset marker-program analysis;
 - publication-ready visualizations.
 
-The package integrates naturally with [Seurat](https://satijalab.org/seurat/) workflows. Full documentation is available at [ymbouamboua.github.io/GnRHcell](https://ymbouamboua.github.io/GnRHcell/).
+## Workflow
+
+```text
+Single-cell RNA-seq object
+          │
+          ▼
+ Input validation
+          │
+          ├── assay and expression-layer checks
+          ├── metadata validation
+          ├── gene-symbol harmonization
+          ├── dimensional-reduction checks
+          └── required-feature assessment
+          │
+          ▼
+ GnRH-neuron detection
+          │
+          ├── GNRH1 expression assessment
+          ├── GnRH marker-module scoring
+          ├── nearest-neighbor support
+          ├── adaptive thresholding
+          └── confidence classification
+          │
+          ▼
+ GnRH-cell characterization
+          │
+          ├── core identity program
+          ├── migration program
+          ├── neuroendocrine program
+          ├── co-expression analysis
+          └── GnRH-specific marker discovery
+          │
+          ▼
+ Developmental staging
+          │
+          ├── neurogenesis
+          ├── identity acquisition
+          ├── migration
+          ├── maturation
+          └── secretion
+          │
+          ▼
+ Diagnostics and quality control
+          │
+          ├── detection-score distributions
+          ├── marker-expression assessment
+          ├── classification confidence
+          ├── stage-consistency checks
+          └── dataset-level summaries
+          │
+          ▼
+ Visualization and reporting
+          │
+          ├── embedding plots
+          ├── feature-expression plots
+          ├── stage distributions
+          ├── co-expression networks
+          ├── marker-overlap plots
+          └── reproducible reports
+```
+
+
+The package integrates naturally with [Seurat](https://satijalab.org/seurat/) workflows. 
+Full documentation is available at https://ymbouamboua.github.io/GnRHcell/
+
 
 
 ## Installation
