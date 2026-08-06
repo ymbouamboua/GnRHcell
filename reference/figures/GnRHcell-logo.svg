@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 1000 1155">
+  <!-- Generator: Adobe Illustrator 30.7.0, SVG Export Plug-In . SVG Version: 2.1.4 Build 114)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: #4b77d5;
+      }
+
+      .st1 {
+        fill: #77b85a;
+      }
+
+      .st2 {
+        fill: #f08a3c;
+      }
+
+      .st3 {
+        fill: #aa4ba8;
+      }
+
+      .st4 {
+        fill: #28b8e6;
+      }
+
+      .st5 {
+        fill: #8ca4c1;
+      }
+
+      .st6 {
+        stroke: #00a09b;
+        stroke-width: 9px;
+      }
+
+      .st6, .st7, .st8 {
+        fill: none;
+      }
+
+      .st6, .st9, .st10, .st11, .st12, .st13 {
+        stroke-linejoin: round;
+      }
+
+      .st6, .st10, .st11, .st12, .st13 {
+        stroke-linecap: round;
+      }
+
+      .st14 {
+        font-size: 149.57px;
+      }
+
+      .st14, .st15, .st16, .st17 {
+        isolation: isolate;
+      }
+
+      .st14, .st16, .st17 {
+        font-family: Arial-Black, 'Arial Black';
+        font-weight: 800;
+      }
+
+      .st18 {
+        font-family: MyriadPro-Regular, 'Myriad Pro';
+        font-size: 12px;
+      }
+
+      .st19 {
+        fill: #d6fff8;
+      }
+
+      .st19, .st20, .st7, .st21 {
+        stroke-miterlimit: 10;
+      }
+
+      .st19, .st20, .st10, .st11, .st12, .st22, .st13 {
+        stroke: #188fa4;
+      }
+
+      .st20, .st10, .st11, .st12, .st13 {
+        fill: #18aaa4;
+      }
+
+      .st7, .st21 {
+        stroke: #2e59a7;
+      }
+
+      .st7, .st21, .st22 {
+        stroke-width: 6px;
+      }
+
+      .st23 {
+        fill: #68c848;
+      }
+
+      .st21 {
+        fill: url(#linear-gradient1);
+      }
+
+      .st24 {
+        fill: #ddf7f3;
+        stroke: #008d91;
+      }
+
+      .st24, .st8 {
+        stroke-width: 5px;
+      }
+
+      .st25 {
+        fill: #188fa4;
+      }
+
+      .st9 {
+        fill: url(#linear-gradient);
+        stroke: #1c75bc;
+        stroke-width: 24px;
+      }
+
+      .st26 {
+        opacity: .98;
+      }
+
+      .st16 {
+        fill: #244f78;
+        font-size: 38px;
+        letter-spacing: .03em;
+      }
+
+      .st27 {
+        fill: #f4af25;
+      }
+
+      .st10 {
+        stroke-width: 12px;
+      }
+
+      .st11 {
+        stroke-width: 10px;
+      }
+
+      .st12 {
+        stroke-width: 11px;
+      }
+
+      .st28 {
+        fill: #f14b86;
+      }
+
+      .st8 {
+        stroke: #fff;
+        stroke-opacity: .9;
+      }
+
+      .st17 {
+        fill: #52728e;
+        font-size: 28px;
+        letter-spacing: .08em;
+      }
+
+      .st29 {
+        fill: #1c75bc;
+      }
+
+      .st22 {
+        fill: #00a39f;
+      }
+
+      .st13 {
+        stroke-width: 8px;
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="711.2" y1="-.54" x2="712.2" y2=".46" gradientTransform="translate(-625788 631) scale(880 1085)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f8fcff"/>
+      <stop offset="1" stop-color="#edf6fc"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient1" x1="709.83" y1="-1.82" x2="710.83" y2="-.82" gradientTransform="translate(-232502 862) scale(328)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity=".98"/>
+      <stop offset="1" stop-color="#ddedf7" stop-opacity=".94"/>
+    </linearGradient>
+  </defs>
+  <path class="st9" d="M500,35l440,254v577l-440,254L60,866V289L500,35Z"/>
+  <path class="st8" d="M500,67l412,238v545l-412,238-412-238V305L500,67Z"/>
+  <g class="st26">
+    <g>
+      <circle class="st2" cx="286" cy="276" r="18"/>
+      <circle class="st2" cx="316" cy="259" r="15"/>
+      <circle class="st2" cx="339" cy="284" r="19"/>
+      <circle class="st2" cx="300" cy="306" r="14"/>
+      <circle class="st2" cx="351" cy="318" r="13"/>
+      <circle class="st2" cx="266" cy="316" r="11"/>
+    </g>
+    <g>
+      <circle class="st3" cx="430" cy="238" r="17"/>
+      <circle class="st3" cx="462" cy="250" r="20"/>
+      <circle class="st3" cx="490" cy="231" r="14"/>
+      <circle class="st3" cx="510" cy="268" r="17"/>
+      <circle class="st3" cx="470" cy="287" r="13"/>
+    </g>
+    <g>
+      <circle class="st28" cx="601" cy="264" r="18"/>
+      <circle class="st28" cx="633" cy="281" r="15"/>
+      <circle class="st28" cx="658" cy="314" r="18"/>
+      <circle class="st28" cx="614" cy="321" r="14"/>
+      <circle class="st28" cx="675" cy="274" r="11"/>
+    </g>
+    <g>
+      <circle class="st4" cx="707" cy="371" r="20"/>
+      <circle class="st4" cx="744" cy="367" r="15"/>
+      <circle class="st4" cx="760" cy="404" r="18"/>
+      <circle class="st4" cx="718" cy="420" r="14"/>
+      <circle class="st4" cx="681" cy="407" r="12"/>
+    </g>
+    <g>
+      <circle class="st0" cx="729" cy="495" r="18"/>
+      <circle class="st0" cx="758" cy="519" r="17"/>
+      <circle class="st0" cx="716" cy="537" r="14"/>
+      <circle class="st0" cx="778" cy="557" r="12"/>
+      <circle class="st0" cx="743" cy="570" r="10"/>
+    </g>
+    <g>
+      <circle class="st1" cx="620" cy="621" r="20"/>
+      <circle class="st1" cx="653" cy="639" r="16"/>
+      <circle class="st1" cx="590" cy="648" r="14"/>
+      <circle class="st1" cx="625" cy="669" r="13"/>
+      <circle class="st1" cx="675" cy="600" r="11"/>
+    </g>
+    <g>
+      <circle class="st23" cx="322" cy="573" r="19"/>
+      <circle class="st23" cx="285" cy="557" r="14"/>
+      <circle class="st23" cx="260" cy="588" r="18"/>
+      <circle class="st23" cx="298" cy="615" r="15"/>
+      <circle class="st23" cx="342" cy="610" r="12"/>
+    </g>
+    <g>
+      <circle class="st27" cx="225" cy="448" r="18"/>
+      <circle class="st27" cx="252" cy="424" r="14"/>
+      <circle class="st27" cx="282" cy="447" r="19"/>
+      <circle class="st27" cx="249" cy="474" r="13"/>
+      <circle class="st27" cx="210" cy="486" r="10"/>
+    </g>
+    <g>
+      <circle class="st5" cx="219" cy="348" r="17"/>
+      <circle class="st5" cx="248" cy="329" r="15"/>
+      <circle class="st5" cx="274" cy="355" r="18"/>
+      <circle class="st5" cx="247" cy="382" r="14"/>
+      <circle class="st5" cx="202" cy="384" r="11"/>
+    </g>
+  </g>
+  <g>
+    <circle class="st24" cx="551" cy="319" r="12"/>
+    <circle class="st24" cx="576" cy="345" r="9"/>
+  </g>
+  <g>
+    <circle class="st21" cx="486" cy="430" r="164"/>
+    <path class="st7" d="M598,550l98,136"/>
+  </g>
+  <g>
+    <path class="st10" d="M523.82,392.2c24.33-24.46,27.05-57.92,45.85-82.96"/>
+    <path class="st13" d="M546.41,356.5c12.08-12.73,21.75-22.28,35.66-26.94"/>
+    <path class="st10" d="M424.4,505.48c1.76,11.87,2.34,21.88,0,33.28"/>
+    <path class="st11" d="M428.89,500.87c-12.6,8.23-24.46,9.32-38.96,9.96"/>
+    <path class="st12" d="M457.19,458.35c-7.46,21.96-18.09,37.73-35.23,48.25"/>
+  </g>
+  <g>
+    <path class="st20" d="M449.82,434.57c2.09-26.51,32.18-54.46,58.29-50.28,22.74,4.23,30.59,32.59,11.81,57.32-17.2,23.04-47.98,29.28-62.68,14.59-5.82-5.4-8.57-13.22-7.42-21.64Z"/>
+    <ellipse class="st22" cx="490.79" cy="420.93" rx="17.77" ry="14.05" transform="translate(-151.57 494.57) rotate(-47.16)"/>
+    <ellipse class="st19" cx="490.79" cy="420.93" rx="6.18" ry="4.89" transform="translate(-151.57 494.57) rotate(-47.16)"/>
+  </g>
+  <path class="st6" d="M301,699.86h118l23-25.63,27,52,25-32.23h239"/>
+  <g class="st15">
+    <text class="st14" transform="translate(158.46 849.8) scale(.92 1)"><tspan class="st25" x="0" y="0">GnRH</tspan><tspan class="st29" x="465.3" y="0">cell</tspan></text>
+    <text class="st18" transform="translate(1121.0625 594) scale(1.2036 1)"><tspan x="0" y="0">Lorem ipsum</tspan></text>
+  </g>
+  <g class="st15">
+    <text class="st16" transform="translate(255 906.82)"><tspan x="0" y="0">GnRH neuron discovery</tspan></text>
+  </g>
+  <g class="st15">
+    <text class="st17" transform="translate(268 945.88)"><tspan x="0" y="0">Single-cell transcriptomics</tspan></text>
+  </g>
+</svg>
