@@ -8,3 +8,6 @@
 ^README\.Rmd$
 ^doc$
 ^Meta$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
