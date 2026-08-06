@@ -3,7 +3,7 @@ GnRHcell
 
 <div align="center">
 
-<img src="man/figures/GnRHcell.png" width="500" alt="GnRHcell logo">
+<img src="man/figures/GnRHcell-logo.svg" width="500" alt="GnRHcell logo">
 
 ### High-confidence detection, developmental staging, and marker discovery of GnRH neurons from single-cell RNA-seq data
 
