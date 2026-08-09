@@ -1833,8 +1833,18 @@ validate_gnrh_collection <- function(
         object[[]] |>
           tibble::as_tibble() |>
           dplyr::filter(
-            .data$gnrh_status ==
-              "pos"
+            .data$gnrh_status == "pos"
+          ) |>
+          dplyr::mutate(
+            gnrh_stage_raw = as.character(
+              .data$gnrh_stage_raw
+            ),
+            gnrh_stage = as.character(
+              .data$gnrh_stage
+            ),
+            gnrh_stage_reason = as.character(
+              .data$gnrh_stage_reason
+            )
           ) |>
           dplyr::count(
             .data$gnrh_stage_raw,
