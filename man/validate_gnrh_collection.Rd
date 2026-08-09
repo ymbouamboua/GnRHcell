@@ -61,6 +61,10 @@ GnRH detection class.}
 \item{\code{biological_markers}}{Expression of selected biological
 validation markers by GnRH detection class.}
 \item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
+\item{\code{migration_refinement}}{
+Comparison of migration-core evidence between cells that remain
+classified as migrating and cells reassigned from the raw migrating
+stage during stage refinement.}
 }
 }
 \description{

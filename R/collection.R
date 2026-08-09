@@ -1000,8 +1000,13 @@ prepare_gnrh_datasets <- function(
 #'   \item{\code{biological_markers}}{Expression of selected biological
 #'   validation markers by GnRH detection class.}
 #'   \item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
+#'   \item{\code{migration_refinement}}{
+#'   Comparison of migration-core evidence between cells that remain
+#'   classified as migrating and cells reassigned from the raw migrating
+#'   stage during stage refinement.}
 #' }
 #'
+
 #' @seealso
 #' \code{\link{run_gnrh_collection}},
 #' \code{\link{run_gnrh_dataset}},
@@ -2007,6 +2012,174 @@ validate_gnrh_collection <- function(
 
 
   # =========================================================================== #
+  # Migration refinement validation
+  # =========================================================================== #
+
+  has_migration_refinement <- vapply(
+    gnrh_list,
+    function(object) {
+
+      all(
+        c(
+          "gnrh_stage_raw",
+          "gnrh_stage",
+          "gnrh_stage_reason",
+          "gnrh_migration_core_hits"
+        ) %in%
+          colnames(
+            object[[]]
+          )
+      )
+    },
+    logical(1)
+  )
+
+  if (any(has_migration_refinement)) {
+
+    migration_refinement <- purrr::imap_dfr(
+      gnrh_list[has_migration_refinement],
+      function(object, id) {
+
+        x <- object[[]] |>
+          tibble::as_tibble() |>
+          dplyr::mutate(
+            gnrh_stage_raw = as.character(
+              .data$gnrh_stage_raw
+            ),
+            gnrh_stage = as.character(
+              .data$gnrh_stage
+            ),
+            gnrh_stage_reason = as.character(
+              .data$gnrh_stage_reason
+            )
+          ) |>
+          dplyr::filter(
+            .data$gnrh_status == "pos",
+            .data$gnrh_stage_raw == "migrating"
+          ) |>
+          dplyr::mutate(
+            migration_outcome = dplyr::case_when(
+              .data$gnrh_stage == "migrating" ~
+                "retained_migrating",
+
+              .data$gnrh_stage != "migrating" ~
+                "reassigned",
+
+              TRUE ~
+                NA_character_
+            )
+          )
+
+        if (nrow(x) == 0L) {
+          return(
+            tibble::tibble()
+          )
+        }
+
+        x |>
+          dplyr::group_by(
+            .data$migration_outcome,
+            .data$gnrh_stage
+          ) |>
+          dplyr::summarise(
+            n_cells = dplyr::n(),
+
+            median_hits =
+              stats::median(
+                .data$gnrh_migration_core_hits,
+                na.rm = TRUE
+              ),
+
+            q25_hits =
+              stats::quantile(
+                .data$gnrh_migration_core_hits,
+                0.25,
+                na.rm = TRUE,
+                names = FALSE
+              ),
+
+            q75_hits =
+              stats::quantile(
+                .data$gnrh_migration_core_hits,
+                0.75,
+                na.rm = TRUE,
+                names = FALSE
+              ),
+
+            mean_hits =
+              mean(
+                .data$gnrh_migration_core_hits,
+                na.rm = TRUE
+              ),
+
+            pct_zero =
+              100 *
+              mean(
+                .data$gnrh_migration_core_hits == 0,
+                na.rm = TRUE
+              ),
+
+            pct_ge1 =
+              100 *
+              mean(
+                .data$gnrh_migration_core_hits >= 1,
+                na.rm = TRUE
+              ),
+
+            pct_ge2 =
+              100 *
+              mean(
+                .data$gnrh_migration_core_hits >= 2,
+                na.rm = TRUE
+              ),
+
+            pct_ge3 =
+              100 *
+              mean(
+                .data$gnrh_migration_core_hits >= 3,
+                na.rm = TRUE
+              ),
+
+            .groups = "drop"
+          ) |>
+          dplyr::mutate(
+            id = id
+          )
+      }
+    ) |>
+      dplyr::left_join(
+        dataset_metadata,
+        by = "id"
+      ) |>
+      dplyr::select(
+        .data$id,
+        .data$label,
+        .data$species,
+        .data$migration_outcome,
+        .data$gnrh_stage,
+        .data$n_cells,
+        .data$median_hits,
+        .data$q25_hits,
+        .data$q75_hits,
+        .data$mean_hits,
+        .data$pct_zero,
+        .data$pct_ge1,
+        .data$pct_ge2,
+        .data$pct_ge3
+      ) |>
+      dplyr::arrange(
+        .data$id,
+        .data$migration_outcome,
+        .data$gnrh_stage
+      )
+
+  } else {
+
+    migration_refinement <- tibble::tibble()
+  }
+
+
+  # =========================================================================== #
   # Independent biological marker validation
   # =========================================================================== #
 
@@ -2230,10 +2403,12 @@ validate_gnrh_collection <- function(
     migration_core =
       migration_core,
 
+    migration_refinement =
+      migration_refinement,
+
     biological_markers =
       biological_markers
   )
-
 
   if (isTRUE(write_output)) {
 
