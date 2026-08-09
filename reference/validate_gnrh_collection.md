@@ -105,6 +105,19 @@ An object of class `"gnrh_validation"` containing:
 
   Migration-core evidence by raw stage.
 
+- `migration_refinement`:
+
+  Comparison of migration-core evidence between cells that remain
+  classified as migrating and cells reassigned from the raw migrating
+  stage during stage refinement.
+
+- `migration_refinement_summary`:
+
+  Dataset-level summary of the migration refinement step, including the
+  number of raw migrating cells, retained and reassigned cells,
+  retention and reassignment percentages, and mean migration-core
+  evidence among retained migrating cells.
+
 - `biological_markers`:
 
   Expression of selected biological validation markers by GnRH detection
@@ -113,12 +126,6 @@ An object of class `"gnrh_validation"` containing:
 - `output_dir`:
 
   Validation output directory, or `NULL`.
-
-- `migration_refinement`:
-
-  Comparison of migration-core evidence between cells that remain
-  classified as migrating and cells reassigned from the raw migrating
-  stage during stage refinement.
 
 ## Details
 
@@ -156,5 +163,7 @@ validation <- validate_gnrh_collection(
 validation$detection
 validation$stage_refinement
 validation$migration_core
+validation$migration_refinement
+validation$migration_refinement_summary
 } # }
 ```

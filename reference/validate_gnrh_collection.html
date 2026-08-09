@@ -140,17 +140,23 @@ GnRH detection class.</p></dd>
 <dt><code>migration_core</code></dt>
 <dd><p>Migration-core evidence by raw stage.</p></dd>
 
+<dt><code>migration_refinement</code></dt>
+<dd><p>Comparison of migration-core evidence between cells that remain
+classified as migrating and cells reassigned from the raw migrating
+stage during stage refinement.</p></dd>
+
+<dt><code>migration_refinement_summary</code></dt>
+<dd><p>Dataset-level summary of the migration refinement step, including the
+number of raw migrating cells, retained and reassigned cells, retention
+and reassignment percentages, and mean migration-core evidence among
+retained migrating cells.</p></dd>
+
 <dt><code>biological_markers</code></dt>
 <dd><p>Expression of selected biological
 validation markers by GnRH detection class.</p></dd>
 
 <dt><code>output_dir</code></dt>
 <dd><p>Validation output directory, or <code>NULL</code>.</p></dd>
-
-<dt><code>migration_refinement</code></dt>
-<dd><p>Comparison of migration-core evidence between cells that remain
-classified as migrating and cells reassigned from the raw migrating
-stage during stage refinement.</p></dd>
 
 
 </dl></div>
@@ -187,6 +193,8 @@ Therefore, <code><a href="run_gnrh_collection.html">run_gnrh_collection()</a></c
 <span class="r-in"><span><span class="va">validation</span><span class="op">$</span><span class="va">detection</span></span></span>
 <span class="r-in"><span><span class="va">validation</span><span class="op">$</span><span class="va">stage_refinement</span></span></span>
 <span class="r-in"><span><span class="va">validation</span><span class="op">$</span><span class="va">migration_core</span></span></span>
+<span class="r-in"><span><span class="va">validation</span><span class="op">$</span><span class="va">migration_refinement</span></span></span>
+<span class="r-in"><span><span class="va">validation</span><span class="op">$</span><span class="va">migration_refinement_summary</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
