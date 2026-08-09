@@ -2195,8 +2195,7 @@ validate_gnrh_collection <- function(
       ) |>
       dplyr::summarise(
         mean_hits_retained = {
-          idx <- .data$migration_outcome ==
-            "retained_migrating"
+          idx <- .data$migration_outcome == "retained_migrating"
 
           if (any(idx)) {
             stats::weighted.mean(
@@ -2209,44 +2208,80 @@ validate_gnrh_collection <- function(
           }
         },
 
-        n_raw_migrating =
-          sum(
-            .data$n_cells,
-            na.rm = TRUE
-          ),
+        n_raw_migrating = sum(
+          .data$n_cells,
+          na.rm = TRUE
+        ),
 
-        n_retained =
-          sum(
-            .data$n_cells[
-              .data$migration_outcome ==
-                "retained_migrating"
-            ],
-            na.rm = TRUE
-          ),
+        n_retained = sum(
+          .data$n_cells[
+            .data$migration_outcome == "retained_migrating"
+          ],
+          na.rm = TRUE
+        ),
 
-        n_reassigned =
-          sum(
-            .data$n_cells[
-              .data$migration_outcome ==
-                "reassigned"
-            ],
-            na.rm = TRUE
-          ),
+        n_reassigned = sum(
+          .data$n_cells[
+            .data$migration_outcome == "reassigned"
+          ],
+          na.rm = TRUE
+        ),
+
+        n_to_identity = sum(
+          .data$n_cells[
+            .data$migration_outcome == "reassigned" &
+              .data$gnrh_stage == "identity"
+          ],
+          na.rm = TRUE
+        ),
+
+        n_to_mature = sum(
+          .data$n_cells[
+            .data$migration_outcome == "reassigned" &
+              .data$gnrh_stage == "mature"
+          ],
+          na.rm = TRUE
+        ),
+
+        n_to_secreting = sum(
+          .data$n_cells[
+            .data$migration_outcome == "reassigned" &
+              .data$gnrh_stage == "secreting"
+          ],
+          na.rm = TRUE
+        ),
 
         pct_retained =
           if (n_raw_migrating > 0L) {
-            100 *
-              n_retained /
-              n_raw_migrating
+            100 * n_retained / n_raw_migrating
           } else {
             NA_real_
           },
 
         pct_reassigned =
           if (n_raw_migrating > 0L) {
-            100 *
-              n_reassigned /
-              n_raw_migrating
+            100 * n_reassigned / n_raw_migrating
+          } else {
+            NA_real_
+          },
+
+        pct_to_identity =
+          if (n_reassigned > 0L) {
+            100 * n_to_identity / n_reassigned
+          } else {
+            NA_real_
+          },
+
+        pct_to_mature =
+          if (n_reassigned > 0L) {
+            100 * n_to_mature / n_reassigned
+          } else {
+            NA_real_
+          },
+
+        pct_to_secreting =
+          if (n_reassigned > 0L) {
+            100 * n_to_secreting / n_reassigned
           } else {
             NA_real_
           },
@@ -2262,6 +2297,12 @@ validate_gnrh_collection <- function(
         .data$n_reassigned,
         .data$pct_retained,
         .data$pct_reassigned,
+        .data$n_to_identity,
+        .data$n_to_mature,
+        .data$n_to_secreting,
+        .data$pct_to_identity,
+        .data$pct_to_mature,
+        .data$pct_to_secreting,
         .data$mean_hits_retained
       ) |>
       dplyr::arrange(
