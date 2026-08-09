@@ -13,6 +13,7 @@
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/cellmap.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/cellpal.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/cellviolin.html</loc></url>
+<url><loc>https://ymbouamboua.github.io/GnRHcell/reference/compare_gnrh_datasets.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/dark_theme.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/detect_gnrh.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/extract_gnrh_run_info.html</loc></url>
@@ -37,8 +38,12 @@
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_runtime_curve.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/plot_network.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/plot_theme.html</loc></url>
+<url><loc>https://ymbouamboua.github.io/GnRHcell/reference/prepare_gnrh_datasets.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh.html</loc></url>
+<url><loc>https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh_collection.html</loc></url>
+<url><loc>https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh_dataset.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/stage_gnrh.html</loc></url>
+<url><loc>https://ymbouamboua.github.io/GnRHcell/reference/validate_gnrh_collection.html</loc></url>
 <url><loc>https://ymbouamboua.github.io/GnRHcell/reference/validate_input.html</loc></url>
 </urlset>
 

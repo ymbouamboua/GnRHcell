@@ -1,7 +1,8 @@
 # Detect GnRH neurons from single-cell RNA-seq data
 
 Identifies candidate gonadotropin-releasing hormone (GnRH) neurons in a
-Seurat object using a biologically informed multi-signal framework.
+Seurat object using direct GNRH1 detection together with independent
+transcriptomic evidence.
 
 ## Usage
 
@@ -16,8 +17,10 @@ detect_gnrh(
   min_umi = 2,
   min_counts = 500,
   mad_factor = 2,
-  score_q = 0.9,
+  supported_q = 0.6,
+  dropout_q = 0.95,
   scale_factor = 10000,
+  max_alternative = 0.75,
   verbose = TRUE
 )
 ```
@@ -47,12 +50,12 @@ detect_gnrh(
 
 - k:
 
-  Number of nearest neighbors used for neighborhood support. Default is
-  20.
+  Number of nearest neighbors. Default is 20.
 
 - min_umi:
 
-  Minimum raw `GNRH1` UMI count required for detection. Default is 2.
+  Minimum raw `GNRH1` UMI count required for direct detection. Default
+  is 2.
 
 - min_counts:
 
@@ -60,105 +63,75 @@ detect_gnrh(
 
 - mad_factor:
 
-  Multiplier applied to MAD-based adaptive expression threshold. Default
-  is 2.
+  Multiplier applied to the MAD-based adaptive `GNRH1` expression
+  threshold. Default is 2.
 
-- score_q:
+- supported_q:
 
-  Quantile used to define adaptive composite score threshold. Default is
-  0.9.
+  Quantile of the direct-cell transcriptomic support distribution used
+  for low-expression supported candidates. Default is 0.25.
+
+- dropout_q:
+
+  Quantile of the direct-cell transcriptomic support distribution used
+  for dropout rescue. Default is 0.90.
 
 - scale_factor:
 
   Library normalization scale factor. Default is 10000.
 
+- max_alternative:
+
+  Maximum alternative identity score tolerated for `GNRH1`-dropout
+  rescue. Default is 0.75.
+
 - verbose:
 
-  Logical; print progress messages. Default is `TRUE`.
+  Logical. Whether to print progress messages.
 
 ## Value
 
-A Seurat object updated with GnRH detection metadata, diagnostics, and
-stored detection parameters.
+A Seurat object containing GnRH classifications, scores, diagnostics,
+and detection parameters.
 
 ## Details
 
 Detection integrates:
 
-- direct `GNRH1` expression
+- direct `GNRH1` expression;
 
-- GnRH-associated marker module scoring
+- GnRH identity and specification programs;
 
-- migration marker support
+- migration-associated programs;
 
-- neuroendocrine marker support
+- neuroendocrine maturation programs;
 
-- ambient RNA correction
+- hormonal responsiveness;
 
-- neighborhood enrichment using k-nearest neighbors
+- alternative neuronal or neuroendocrine identity programs;
 
-- adaptive thresholding of a composite detection score
+- ambient RNA information;
 
-The method combines transcript abundance, marker co-detection, local
-transcriptomic neighborhood structure, and contamination-aware scoring
-to improve detection of rare GnRH neurons in sparse single-cell
-datasets.
+- neighborhood enrichment using k-nearest neighbors; and
 
-Results are written into object metadata and diagnostics.
+- adaptive transcriptomic support thresholds.
 
-Added metadata columns include:
+Classification uses three routes: `direct`, `supported`, and
+`dropout_rescue`. The transcriptomic support score used for the latter
+two routes is calculated independently of direct `GNRH1` expression.
 
-- `gnrh_status`:
+Direct candidates require at least `min_umi` raw `GNRH1` counts.
+Supported candidates contain detectable but sub-threshold `GNRH1` and
+must show independent GnRH transcriptomic support.
 
-  Binary GnRH classification (`neg`, `pos`).
+Dropout-rescue candidates contain no detected `GNRH1` and therefore
+require stronger GnRH-associated transcriptomic evidence, strong
+neighborhood support, and absence of a dominant alternative neuronal
+program.
 
-- `gnrh_class`:
-
-  Internal classification labels.
-
-- `gnrh_score`:
-
-  Composite GnRH detection score.
-
-- `gnrh_expr`:
-
-  Normalized `GNRH1` expression.
-
-- `gnrh_raw`:
-
-  Raw `GNRH1` UMI counts.
-
-- `gnrh_core_hits`:
-
-  Number of detected core GnRH markers.
-
-- `gnrh_mig_hits`:
-
-  Number of migration marker hits.
-
-- `gnrh_neuro_hits`:
-
-  Number of neuroendocrine marker hits.
-
-- `gnrh_knn`:
-
-  Neighborhood support score.
-
-- `gnrh_confident`:
-
-  High-confidence gnrh_confident classification.
-
-Detection parameters and classification diagnostics are stored in
-`object@misc`.
-
-If `GNRH1` is not found, gene aliases are searched (`GNRH1`, `Gnrh1`,
-`gnrh1`).
-
-Composite scoring combines normalized expression, marker module
-enrichment, ambient correction, and neighborhood support.
-
-Diagnostic plots and summary outputs are generated via
-[`gnrh_diagnostics`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_diagnostics.md).
+The main `gnrh_score` includes direct `GNRH1` information, whereas
+`gnrh_support_score` deliberately excludes direct `GNRH1` expression and
+ambient-RNA information.
 
 ## See also
 

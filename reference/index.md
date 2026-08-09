@@ -10,6 +10,22 @@ staging, diagnostic, and reporting workflow.
 - [`gnrh_report()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_report.md)
   : Generate a comprehensive GnRH diagnostic report
 
+## Multi-dataset workflows
+
+Functions for preparing, processing, comparing, and validating
+collections of single-cell datasets with GnRHcell.
+
+- [`prepare_gnrh_datasets()`](https://ymbouamboua.github.io/GnRHcell/reference/prepare_gnrh_datasets.md)
+  : Prepare a GnRHcell dataset configuration table
+- [`run_gnrh_dataset()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh_dataset.md)
+  : Run GnRHcell analysis on a single dataset
+- [`run_gnrh_collection()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh_collection.md)
+  : Run GnRHcell across multiple datasets
+- [`compare_gnrh_datasets()`](https://ymbouamboua.github.io/GnRHcell/reference/compare_gnrh_datasets.md)
+  : Compare GnRHcell results across datasets
+- [`validate_gnrh_collection()`](https://ymbouamboua.github.io/GnRHcell/reference/validate_gnrh_collection.md)
+  : Validate a GnRHcell multi-dataset collection
+
 ## GnRH-neuron detection and staging
 
 Detection, classification, input validation, and developmental-stage
@@ -51,10 +67,22 @@ Diagnostic summaries and quality-control functions.
 - [`gnrh_diagnostics()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_diagnostics.md)
   : Run GnRH detection diagnostics
 
+## Scores and classification
+
+Functions for computing detection scores, classification confidence, and
+developmental-stage scores.
+
+## Data extraction and summaries
+
+Extraction and summarization of GnRHcell results.
+
+- [`extract_gnrh_run_info()`](https://ymbouamboua.github.io/GnRHcell/reference/extract_gnrh_run_info.md)
+  : Extract GnRHcell run information
+
 ## Visualization
 
 Visualization of cellular embeddings, expression, stages, co-expression
-patterns, and distributions.
+patterns, distributions, and cross-dataset summaries.
 
 - [`celldot()`](https://ymbouamboua.github.io/GnRHcell/reference/celldot.md)
   : Create an enhanced Seurat dot plot
@@ -102,15 +130,3 @@ Example datasets distributed with GnRHcell.
 
 - [`hpsc_gnrh`](https://ymbouamboua.github.io/GnRHcell/reference/hpsc_gnrh.md)
   : Example GnRHcell Seurat object
-
-## Scores and classification
-
-Functions for computing detection scores, classification confidence, and
-developmental-stage scores.
-
-## Data extraction and summaries
-
-Extraction and summarization of GnRHcell results.
-
-- [`extract_gnrh_run_info()`](https://ymbouamboua.github.io/GnRHcell/reference/extract_gnrh_run_info.md)
-  : Extract GnRHcell run information
