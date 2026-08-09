@@ -44,7 +44,10 @@ Imports:
     rlang,
     utils,
     stringr,
-    tibble
+    tibble,
+    purrr,
+    readr,
+    rlang
 Suggests:
     testthat (>= 3.0.0),
     knitr,

@@ -118,33 +118,14 @@
 #' @noRd
 .gnrh_alternative_modules <- function(genes) {
   modules <- list(
-    kndy = c(
-      "KISS1",
-      "TAC3",
-      "PDYN"
-    ),
-    pomc = c(
-      "POMC"
-    ),
-    agrp_npy = c(
-      "AGRP",
-      "NPY"
-    ),
-    avp = c(
-      "AVP"
-    ),
-    oxt = c(
-      "OXT"
-    ),
-    crh = c(
-      "CRH"
-    ),
-    trh = c(
-      "TRH"
-    ),
-    sst = c(
-      "SST"
-    )
+    kndy = c("KISS1","TAC3","PDYN"),
+    pomc = c("POMC"),
+    agrp_npy = c("AGRP","NPY"),
+    avp = c("AVP"),
+    oxt = c("OXT"),
+    crh = c("CRH"),
+    trh = c("TRH"),
+    sst = c("SST")
   )
   lapply(
     modules,
@@ -282,14 +263,13 @@
 #'
 #' @keywords internal
 #' @noRd
-build_stage_modules <- function(genes) {
+.build_stage_modules <- function(genes) {
 
   list(
     identity = .match_genes(c(
-      "GNRH1",
       "ISL1",
       "SIX3", "SIX6",
-      "DLX1","DLX2", "DLX5", "DLX6",
+      "DLX1", "DLX2", "DLX5", "DLX6",
       "OTX2",
       "KISS1R",
       "PBX3",
@@ -299,19 +279,27 @@ build_stage_modules <- function(genes) {
     ), genes),
 
     migrating = .match_genes(c(
-      "GNRH1",
+      # More migration-specific
       "SEMA3C", "SEMA3A", "SEMA3F",
+      "ROBO2", "ROBO3",
+      "RIPOR2",
+      "UNC5D",
+      "PLXNA3",
+      "SLIT1",
+
+      # Supporting migration / axon-guidance genes
       "NRP1", "NRP2",
-      "ROBO1", "ROBO2", "ROBO3",
-      "L1CAM", "NCAM1", "CNTN2",
+      "ROBO1",
+      "L1CAM",
+      "NCAM1",
+      "CNTN2",
       "STMN2", "STMN3",
-      "GAP43", "MAP1B",
-      "RIPOR2", "SPOCK1", "UNC5D",
-      "PLXNA3", "SLIT1"
+      "GAP43",
+      "MAP1B",
+      "SPOCK1"
     ), genes),
 
     mature = .match_genes(c(
-      "GNRH1",
       "KISS1R",
       "ISL1",
       "DOC2B",
@@ -319,26 +307,54 @@ build_stage_modules <- function(genes) {
       "BAIAP3",
       "ECEL1",
       "SCG2", "SCG5",
-      "SYP", "VAMP2", "SNAP25",
+      "SYP",
+      "VAMP2",
+      "SNAP25",
       "RAB3A", "RAB3B", "RAB3C",
-      "HCN1", "NALCN", "SCN3A",
+      "HCN1",
+      "NALCN",
+      "SCN3A",
       "GAD1"
     ), genes),
 
     secreting = .match_genes(c(
-      "GNRH1",
-      "PCSK1", "PCSK2", "CPE",
+      "PCSK1", "PCSK2",
+      "CPE",
+      "CHGA", "CHGB",
+      "VGF",
       "SCG2", "SCG5",
-      "CHGA", "CHGB", "VGF",
-      "PTPRN", "BAIAP3", "DOC2B",
-      "SYP", "VAMP2", "SNAP25", "STX1A",
-      "SYT1", "RAB3A",
+      "PTPRN",
+      "BAIAP3",
+      "DOC2B",
+      "SYT1",
+      "STX1A",
       "FOS", "JUN", "EGR1",
-      "ESR1","PGR","AR"
+      "ESR1", "PGR", "AR"
     ), genes)
   )
 }
 
+
+#' @keywords internal
+#' @noRd
+.build_migration_core <- function(genes) {
+
+  .match_genes(
+    c(
+      "ANOS1",
+      "PROK2",
+      "PROKR2",
+      "SEMA3C",
+      "SEMA3F",
+      "ROBO2",
+      "ROBO3",
+      "RIPOR2",
+      "PLXNA3",
+      "SLIT1"
+    ),
+    genes
+  )
+}
 
 
 

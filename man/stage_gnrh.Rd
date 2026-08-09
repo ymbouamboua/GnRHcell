@@ -4,7 +4,13 @@
 \alias{stage_gnrh}
 \title{Stage GnRH lineage cells}
 \usage{
-stage_gnrh(object, assay = "RNA", layer = "counts", verbose = TRUE)
+stage_gnrh(
+  object,
+  assay = "RNA",
+  layer = "data",
+  min_migration_hits = 1L,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{object}{A Seurat object containing single-cell RNA-seq data.}
@@ -12,8 +18,12 @@ stage_gnrh(object, assay = "RNA", layer = "counts", verbose = TRUE)
 \item{assay}{Assay used for expression extraction.
 Default is \code{"RNA"}.}
 
-\item{layer}{Expression layer used for staging.
-Default is \code{"counts"}.}
+\item{layer}{Expression layer used for developmental module scoring.
+Default is \code{"data"}.}
+
+\item{min_migration_hits}{Minimum number of expressed migration-core
+markers required to retain a raw \code{migrating} assignment.
+Default is \code{1L}.}
 
 \item{verbose}{Logical; print progress messages.
 Default is \code{TRUE}.}
@@ -21,15 +31,44 @@ Default is \code{TRUE}.}
 \value{
 A Seurat object updated with:
 \describe{
-\item{\code{gnrh_stage}}{Assigned developmental stage labels.}
-\item{\code{gnrh_identity_score}}{Identity module score.}
-\item{\code{gnrh_migrating_score}}{Migration module score.}
-\item{\code{gnrh_mature_score}}{Mature neuroendocrine score.}
-\item{\code{gnrh_secreting_score}}{Secretory activity score.}
+\item{\code{gnrh_stage_raw}}{
+Developmental stage assigned directly from the maximum module score.
+}
+\item{\code{gnrh_stage}}{
+Final developmental stage after migration validation and masking
+of non-GnRH cells.
+}
+\item{\code{gnrh_stage_reassigned}}{
+Logical indicator specifying whether the raw developmental stage
+was reassigned during migration validation.
+}
+\item{\code{gnrh_stage_reason}}{
+Reason for the final stage assignment.
+}
+\item{\code{gnrh_migration_core_hits}}{
+Number of expressed migration-core markers detected per cell.
+}
+\item{\code{gnrh_identity_score}}{
+Identity module score.
+}
+\item{\code{gnrh_migrating_score}}{
+Migration module score.
+}
+\item{\code{gnrh_mature_score}}{
+Mature neuroendocrine module score.
+}
+\item{\code{gnrh_secreting_score}}{
+Secretory activity module score.
+}
 }
 
-Developmental module definitions are stored in:
-\code{object@misc$gnrh_stage_modules}
+Developmental module definitions, migration-core markers, and
+staging parameters are stored in:
+\itemize{
+\item \code{object@misc$gnrh_stage_modules}
+\item \code{object@misc$gnrh_migration_core}
+\item \code{object@misc$gnrh_stage_parameters}
+}
 }
 \description{
 Assign developmental states to GnRH-lineage cells using
@@ -45,18 +84,32 @@ representing major GnRH neuron states:
 \item \code{secreting}: secretory and vesicle machinery activation
 }
 
-Each cell is assigned to the stage with the highest module score.
+A raw developmental stage is first assigned from the highest
+module score. Migration assignments are then validated using
+migration-specific marker evidence. Cells initially assigned as
+\code{migrating} but lacking the required number of migration-core
+marker hits are reassigned to the highest-scoring alternative stage.
+
 If GnRH classification metadata are present, non-GnRH cells are
-labeled as \code{non-gnrh}.
+labeled as \code{non-gnrh} in the final stage assignment.
 
-Stage-specific module scores are stored in object metadata.
+Developmental staging is based on predefined transcriptional
+programs reflecting known biological states of GnRH neuron
+development.
 
-Developmental staging is based on predefined marker modules
-reflecting known biological programs of GnRH neuron development.
+Raw stage assignments are obtained from the highest developmental
+module score. Because general neuronal and axon-guidance genes can
+produce elevated migration scores in mature neurons, raw
+\code{migrating} assignments require additional migration-core
+evidence.
 
-If \code{gnrh_class} metadata are present from
-\code{\link{detect_gnrh}}, cells classified as negative are
-reassigned to \code{non-gnrh}.
+Cells failing this migration criterion are reassigned to the
+highest-scoring stage among \code{identity}, \code{mature}, and
+\code{secreting}.
+
+If \code{gnrh_status} metadata are present from
+\code{\link{detect_gnrh}}, cells classified as negative are labeled
+\code{non-gnrh} in the final stage assignment.
 }
 \seealso{
 \code{\link{detect_gnrh}},

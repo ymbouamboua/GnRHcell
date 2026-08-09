@@ -10,5 +10,6 @@
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @importFrom Seurat Idents "Idents<-"
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @noRd
 NULL
