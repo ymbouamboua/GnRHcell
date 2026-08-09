@@ -114,6 +114,12 @@ An object of class `"gnrh_validation"` containing:
 
   Validation output directory, or `NULL`.
 
+- `migration_refinement`:
+
+  Comparison of migration-core evidence between cells that remain
+  classified as migrating and cells reassigned from the raw migrating
+  stage during stage refinement.
+
 ## Details
 
 The function summarizes GnRH detection classes, consistency between
