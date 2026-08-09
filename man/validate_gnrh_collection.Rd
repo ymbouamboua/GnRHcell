@@ -58,13 +58,18 @@ GnRH detection class.}
 \item{\code{stage_refinement}}{Summary of raw-to-final stage refinement.}
 \item{\code{stage_reassignment}}{Detailed raw-to-final stage transitions.}
 \item{\code{migration_core}}{Migration-core evidence by raw stage.}
-\item{\code{biological_markers}}{Expression of selected biological
-validation markers by GnRH detection class.}
-\item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
 \item{\code{migration_refinement}}{
 Comparison of migration-core evidence between cells that remain
 classified as migrating and cells reassigned from the raw migrating
 stage during stage refinement.}
+\item{\code{migration_refinement_summary}}{
+Dataset-level summary of the migration refinement step, including the
+number of raw migrating cells, retained and reassigned cells, retention
+and reassignment percentages, and mean migration-core evidence among
+retained migrating cells.}
+\item{\code{biological_markers}}{Expression of selected biological
+validation markers by GnRH detection class.}
+\item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
 }
 }
 \description{
@@ -96,6 +101,8 @@ validation <- validate_gnrh_collection(
 validation$detection
 validation$stage_refinement
 validation$migration_core
+validation$migration_refinement
+validation$migration_refinement_summary
 }
 
 }

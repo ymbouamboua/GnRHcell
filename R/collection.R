@@ -997,16 +997,20 @@ prepare_gnrh_datasets <- function(
 #'   \item{\code{stage_refinement}}{Summary of raw-to-final stage refinement.}
 #'   \item{\code{stage_reassignment}}{Detailed raw-to-final stage transitions.}
 #'   \item{\code{migration_core}}{Migration-core evidence by raw stage.}
-#'   \item{\code{biological_markers}}{Expression of selected biological
-#'   validation markers by GnRH detection class.}
-#'   \item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
 #'   \item{\code{migration_refinement}}{
 #'   Comparison of migration-core evidence between cells that remain
 #'   classified as migrating and cells reassigned from the raw migrating
 #'   stage during stage refinement.}
+#'   \item{\code{migration_refinement_summary}}{
+#'   Dataset-level summary of the migration refinement step, including the
+#'   number of raw migrating cells, retained and reassigned cells, retention
+#'   and reassignment percentages, and mean migration-core evidence among
+#'   retained migrating cells.}
+#'   \item{\code{biological_markers}}{Expression of selected biological
+#'   validation markers by GnRH detection class.}
+#'   \item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
 #' }
 #'
-
 #' @seealso
 #' \code{\link{run_gnrh_collection}},
 #' \code{\link{run_gnrh_dataset}},
@@ -1027,6 +1031,8 @@ prepare_gnrh_datasets <- function(
 #' validation$detection
 #' validation$stage_refinement
 #' validation$migration_core
+#' validation$migration_refinement
+#' validation$migration_refinement_summary
 #' }
 #'
 #' @export
@@ -1269,18 +1275,13 @@ validate_gnrh_collection <- function(
   if (is.null(validation_markers)) {
 
     validation_markers <- c(
-      # GnRH identity
       "GNRH1",
       "GNRHR",
-
-      # lineage / specification
       "FEZF1",
       "ISL1",
       "OTX2",
       "SIX3",
       "SIX6",
-
-      # neuroendocrine
       "CHGA",
       "CHGB",
       "SCG2",
@@ -1289,8 +1290,6 @@ validate_gnrh_collection <- function(
       "CPE",
       "VGF",
       "SYP",
-
-      # migration / guidance
       "ANOS1",
       "PROKR2",
       "PROK2",
@@ -1368,17 +1367,9 @@ validate_gnrh_collection <- function(
       }
     }
 
-    direct <- count_class(
-      "direct"
-    )
-
-    supported <- count_class(
-      "supported"
-    )
-
-    dropout <- count_class(
-      "dropout_rescue"
-    )
+    direct <- count_class("direct")
+    supported <- count_class("supported")
+    dropout <- count_class("dropout_rescue")
 
     positive <- sum(
       as.character(md$gnrh_class) %in%
@@ -1390,15 +1381,10 @@ validate_gnrh_collection <- function(
 
     tibble::tibble(
       id = id,
-
       n_cells = total,
-
       direct = direct,
-
       supported = supported,
-
       dropout_rescue = dropout,
-
       gnrh_pos = positive,
 
       pct_gnrh =
@@ -1485,6 +1471,14 @@ validate_gnrh_collection <- function(
 
       object[[]] |>
         tibble::as_tibble() |>
+        dplyr::mutate(
+          gnrh_status = as.character(
+            .data$gnrh_status
+          ),
+          gnrh_class = as.character(
+            .data$gnrh_class
+          )
+        ) |>
         dplyr::count(
           .data$gnrh_status,
           .data$gnrh_class,
@@ -1564,6 +1558,11 @@ validate_gnrh_collection <- function(
 
         object[[]] |>
           tibble::as_tibble() |>
+          dplyr::mutate(
+            gnrh_class = as.character(
+              .data$gnrh_class
+            )
+          ) |>
           dplyr::filter(
             .data$gnrh_class %in%
               positive_classes
@@ -1635,13 +1634,19 @@ validate_gnrh_collection <- function(
 
       x <- object[[]] |>
         tibble::as_tibble() |>
+        dplyr::mutate(
+          gnrh_class = as.character(
+            .data$gnrh_class
+          ),
+          gnrh_stage = as.character(
+            .data$gnrh_stage
+          )
+        ) |>
         dplyr::filter(
           .data$gnrh_class %in%
             positive_classes,
           !is.na(.data$gnrh_stage),
-          as.character(
-            .data$gnrh_stage
-          ) != "non-gnrh"
+          .data$gnrh_stage != "non-gnrh"
         )
 
       if (nrow(x) == 0L) {
@@ -1694,13 +1699,19 @@ validate_gnrh_collection <- function(
 
       x <- object[[]] |>
         tibble::as_tibble() |>
+        dplyr::mutate(
+          gnrh_class = as.character(
+            .data$gnrh_class
+          ),
+          gnrh_stage = as.character(
+            .data$gnrh_stage
+          )
+        ) |>
         dplyr::filter(
           .data$gnrh_class %in%
             positive_classes,
           !is.na(.data$gnrh_stage),
-          as.character(
-            .data$gnrh_stage
-          ) != "non-gnrh"
+          .data$gnrh_stage != "non-gnrh"
         )
 
       if (nrow(x) == 0L) {
@@ -1778,8 +1789,7 @@ validate_gnrh_collection <- function(
         md <- object[[]] |>
           tibble::as_tibble() |>
           dplyr::filter(
-            .data$gnrh_status ==
-              "pos"
+            .data$gnrh_status == "pos"
           )
 
         n_positive <- nrow(md)
@@ -1830,7 +1840,6 @@ validate_gnrh_collection <- function(
         dplyr::everything()
       )
 
-
     stage_reassignment <- purrr::imap_dfr(
       gnrh_list[has_refinement],
       function(object, id) {
@@ -1879,7 +1888,6 @@ validate_gnrh_collection <- function(
   } else {
 
     stage_refinement <- tibble::tibble()
-
     stage_reassignment <- tibble::tibble()
   }
 
@@ -1913,9 +1921,13 @@ validate_gnrh_collection <- function(
 
         x <- object[[]] |>
           tibble::as_tibble() |>
+          dplyr::mutate(
+            gnrh_stage_raw = as.character(
+              .data$gnrh_stage_raw
+            )
+          ) |>
           dplyr::filter(
-            .data$gnrh_status ==
-              "pos",
+            .data$gnrh_status == "pos",
             !is.na(
               .data$gnrh_stage_raw
             )
@@ -1959,24 +1971,21 @@ validate_gnrh_collection <- function(
             pct_ge1 =
               100 *
               mean(
-                .data$gnrh_migration_core_hits >=
-                  1,
+                .data$gnrh_migration_core_hits >= 1,
                 na.rm = TRUE
               ),
 
             pct_ge2 =
               100 *
               mean(
-                .data$gnrh_migration_core_hits >=
-                  2,
+                .data$gnrh_migration_core_hits >= 2,
                 na.rm = TRUE
               ),
 
             pct_ge3 =
               100 *
               mean(
-                .data$gnrh_migration_core_hits >=
-                  3,
+                .data$gnrh_migration_core_hits >= 3,
                 na.rm = TRUE
               ),
 
@@ -2173,9 +2182,98 @@ validate_gnrh_collection <- function(
         .data$gnrh_stage
       )
 
+
+    # ------------------------------------------------------------------------- #
+    # Dataset-level migration refinement summary
+    # ------------------------------------------------------------------------- #
+
+    migration_refinement_summary <- migration_refinement |>
+      dplyr::group_by(
+        .data$id,
+        .data$label,
+        .data$species
+      ) |>
+      dplyr::summarise(
+        mean_hits_retained = {
+          idx <- .data$migration_outcome ==
+            "retained_migrating"
+
+          if (any(idx)) {
+            stats::weighted.mean(
+              .data$mean_hits[idx],
+              .data$n_cells[idx],
+              na.rm = TRUE
+            )
+          } else {
+            NA_real_
+          }
+        },
+
+        n_raw_migrating =
+          sum(
+            .data$n_cells,
+            na.rm = TRUE
+          ),
+
+        n_retained =
+          sum(
+            .data$n_cells[
+              .data$migration_outcome ==
+                "retained_migrating"
+            ],
+            na.rm = TRUE
+          ),
+
+        n_reassigned =
+          sum(
+            .data$n_cells[
+              .data$migration_outcome ==
+                "reassigned"
+            ],
+            na.rm = TRUE
+          ),
+
+        pct_retained =
+          if (n_raw_migrating > 0L) {
+            100 *
+              n_retained /
+              n_raw_migrating
+          } else {
+            NA_real_
+          },
+
+        pct_reassigned =
+          if (n_raw_migrating > 0L) {
+            100 *
+              n_reassigned /
+              n_raw_migrating
+          } else {
+            NA_real_
+          },
+
+        .groups = "drop"
+      ) |>
+      dplyr::select(
+        .data$id,
+        .data$label,
+        .data$species,
+        .data$n_raw_migrating,
+        .data$n_retained,
+        .data$n_reassigned,
+        .data$pct_retained,
+        .data$pct_reassigned,
+        .data$mean_hits_retained
+      ) |>
+      dplyr::arrange(
+        dplyr::desc(
+          .data$pct_reassigned
+        )
+      )
+
   } else {
 
     migration_refinement <- tibble::tibble()
+    migration_refinement_summary <- tibble::tibble()
   }
 
 
@@ -2342,7 +2440,6 @@ validate_gnrh_collection <- function(
     )
   }
 
-
   biological_markers <- purrr::imap_dfr(
     gnrh_list,
     summarise_marker_expression
@@ -2405,6 +2502,9 @@ validate_gnrh_collection <- function(
 
     migration_refinement =
       migration_refinement,
+
+    migration_refinement_summary =
+      migration_refinement_summary,
 
     biological_markers =
       biological_markers
@@ -2486,9 +2586,7 @@ validate_gnrh_collection <- function(
     " GnRH-positive cells."
   )
 
-  if (
-    nrow(stage_refinement) > 0L
-  ) {
+  if (nrow(stage_refinement) > 0L) {
 
     total_reassigned <- sum(
       stage_refinement$n_reassigned,
@@ -2502,6 +2600,47 @@ validate_gnrh_collection <- function(
         big.mark = ","
       ),
       " cells."
+    )
+  }
+
+  if (nrow(migration_refinement_summary) > 0L) {
+
+    total_raw_migrating <- sum(
+      migration_refinement_summary$n_raw_migrating,
+      na.rm = TRUE
+    )
+
+    total_migration_reassigned <- sum(
+      migration_refinement_summary$n_reassigned,
+      na.rm = TRUE
+    )
+
+    pct_migration_reassigned <-
+      if (total_raw_migrating > 0L) {
+        100 *
+          total_migration_reassigned /
+          total_raw_migrating
+      } else {
+        NA_real_
+      }
+
+    log(
+      "Migration refinement: ",
+      format(
+        total_migration_reassigned,
+        big.mark = ","
+      ),
+      " / ",
+      format(
+        total_raw_migrating,
+        big.mark = ","
+      ),
+      " raw migrating cells reassigned (",
+      sprintf(
+        "%.2f",
+        pct_migration_reassigned
+      ),
+      "%)."
     )
   }
 
