@@ -6,45 +6,6 @@
 \usage{
 plot_gnrh_coexpr(df, coexp_cutoff = 0.25, txtsize = 10)
 }
-\arguments{
-\item{df}{A marker table returned by \code{\link{gnrh_markers}}.
-Must contain the columns \code{gene}, \code{coexpr}, \code{score},
-and \code{p_val_adj}.}
-
-\item{coexp_cutoff}{Minimum coexpression value required for plotting.
-Default is \code{0.25}.}
-
-\item{txtsize}{Base text size passed to \code{\link{plot_theme}}.
-Default is \code{12}.}
-}
-\value{
-A \code{ggplot2} object showing coexpression strength,
-marker score, and adjusted p-value significance.
-}
 \description{
-Visualizes genes coexpressed with \code{GNRH1} and ranks them by
-coexpression strength.
-}
-\details{
-\code{GNRH1} itself is removed before plotting. Genes are ordered
-by decreasing coexpression strength.
-
-Point aesthetics:
-\itemize{
-\item x-axis: correlation with \code{GNRH1}
-\item y-axis: coexpressed genes
-\item point size: composite marker score
-\item point color: \eqn{-log10(adjusted~p-value)}
-}
-}
-\examples{
-\dontrun{
-p <- plot_gnrh_coexpr(
-  markers,
-  coexp_cutoff = 0.35
-)
-
-print(p)
-}
-
+Plot GnRH coexpression markers
 }

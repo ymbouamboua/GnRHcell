@@ -2,45 +2,42 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_feature}
 \alias{plot_gnrh_feature}
-\title{Plot GnRH feature maps}
+\title{Plot GnRH features on an embedding}
 \usage{
 plot_gnrh_feature(
   object,
-  features = "all",
-  feature_type = NULL,
-  reduction = "umap",
-  ncol = 4,
-  style = "classic",
-  merge.leg = FALSE,
+  features,
+  cols = NULL,
+  palette = "gnrh",
+  rev.cols = FALSE,
+  na.col = "grey90",
+  order = FALSE,
+  pt.size = NULL,
+  reduction = NULL,
+  dims = c(1, 2),
+  min.cutoff = NULL,
+  max.cutoff = NULL,
+  raster = NULL,
+  raster.dpi = c(2048, 2048),
   split.by = NULL,
-  title = NULL,
+  ncol = NULL,
+  layer = "data",
+  label = FALSE,
+  axes = TRUE,
+  combine = TRUE,
+  blend = FALSE,
+  merge.leg = FALSE,
+  legend = TRUE,
+  plot.ttl = NULL,
+  leg.ttl = NULL,
+  leg.pos = "right",
+  leg.size = 9,
+  txtsize = 10,
+  dark = FALSE,
+  style = "classic",
   ...
 )
 }
-\arguments{
-\item{object}{A Seurat object processed by GnRHcell.}
-
-\item{features}{Features to plot, or \code{"all"}.}
-
-\item{feature_type}{Optional preset: \code{"core"}, \code{"modules"}, or \code{"all"}.}
-
-\item{reduction}{Dimensional reduction to use.}
-
-\item{ncol}{Number of columns.}
-
-\item{style}{Theme style.}
-
-\item{merge.leg}{Logical; merge legends across panels.}
-
-\item{split.by}{Optional metadata column for splitting.}
-
-\item{title}{Optional title.}
-
-\item{...}{Additional arguments passed to \code{\link{cellfeature}}.}
-}
-\value{
-ggplot2 or patchwork object.
-}
 \description{
-Wrapper around \code{\link{cellfeature}} for GnRHcell diagnostic features.
+Plot GnRH features on an embedding
 }

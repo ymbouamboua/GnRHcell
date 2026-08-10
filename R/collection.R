@@ -81,7 +81,7 @@ resolve_split_column <- function(object, split_by) {
 #' diagnostic plots, embeddings, feature plots, distribution plots, marker
 #' tables, co-expression plots, and marker networks.
 #'
-#' The function is primarily used internally by [run_gnrh_collection()] but
+#' The function is primarily used internally by [GnRHcell::run_gnrh_collection()] but
 #' can also be called directly for individual datasets.
 #'
 #' @param object A Seurat object containing the dataset to analyze.

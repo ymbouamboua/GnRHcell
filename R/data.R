@@ -1,13 +1,14 @@
-#' Example GnRHcell Seurat object
+#' Human hPSC GnRH demo dataset
 #'
-#' A small example Seurat object for demonstrating GnRHcell functions.
+#' A sampled Seurat object derived from the public Wang et al. 2022
+#' hPSC-derived GnRH neuron dataset.
 #'
-#' @format A Seurat object with 500 cells.
-#' @source Derived from a small subset of a public scRNA-seq dataset.
+#' The object is intended for examples, tutorials, and testing of the
+#' GnRHcell workflow.
 #'
-#' @examples
-#' data(hpsc_gnrh)
-#' hpsc_gnrh
+#' @format A Seurat object.
 #'
-#' @name hpsc_gnrh
-"hpsc_gnrh"
+#' @source Wang et al. 2022.
+#'
+#' @name hpsc
+NULL

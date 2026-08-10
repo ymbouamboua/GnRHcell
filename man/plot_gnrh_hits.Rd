@@ -11,33 +11,9 @@ plot_gnrh_hits(
   palette = NULL,
   type = c("count", "fraction"),
   title = NULL,
-  rotate.x = FALSE,
-  txtsize = 12,
-  style = "classic",
-  ...
+  txtsize = 10
 )
 }
-\arguments{
-\item{data}{data.frame (usually object@meta.data)}
-
-\item{x}{character. grouping variable (e.g. "total_hits_bin")}
-
-\item{fill}{character. fill variable (e.g. "gnrh_status")}
-
-\item{palette}{named vector of colors}
-
-\item{type}{"count" or "fraction"}
-
-\item{title}{plot title}
-
-\item{rotate.x}{logical}
-
-\item{txtsize}{theme text size}
-
-\item{style}{theme style}
-
-\item{...}{Additional arguments passed to \code{plot_theme()}.}
-}
 \description{
-Bar plots of GnRH module hits vs metadata variables
+Plot GnRH module hit distributions
 }

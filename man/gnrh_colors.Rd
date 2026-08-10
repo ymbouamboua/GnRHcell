@@ -4,15 +4,14 @@
 \alias{gnrh_colors}
 \title{GnRHcell color palettes}
 \usage{
-gnrh_colors(type = c("status", "confident", "stage"))
+gnrh_colors(type = c("status", "confident", "class", "stage", "secretory"))
 }
 \arguments{
-\item{type}{Palette type. One of \code{"status"},
-\code{"confident"}, or \code{"stage"}.}
+\item{type}{Palette type.}
 }
 \value{
-Named character vector of colors.
+Named character vector.
 }
 \description{
-Returns named color palettes for GnRHcell metadata variables.
+GnRHcell color palettes
 }

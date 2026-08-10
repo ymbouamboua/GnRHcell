@@ -2,79 +2,22 @@
 % Please edit documentation in R/visualization.R
 \name{gnrh_report}
 \alias{gnrh_report}
-\title{Generate a comprehensive GnRH diagnostic report}
+\title{Generate a compact GnRH diagnostic report}
 \usage{
-gnrh_report(object, style = "test", verbose = TRUE)
+gnrh_report(object, style = "test", truth = NULL, verbose = TRUE)
 }
 \arguments{
-\item{object}{A \code{Seurat} object processed with
-\code{detect_gnrh()} and \code{gnrh_diagnostics()}.}
+\item{object}{Seurat object processed with GnRHcell.}
 
-\item{style}{Character scalar specifying the plotting theme style
-passed to \code{plot_theme()}. Default is \code{"test"}.}
+\item{style}{Plot theme style.}
 
-\item{verbose}{Logical; if \code{TRUE}, progress messages are printed.}
+\item{truth}{Optional metadata column containing independent binary truth.}
+
+\item{verbose}{Print progress messages.}
 }
 \value{
-A \code{patchwork} plot object containing the diagnostic dashboard.
+A patchwork diagnostic dashboard.
 }
 \description{
-Creates a multi-panel quality-control dashboard summarizing
-GnRH detection performance, classification behavior, threshold
-optimization, ROC performance, module enrichment, developmental
-staging, and run parameters from a \code{GnRHcell} analysis.
-}
-\details{
-The report automatically extracts diagnostics stored in
-\code{object@misc$gnrh} after running the detection pipeline.
-
-Included panels may include:
-\itemize{
-\item Signal landscape: GNRH1 expression versus composite GnRH score
-\item Score distribution by GnRH classification
-\item Threshold optimization curve (sensitivity, specificity, F1)
-\item ROC curve with AUC estimate
-\item Module hit burden versus composite score
-\item Classification enrichment across total module hits
-\item Developmental stage signal landscape (if staging available)
-\item Run parameter summary table
-}
-
-Status and stage legends include both cell counts and percentages
-for easier interpretation.
-
-ROC curves are generated automatically when valid binary labels
-are available in diagnostic metadata.
-
-Diagnostic information is expected in:
-\itemize{
-\item \code{object@misc$gnrh$diagnostics}
-\item \code{object@misc$gnrh$threshold_curve}
-\item optional staging metadata in \code{object$gnrh_stage}
-\item optional run parameters in \code{object@misc$gnrh_params}
-}
-
-If staging results are unavailable, the stage panel is replaced
-by a placeholder panel.
-
-If ROC computation is not possible (for example, only one class
-present), the ROC panel is replaced by an informative placeholder.
-}
-\examples{
-\dontrun{
-data(hpsc_gnrh)
-
-hpsc_gnrh <- run_gnrh(hpsc_gnrh)
-
-p <- gnrh_report(hpsc_gnrh)
-p
-}
-
-}
-\seealso{
-\code{\link{run_gnrh}},
-\code{\link{detect_gnrh}},
-\code{\link{stage_gnrh}},
-\code{\link{gnrh_diagnostics}},
-\code{\link{plot_gnrh_distribution}}
+Generate a compact GnRH diagnostic report
 }

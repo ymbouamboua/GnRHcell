@@ -8,29 +8,10 @@ plot_gnrh_detected(
   files = NULL,
   dir = file.path("results", "tables"),
   pattern = "_gnrh_run_info\\\\.tsv$",
-  style = "classic",
   x.ang = 45,
   txtsize = 10,
-  debug = TRUE
+  debug = FALSE
 )
-}
-\arguments{
-\item{files}{Optional character vector of run-info TSV files.}
-
-\item{dir}{Directory containing runtime summary tables.}
-
-\item{pattern}{Regex pattern used to identify runtime files.}
-
-\item{style}{Plot style.}
-
-\item{x.ang}{X-axis text angle.}
-
-\item{txtsize}{Base text size.}
-
-\item{debug}{Print loaded table.}
-}
-\value{
-A ggplot2 object.
 }
 \description{
 Plot detected GnRH-positive cells across datasets

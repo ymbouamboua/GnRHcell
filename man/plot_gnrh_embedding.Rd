@@ -2,37 +2,44 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_embedding}
 \alias{plot_gnrh_embedding}
-\title{Plot GnRHcell metadata on cell embeddings}
+\title{Plot GnRH embedding}
 \usage{
 plot_gnrh_embedding(
   object,
-  group.by = "all",
-  reduction = "umap",
+  group_by = "gnrh_status",
+  reduction = NULL,
+  dims = c(1, 2),
+  shuffle = FALSE,
+  raster = NULL,
+  raster.dpi = c(2048, 2048),
+  alpha = 0.9,
+  background_alpha = 0.18,
+  n.cells = TRUE,
+  percentage = FALSE,
+  label = FALSE,
+  repel = TRUE,
+  label.size = 4,
+  label.face = "plain",
   cols = NULL,
-  style = "classic",
+  axes = TRUE,
+  plot.ttl = NULL,
+  legend = TRUE,
+  leg.ttl = NULL,
+  leg.ttl.size = NULL,
+  item.size = 3.5,
+  leg.pos = "right",
+  leg.dir = "vertical",
+  leg.size = NULL,
+  leg.ncol = NULL,
+  item.border = TRUE,
+  txtsize = 12,
+  pt.size = NULL,
   dark = FALSE,
-  ncol = NULL
+  total.cells = FALSE,
+  style = "classic",
+  ...
 )
 }
-\arguments{
-\item{object}{A Seurat object processed by GnRHcell.}
-
-\item{group.by}{Metadata variable to plot. Use \code{"all"} to plot
-\code{gnrh_status}, \code{gnrh_confident}, and \code{gnrh_stage}.}
-
-\item{reduction}{Dimensional reduction to use.}
-
-\item{cols}{Optional color palette.}
-
-\item{style}{Theme style.}
-
-\item{dark}{Logical; use dark theme.}
-
-\item{ncol}{Number of columns when plotting multiple panels.}
-}
-\value{
-A ggplot2 or patchwork object.
-}
 \description{
-Visualizes GnRHcell metadata on a Seurat dimensional reduction.
+Plot GnRH embedding
 }

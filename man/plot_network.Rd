@@ -6,17 +6,6 @@
 \usage{
 plot_network(df, top_n = 25, threshold = 0.4)
 }
-\arguments{
-\item{df}{Data frame containing gene-level scores and coexpression.}
-
-\item{top_n}{Number of genes to include.}
-
-\item{threshold}{Minimum edge weight to retain.}
-}
-\value{
-A ggraph object.
-}
 \description{
-Constructs a similarity network based on coexpression structure
-among top-ranked genes.
+GnRH gene similarity network
 }
