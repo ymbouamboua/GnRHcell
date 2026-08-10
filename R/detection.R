@@ -98,10 +98,6 @@ detect_gnrh <- function(
 
   log <- .msg(verbose)
 
-  log(
-    "==== GNRH DETECTION START ===="
-  )
-
   # --------------------------------------------------------------------------- #
   # Validate input
   # --------------------------------------------------------------------------- #
@@ -150,10 +146,7 @@ detect_gnrh <- function(
 
   gnrh_gene <- gene[[1]]
 
-  log(
-    "Using GnRH gene: ",
-    gnrh_gene
-  )
+  log("Using GnRH gene:", gnrh_gene)
 
   # --------------------------------------------------------------------------- #
   # Curated modules
@@ -827,19 +820,6 @@ detect_gnrh <- function(
 
   object@misc$gnrh$classify_summary <-
     cls$rule_summary
-
-  # --------------------------------------------------------------------------- #
-  # Diagnostics
-  # --------------------------------------------------------------------------- #
-
-  object <- gnrh_diagnostics(
-    object,
-    verbose = verbose
-  )
-
-  log(
-    "==== GNRH DETECTION DONE ===="
-  )
 
   object
 }

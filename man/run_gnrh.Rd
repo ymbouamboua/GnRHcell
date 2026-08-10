@@ -16,20 +16,15 @@ run_gnrh(
 \arguments{
 \item{object}{A Seurat object containing single-cell RNA-seq data.}
 
-\item{detect}{Logical; run GnRH detection.
-Default is \code{TRUE}.}
+\item{detect}{Logical; run GnRH detection. Default is \code{TRUE}.}
 
-\item{stage}{Logical; run developmental staging.
-Default is \code{TRUE}.}
+\item{stage}{Logical; run developmental staging. Default is \code{TRUE}.}
 
-\item{diagnostics}{Logical; run diagnostic analysis.
-Default is \code{TRUE}.}
+\item{diagnostics}{Logical; run diagnostic analysis. Default is \code{TRUE}.}
 
-\item{verbose}{Logical; print progress messages.
-Default is \code{TRUE}.}
+\item{verbose}{Logical; print progress messages. Default is \code{TRUE}.}
 
-\item{...}{Additional arguments passed to
-\code{\link{detect_gnrh}}.}
+\item{...}{Additional arguments passed to \code{\link{detect_gnrh}}.}
 }
 \value{
 A Seurat object updated with GnRH detection,
@@ -38,58 +33,6 @@ developmental staging, diagnostics, and runtime metadata.
 \description{
 Executes the full GnRHcell workflow for identification,
 developmental staging, diagnostics, and runtime reporting.
-}
-\details{
-The pipeline can perform:
-\itemize{
-\item GnRH neuron detection via \code{\link{detect_gnrh}}
-\item developmental stage assignment via \code{\link{stage_gnrh}}
-\item diagnostic analysis via \code{\link{gnrh_diagnostics}}
-}
-
-Runtime metrics, dataset summaries, analysis parameters,
-and session information are stored in
-\code{object@misc$gnrh$run_info}.
-
-Workflow steps:
-\enumerate{
-\item GnRH detection using transcriptomic and marker-based scoring
-\item developmental state assignment
-\item diagnostic performance evaluation
-\item runtime and summary reporting
-}
-
-Metadata added may include:
-\describe{
-\item{\code{gnrh_status}}{Binary GnRH classification.}
-\item{\code{gnrh_class}}{Internal classification labels.}
-\item{\code{gnrh_truth}}{High-confidence truth labels.}
-\item{\code{gnrh_stage}}{Developmental stage assignments.}
-}
-
-Stored runtime metadata:
-\describe{
-\item{\code{detect_sec}}{Detection runtime in seconds.}
-\item{\code{stage_sec}}{Staging runtime in seconds.}
-\item{\code{diagnostics_sec}}{Diagnostics runtime in seconds.}
-\item{\code{total_sec}}{Total pipeline runtime.}
-}
-
-If specific steps are disabled, only selected workflow components
-are executed.
-}
-\examples{
-\dontrun{
-obj <- run_gnrh(seurat_obj)
-
-obj <- run_gnrh(
-  seurat_obj,
-  detect = TRUE,
-  stage = TRUE,
-  diagnostics = TRUE
-)
-}
-
 }
 \seealso{
 \code{\link{detect_gnrh}},

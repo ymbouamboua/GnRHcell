@@ -243,8 +243,8 @@
 #' of GnRH neurons from single-cell RNA-seq data.
 #'
 #' The modules represent major biological states of GnRH neuron
-#' development, including identity specification, migration,
-#' maturation, and secretory activity.
+#' development, including identity specification, migration and
+#' maturation activity.
 #'
 #' These modules are used internally by staging functions such as
 #' \code{\link{stage_gnrh}} to score GnRH cells across developmental
@@ -258,7 +258,6 @@
 #'   \item{\code{identity}}{GnRH lineage identity and specification markers.}
 #'   \item{\code{migrating}}{Migration, axon-guidance, adhesion, and cytoskeletal markers.}
 #'   \item{\code{mature}}{Neuroendocrine maturation and synaptic function markers.}
-#'   \item{\code{secreting}}{Peptide processing, dense-core vesicle, and secretion markers.}
 #' }
 #'
 #' @keywords internal
@@ -266,67 +265,59 @@
 .build_stage_modules <- function(genes) {
 
   list(
-    identity = .match_genes(c(
-      "ISL1",
-      "SIX3", "SIX6",
-      "DLX1", "DLX2", "DLX5", "DLX6",
-      "OTX2",
-      "KISS1R",
-      "PBX3",
-      "RASD1",
-      "RMST",
-      "MIAT"
-    ), genes),
+    identity = .match_genes(
+      c(
+        "FEZF1",
+        "ISL1",
+        "SIX6",
+        "SIX3",
+        "OTX2",
+        "DLX1",
+        "DLX2",
+        "DLX5",
+        "DLX6",
+        "PBX3",
+        "RASD1",
+        "RMST"
+      ),
+      genes
+    ),
 
-    migrating = .match_genes(c(
-      # More migration-specific
-      "SEMA3C", "SEMA3A", "SEMA3F",
-      "ROBO2", "ROBO3",
-      "RIPOR2",
-      "UNC5D",
-      "PLXNA3",
-      "SLIT1",
+    migrating = .match_genes(
+      c(
+        "PROKR2",
+        "NSMF",
+        "SEMA3C",
+        "SEMA3F",
+        "ROBO2",
+        "ROBO3",
+        "RIPOR2",
+        "PLXNA3",
+        "SLIT1",
+        "CXCR4"
+      ),
+      genes
+    ),
 
-      # Supporting migration / axon-guidance genes
-      "NRP1", "NRP2",
-      "ROBO1",
-      "L1CAM",
-      "NCAM1",
-      "CNTN2",
-      "STMN2", "STMN3",
-      "GAP43",
-      "MAP1B",
-      "SPOCK1"
-    ), genes),
-
-    mature = .match_genes(c(
-      "KISS1R",
-      "ISL1",
-      "DOC2B",
-      "PTPRN",
-      "BAIAP3",
-      "ECEL1",
-      "SCG2",
-      "SCG5",
-      "HCN1",
-      "NALCN"
-    ), genes),
-
-    secreting = .match_genes(c(
-      "PCSK1",
-      "PCSK2",
-      "CPE",
-      "CHGA",
-      "CHGB",
-      "VGF",
-      "SCG2",
-      "SCG5",
-      "PTPRN",
-      "BAIAP3",
-      "DOC2B"
-    ), genes)
+    mature = .match_genes(
+      c(
+        "KISS1R",
+        "ISL1",
+        "DOC2B",
+        "PTPRN",
+        "BAIAP3",
+        "ECEL1",
+        "SCG2",
+        "SCG5",
+        "HCN1",
+        "NALCN"
+      ),
+      genes
+    )
   )
 }
+
+
 
 
 #' @keywords internal
@@ -335,9 +326,8 @@
 
   .match_genes(
     c(
-      "ANOS1",
-      "PROK2",
       "PROKR2",
+      "NSMF",
       "SEMA3C",
       "SEMA3F",
       "ROBO2",
@@ -347,6 +337,47 @@
       "SLIT1"
     ),
     genes
+  )
+}
+
+
+#' Build GnRH secretory module
+#'
+#' Constructs core and supportive neuroendocrine secretory programs used
+#' independently from developmental stage classification.
+#'
+#' @param genes Character vector containing genes available in the expression
+#'   matrix.
+#'
+#' @return A named list containing matched core and supportive secretory genes.
+#'
+#' @keywords internal
+#' @noRd
+.build_secretory_module <- function(genes) {
+
+  list(
+    core = .match_genes(
+      c(
+        "PCSK1",
+        "PCSK2",
+        "CHGA",
+        "CHGB"
+      ),
+      genes
+    ),
+
+    supportive = .match_genes(
+      c(
+        "CPE",
+        "VGF",
+        "SCG2",
+        "SCG5",
+        "PTPRN",
+        "BAIAP3",
+        "DOC2B"
+      ),
+      genes
+    )
   )
 }
 
