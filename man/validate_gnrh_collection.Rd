@@ -7,7 +7,7 @@
 validate_gnrh_collection(
   collection,
   output_dir = file.path(collection$output_dir, "validation"),
-  positive_classes = c("direct", "supported", "dropout_rescue"),
+  positive_classes = c("direct", "supported"),
   validation_markers = NULL,
   assay = "RNA",
   layer = "data",
@@ -24,7 +24,7 @@ Default is \code{file.path(collection$output_dir, "validation")}.}
 
 \item{positive_classes}{Character vector defining positive GnRH detection
 classes. Default is
-\code{c("direct", "supported", "dropout_rescue")}.}
+\code{c("direct", "supported")}.}
 
 \item{validation_markers}{Character vector of genes used for independent
 biological marker validation. If \code{NULL}, a predefined marker panel
@@ -48,9 +48,12 @@ An object of class \code{"gnrh_validation"} containing:
 \item{\code{datasets}}{Dataset metadata used for validation.}
 \item{\code{input_summary}}{Number of cells and features per dataset.}
 \item{\code{detection}}{GnRH detection summary.}
+\item{\code{dropout_candidates}}{
+Summary of GNRH1-negative cells showing strong GnRH-like transcriptomic
+evidence. These cells are diagnostic candidates only and are not counted
+as GnRH-positive.}
 \item{\code{status_class}}{Consistency between detection status and class.}
-\item{\code{scores}}{Summary of GnRH evidence and staging scores by
-detection class.}
+\item{\code{scores}}{Summary of GnRH evidence scores by detection class.}
 \item{\code{stages}}{Developmental-stage distribution among GnRH-positive
 cells.}
 \item{\code{stage_class}}{Developmental-stage distribution within each
@@ -59,16 +62,13 @@ GnRH detection class.}
 \item{\code{stage_reassignment}}{Detailed raw-to-final stage transitions.}
 \item{\code{migration_core}}{Migration-core evidence by raw stage.}
 \item{\code{migration_refinement}}{
-Comparison of migration-core evidence between cells that remain
-classified as migrating and cells reassigned from the raw migrating
-stage during stage refinement.}
+Comparison of migration-core evidence between retained and reassigned
+migrating cells.}
 \item{\code{migration_refinement_summary}}{
-Dataset-level summary of the migration refinement step, including the
-number of raw migrating cells, retained and reassigned cells, retention
-and reassignment percentages, and mean migration-core evidence among
-retained migrating cells.}
-\item{\code{biological_markers}}{Expression of selected biological
-validation markers by GnRH detection class.}
+Dataset-level summary of migration-stage refinement.}
+\item{\code{biological_markers}}{
+Expression of selected biological validation markers by positive
+GnRH detection class.}
 \item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
 }
 }

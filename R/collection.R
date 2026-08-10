@@ -1,6 +1,6 @@
-# =========================================================================== #== #
+# =========================================================================== #
 # GnRHcell multi-dataset workflows
-# =========================================================================== #== #
+# =========================================================================== #
 
 
 #' Resolve a dimensional reduction
@@ -969,7 +969,7 @@ prepare_gnrh_datasets <- function(
 #'   Default is \code{file.path(collection$output_dir, "validation")}.
 #' @param positive_classes Character vector defining positive GnRH detection
 #'   classes. Default is
-#'   \code{c("direct", "supported", "dropout_rescue")}.
+#'   \code{c("direct", "supported")}.
 #' @param validation_markers Character vector of genes used for independent
 #'   biological marker validation. If \code{NULL}, a predefined marker panel
 #'   covering GnRH identity, migration, and neuroendocrine maturation is used.
@@ -987,9 +987,12 @@ prepare_gnrh_datasets <- function(
 #'   \item{\code{datasets}}{Dataset metadata used for validation.}
 #'   \item{\code{input_summary}}{Number of cells and features per dataset.}
 #'   \item{\code{detection}}{GnRH detection summary.}
+#'   \item{\code{dropout_candidates}}{
+#'   Summary of GNRH1-negative cells showing strong GnRH-like transcriptomic
+#'   evidence. These cells are diagnostic candidates only and are not counted
+#'   as GnRH-positive.}
 #'   \item{\code{status_class}}{Consistency between detection status and class.}
-#'   \item{\code{scores}}{Summary of GnRH evidence and staging scores by
-#'   detection class.}
+#'   \item{\code{scores}}{Summary of GnRH evidence scores by detection class.}
 #'   \item{\code{stages}}{Developmental-stage distribution among GnRH-positive
 #'   cells.}
 #'   \item{\code{stage_class}}{Developmental-stage distribution within each
@@ -998,16 +1001,13 @@ prepare_gnrh_datasets <- function(
 #'   \item{\code{stage_reassignment}}{Detailed raw-to-final stage transitions.}
 #'   \item{\code{migration_core}}{Migration-core evidence by raw stage.}
 #'   \item{\code{migration_refinement}}{
-#'   Comparison of migration-core evidence between cells that remain
-#'   classified as migrating and cells reassigned from the raw migrating
-#'   stage during stage refinement.}
+#'   Comparison of migration-core evidence between retained and reassigned
+#'   migrating cells.}
 #'   \item{\code{migration_refinement_summary}}{
-#'   Dataset-level summary of the migration refinement step, including the
-#'   number of raw migrating cells, retained and reassigned cells, retention
-#'   and reassignment percentages, and mean migration-core evidence among
-#'   retained migrating cells.}
-#'   \item{\code{biological_markers}}{Expression of selected biological
-#'   validation markers by GnRH detection class.}
+#'   Dataset-level summary of migration-stage refinement.}
+#'   \item{\code{biological_markers}}{
+#'   Expression of selected biological validation markers by positive
+#'   GnRH detection class.}
 #'   \item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
 #' }
 #'
@@ -1044,8 +1044,7 @@ validate_gnrh_collection <- function(
     ),
     positive_classes = c(
       "direct",
-      "supported",
-      "dropout_rescue"
+      "supported"
     ),
     validation_markers = NULL,
     assay = "RNA",
@@ -1098,6 +1097,28 @@ validate_gnrh_collection <- function(
   positive_classes <- unique(
     as.character(positive_classes)
   )
+
+  allowed_positive_classes <- c(
+    "direct",
+    "supported"
+  )
+
+  invalid_positive_classes <- setdiff(
+    positive_classes,
+    allowed_positive_classes
+  )
+
+  if (length(invalid_positive_classes) > 0L) {
+    stop(
+      "Unsupported positive GnRH class(es): ",
+      paste(
+        invalid_positive_classes,
+        collapse = ", "
+      ),
+      ". Allowed classes are: direct, supported.",
+      call. = FALSE
+    )
+  }
 
   required_dataset_columns <- c(
     "id",
@@ -1350,42 +1371,130 @@ validate_gnrh_collection <- function(
     md <- object[[]]
 
     classes <- table(
-      as.character(md$gnrh_class),
+      as.character(
+        md$gnrh_class
+      ),
       useNA = "no"
     )
 
     count_class <- function(x) {
 
       if (x %in% names(classes)) {
-        unname(
-          as.integer(
-            classes[[x]]
+        return(
+          unname(
+            as.integer(
+              classes[[x]]
+            )
           )
         )
-      } else {
-        0L
       }
+
+      0L
     }
 
-    direct <- count_class("direct")
-    supported <- count_class("supported")
-    dropout <- count_class("dropout_rescue")
+    direct <- count_class(
+      "direct"
+    )
+
+    supported <- count_class(
+      "supported"
+    )
 
     positive <- sum(
-      as.character(md$gnrh_class) %in%
+      as.character(
+        md$gnrh_class
+      ) %in%
         positive_classes,
       na.rm = TRUE
     )
 
     total <- nrow(md)
 
+    dropout_candidates <-
+      if (
+        "gnrh_dropout_candidate" %in%
+        colnames(md)
+      ) {
+
+        sum(
+          md$gnrh_dropout_candidate %in% TRUE,
+          na.rm = TRUE
+        )
+
+      } else {
+
+        0L
+      }
+
+    direct_supported <-
+      if (
+        "gnrh_direct_supported" %in%
+        colnames(md)
+      ) {
+
+        sum(
+          md$gnrh_direct_supported %in% TRUE,
+          na.rm = TRUE
+        )
+
+      } else {
+
+        NA_integer_
+      }
+
+    direct_isolated <-
+      if (
+        "gnrh_direct_isolated" %in%
+        colnames(md)
+      ) {
+
+        sum(
+          md$gnrh_direct_isolated %in% TRUE,
+          na.rm = TRUE
+        )
+
+      } else {
+
+        NA_integer_
+      }
+
+    confident <-
+      if (
+        "gnrh_confident" %in%
+        colnames(md)
+      ) {
+
+        sum(
+          md$gnrh_confident %in% TRUE,
+          na.rm = TRUE
+        )
+
+      } else {
+
+        NA_integer_
+      }
+
     tibble::tibble(
       id = id,
+
       n_cells = total,
+
       direct = direct,
       supported = supported,
-      dropout_rescue = dropout,
+
+      direct_supported =
+        direct_supported,
+
+      direct_isolated =
+        direct_isolated,
+
+      dropout_candidates =
+        dropout_candidates,
+
       gnrh_pos = positive,
+
+      gnrh_confident =
+        confident,
 
       pct_gnrh =
         if (total > 0L) {
@@ -1408,9 +1517,38 @@ validate_gnrh_collection <- function(
           NA_real_
         },
 
-      pct_dropout =
-        if (positive > 0L) {
-          100 * dropout / positive
+      pct_direct_supported =
+        if (
+          direct > 0L &&
+          !is.na(direct_supported)
+        ) {
+          100 *
+            direct_supported /
+            direct
+        } else {
+          NA_real_
+        },
+
+      pct_direct_isolated =
+        if (
+          direct > 0L &&
+          !is.na(direct_isolated)
+        ) {
+          100 *
+            direct_isolated /
+            direct
+        } else {
+          NA_real_
+        },
+
+      pct_confident =
+        if (
+          positive > 0L &&
+          !is.na(confident)
+        ) {
+          100 *
+            confident /
+            positive
         } else {
           NA_real_
         },
@@ -1429,9 +1567,11 @@ validate_gnrh_collection <- function(
           NA_real_
         },
 
-      pct_dropout_all =
+      pct_dropout_candidates =
         if (total > 0L) {
-          100 * dropout / total
+          100 *
+            dropout_candidates /
+            total
         } else {
           NA_real_
         }
@@ -1457,6 +1597,157 @@ validate_gnrh_collection <- function(
         .data$pct_gnrh
       )
     )
+
+
+
+  # =========================================================================== #
+  # GNRH1-negative transcriptomic candidates
+  #
+  # Diagnostic only.
+  # These cells remain gnrh_status == "neg".
+  # =========================================================================== #
+
+  log(
+    "Summarizing GNRH1-negative transcriptomic candidates"
+  )
+
+  has_dropout_candidate <- vapply(
+    gnrh_list,
+    function(object) {
+
+      "gnrh_dropout_candidate" %in%
+        colnames(
+          object[[]]
+        )
+    },
+    logical(1)
+  )
+
+  if (any(has_dropout_candidate)) {
+
+    dropout_candidates <- purrr::imap_dfr(
+      gnrh_list[has_dropout_candidate],
+      function(object, id) {
+
+        md <- object[[]] |>
+          tibble::as_tibble()
+
+        x <- md |>
+          dplyr::filter(
+            .data$gnrh_dropout_candidate %in% TRUE
+          )
+
+        if (nrow(x) == 0L) {
+
+          return(
+            tibble::tibble(
+              id = id,
+              n_cells = 0L,
+              pct_dataset = 0,
+              pct_GNRH1_detected = 0,
+              median_GNRH1 = 0,
+              median_support = NA_real_,
+              median_identity_primary = NA_real_,
+              median_core = NA_real_,
+              median_neuro = NA_real_,
+              median_knn = NA_real_,
+              median_alternative = NA_real_
+            )
+          )
+        }
+
+        get_median <- function(column) {
+
+          if (!column %in% colnames(x)) {
+            return(NA_real_)
+          }
+
+          stats::median(
+            x[[column]],
+            na.rm = TRUE
+          )
+        }
+
+        tibble::tibble(
+          id = id,
+
+          n_cells =
+            nrow(x),
+
+          pct_dataset =
+            100 *
+            nrow(x) /
+            nrow(md),
+
+          pct_GNRH1_detected =
+            if (
+              "gnrh_raw" %in%
+              colnames(x)
+            ) {
+
+              100 *
+                mean(
+                  x$gnrh_raw > 0,
+                  na.rm = TRUE
+                )
+
+            } else {
+
+              NA_real_
+            },
+
+          median_GNRH1 =
+            get_median(
+              "gnrh_raw"
+            ),
+
+          median_support =
+            get_median(
+              "gnrh_support_score"
+            ),
+
+          median_identity_primary =
+            get_median(
+              "gnrh_identity_primary_hits"
+            ),
+
+          median_core =
+            get_median(
+              "gnrh_core_hits"
+            ),
+
+          median_neuro =
+            get_median(
+              "gnrh_neuro_hits"
+            ),
+
+          median_knn =
+            get_median(
+              "gnrh_knn"
+            ),
+
+          median_alternative =
+            get_median(
+              "gnrh_alternative_score"
+            )
+        )
+      }
+    ) |>
+      dplyr::left_join(
+        dataset_metadata,
+        by = "id"
+      ) |>
+      dplyr::select(
+        .data$id,
+        .data$label,
+        .data$species,
+        dplyr::everything()
+      )
+
+  } else {
+
+    dropout_candidates <- tibble::tibble()
+  }
 
 
   # =========================================================================== #
@@ -1515,21 +1806,124 @@ validate_gnrh_collection <- function(
 
 
   # =========================================================================== #
+  # Classification consistency checks
+  # =========================================================================== #
+
+  classification_consistency <- purrr::imap_dfr(
+    gnrh_list,
+    function(object, id) {
+
+      md <- object[[]]
+
+      class <- as.character(
+        md$gnrh_class
+      )
+
+      status <- as.character(
+        md$gnrh_status
+      )
+
+      raw <-
+        if (
+          "gnrh_raw" %in%
+          colnames(md)
+        ) {
+          md$gnrh_raw
+        } else {
+          rep(NA_real_, nrow(md))
+        }
+
+      dropout <-
+        if (
+          "gnrh_dropout_candidate" %in%
+          colnames(md)
+        ) {
+          md$gnrh_dropout_candidate %in% TRUE
+        } else {
+          rep(FALSE, nrow(md))
+        }
+
+      tibble::tibble(
+        id = id,
+
+        n_positive_without_GNRH1 =
+          sum(
+            status == "pos" &
+              raw <= 0,
+            na.rm = TRUE
+          ),
+
+        n_negative_positive_class =
+          sum(
+            status == "neg" &
+              class %in%
+              positive_classes,
+            na.rm = TRUE
+          ),
+
+        n_positive_negative_class =
+          sum(
+            status == "pos" &
+              !class %in%
+              positive_classes,
+            na.rm = TRUE
+          ),
+
+        n_dropout_called_positive =
+          sum(
+            dropout &
+              status == "pos",
+            na.rm = TRUE
+          )
+      )
+    }
+  ) |>
+    dplyr::left_join(
+      dataset_metadata,
+      by = "id"
+    ) |>
+    dplyr::select(
+      .data$id,
+      .data$label,
+      .data$species,
+      dplyr::everything()
+    )
+
+  # =========================================================================== #
   # Score validation
   # =========================================================================== #
 
   log("Summarizing GnRH evidence scores")
 
   candidate_score_columns <- c(
+    "gnrh_score",
     "gnrh_support_score",
+
     "gnrh_identity_score",
+    "gnrh_migration_score",
+    "gnrh_neuro_score",
+    "gnrh_hormone_score",
+    "gnrh_guidance_score",
+    "gnrh_alternative_score",
+
     "gnrh_identity_primary_hits",
+    "gnrh_identity_supportive_hits",
     "gnrh_core_hits",
+
+    "gnrh_migration_primary_hits",
+    "gnrh_migration_supportive_hits",
+    "gnrh_mig_hits",
+
+    "gnrh_neuro_primary_hits",
+    "gnrh_neuro_supportive_hits",
+    "gnrh_neuro_hits",
+
     "gnrh_migration_core_hits",
+
     "gnrh_migrating_score",
     "gnrh_mature_score",
     "gnrh_secreting_score",
-    "gnrh_exclusion_score",
+
     "gnrh_knn"
   )
 
@@ -2514,41 +2908,20 @@ validate_gnrh_collection <- function(
   # =========================================================================== #
 
   validation_tables <- list(
-    input_summary =
-      input_summary,
-
-    detection =
-      detection,
-
-    status_class =
-      status_class,
-
-    scores =
-      scores,
-
-    stages =
-      stages,
-
-    stage_class =
-      stage_class,
-
-    stage_refinement =
-      stage_refinement,
-
-    stage_reassignment =
-      stage_reassignment,
-
-    migration_core =
-      migration_core,
-
-    migration_refinement =
-      migration_refinement,
-
-    migration_refinement_summary =
-      migration_refinement_summary,
-
-    biological_markers =
-      biological_markers
+    input_summary = input_summary,
+    detection = detection,
+    dropout_candidates = dropout_candidates,
+    classification_consistency = classification_consistency,
+    status_class = status_class,
+    scores = scores,
+    stages = stages,
+    stage_class = stage_class,
+    stage_refinement = stage_refinement,
+    stage_reassignment = stage_reassignment,
+    migration_core = migration_core,
+    migration_refinement = migration_refinement,
+    migration_refinement_summary = migration_refinement_summary,
+    biological_markers = biological_markers
   )
 
   if (isTRUE(write_output)) {
@@ -2611,6 +2984,11 @@ validate_gnrh_collection <- function(
     na.rm = TRUE
   )
 
+  total_dropout_candidates <- sum(
+    detection$dropout_candidates,
+    na.rm = TRUE
+  )
+
   log(
     "Validated ",
     length(gnrh_list),
@@ -2625,6 +3003,15 @@ validate_gnrh_collection <- function(
       big.mark = ","
     ),
     " GnRH-positive cells."
+  )
+
+  log(
+    "GNRH1-negative transcriptomic candidates: ",
+    format(
+      total_dropout_candidates,
+      big.mark = ","
+    ),
+    " (diagnostic only; not counted as GnRH-positive)."
   )
 
   if (nrow(stage_refinement) > 0L) {

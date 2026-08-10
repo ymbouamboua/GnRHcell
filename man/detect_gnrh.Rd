@@ -15,7 +15,7 @@ detect_gnrh(
   min_counts = 500,
   mad_factor = 2,
   supported_q = 0.6,
-  dropout_q = 0.95,
+  candidate_q = 0.95,
   scale_factor = 10000,
   max_alternative = 0.75,
   verbose = TRUE
@@ -47,10 +47,11 @@ detection. Default is 2.}
 
 \item{supported_q}{Quantile of the direct-cell transcriptomic support
 distribution used for low-expression supported candidates.
-Default is 0.25.}
+Default is 0.60.}
 
-\item{dropout_q}{Quantile of the direct-cell transcriptomic support
-distribution used for dropout rescue. Default is 0.90.}
+\item{candidate_q}{Quantile of the direct-cell transcriptomic support
+distribution used only to flag GNRH1-negative transcriptomic candidates.
+These cells are never classified as GnRH-positive. Default is 0.95.}
 
 \item{scale_factor}{Library normalization scale factor. Default is 10000.}
 
@@ -82,18 +83,28 @@ Detection integrates:
 \item adaptive transcriptomic support thresholds.
 }
 
-Classification uses three routes: \code{direct}, \code{supported}, and
-\code{dropout_rescue}. The transcriptomic support score used for the latter
-two routes is calculated independently of direct \code{GNRH1} expression.
+Classification uses two GnRH-positive routes: \code{direct} and
+\code{supported}. Both routes require detectable \code{GNRH1} expression.
+
+Cells without detected \code{GNRH1} are never classified as GnRH-positive.
+However, cells showing strong GnRH-like transcriptomic evidence can be
+flagged separately as \code{gnrh_dropout_candidate} for diagnostic
+purposes.
 
 Direct candidates require at least \code{min_umi} raw \code{GNRH1}
-counts. Supported candidates contain detectable but sub-threshold
-\code{GNRH1} and must show independent GnRH transcriptomic support.
+counts.
 
-Dropout-rescue candidates contain no detected \code{GNRH1} and therefore
-require stronger GnRH-associated transcriptomic evidence, strong
-neighborhood support, and absence of a dominant alternative neuronal
-program.
+Supported candidates contain detectable but sub-threshold \code{GNRH1}
+and additionally require independent GnRH identity and transcriptomic
+support.
+
+Cells with no detected \code{GNRH1} are not classified as GnRH-positive,
+regardless of their transcriptomic support score. Strong GnRH-like
+GNRH1-negative cells may instead be flagged as
+\code{gnrh_dropout_candidate} for exploratory or diagnostic analyses.
+
+Migration-associated expression contributes supportive evidence but cannot
+independently establish GnRH identity.
 
 The main \code{gnrh_score} includes direct \code{GNRH1} information,
 whereas \code{gnrh_support_score} deliberately excludes direct

@@ -17,9 +17,13 @@
 #'   \item adaptive transcriptomic support thresholds.
 #' }
 #'
-#' Classification uses three routes: \code{direct}, \code{supported}, and
-#' \code{dropout_rescue}. The transcriptomic support score used for the latter
-#' two routes is calculated independently of direct \code{GNRH1} expression.
+#' Classification uses two GnRH-positive routes: \code{direct} and
+#' \code{supported}. Both routes require detectable \code{GNRH1} expression.
+#'
+#' Cells without detected \code{GNRH1} are never classified as GnRH-positive.
+#' However, cells showing strong GnRH-like transcriptomic evidence can be
+#' flagged separately as \code{gnrh_dropout_candidate} for diagnostic
+#' purposes.
 #'
 #' @param object A Seurat object containing single-cell RNA-seq data.
 #' @param assay Assay used for expression extraction. Default is \code{"RNA"}.
@@ -37,9 +41,10 @@
 #'   \code{GNRH1} expression threshold. Default is 2.
 #' @param supported_q Quantile of the direct-cell transcriptomic support
 #'   distribution used for low-expression supported candidates.
-#'   Default is 0.25.
-#' @param dropout_q Quantile of the direct-cell transcriptomic support
-#'   distribution used for dropout rescue. Default is 0.90.
+#'   Default is 0.60.
+#' @param candidate_q Quantile of the direct-cell transcriptomic support
+#'   distribution used only to flag GNRH1-negative transcriptomic candidates.
+#'   These cells are never classified as GnRH-positive. Default is 0.95.
 #' @param scale_factor Library normalization scale factor. Default is 10000.
 #' @param max_alternative Maximum alternative identity score tolerated for
 #'   \code{GNRH1}-dropout rescue. Default is 0.75.
@@ -50,13 +55,19 @@
 #'
 #' @details
 #' Direct candidates require at least \code{min_umi} raw \code{GNRH1}
-#' counts. Supported candidates contain detectable but sub-threshold
-#' \code{GNRH1} and must show independent GnRH transcriptomic support.
+#' counts.
 #'
-#' Dropout-rescue candidates contain no detected \code{GNRH1} and therefore
-#' require stronger GnRH-associated transcriptomic evidence, strong
-#' neighborhood support, and absence of a dominant alternative neuronal
-#' program.
+#' Supported candidates contain detectable but sub-threshold \code{GNRH1}
+#' and additionally require independent GnRH identity and transcriptomic
+#' support.
+#'
+#' Cells with no detected \code{GNRH1} are not classified as GnRH-positive,
+#' regardless of their transcriptomic support score. Strong GnRH-like
+#' GNRH1-negative cells may instead be flagged as
+#' \code{gnrh_dropout_candidate} for exploratory or diagnostic analyses.
+#'
+#' Migration-associated expression contributes supportive evidence but cannot
+#' independently establish GnRH identity.
 #'
 #' The main \code{gnrh_score} includes direct \code{GNRH1} information,
 #' whereas \code{gnrh_support_score} deliberately excludes direct
@@ -79,14 +90,17 @@ detect_gnrh <- function(
     min_counts = 500,
     mad_factor = 2,
     supported_q = 0.60,
-    dropout_q = 0.95,
+    candidate_q = 0.95,
     scale_factor = 10000,
     max_alternative = 0.75,
     verbose = TRUE
 ) {
 
   log <- .msg(verbose)
-  log("==== GNRH DETECTION START ====")
+
+  log(
+    "==== GNRH DETECTION START ===="
+  )
 
   # --------------------------------------------------------------------------- #
   # Validate input
@@ -189,11 +203,9 @@ detect_gnrh <- function(
     lib
   )
 
-  amb_ratio <- (
-    raw + 1
-  ) / (
-    amb + 1
-  )
+  amb_ratio <-
+    (raw + 1) /
+    (amb + 1)
 
   # --------------------------------------------------------------------------- #
   # Module helpers
@@ -344,8 +356,11 @@ detect_gnrh <- function(
     modules = alternative_modules
   )
 
-  alternative_score <- alternative$score
-  alternative_hits <- alternative$hits
+  alternative_score <-
+    alternative$score
+
+  alternative_hits <-
+    alternative$hits
 
   # --------------------------------------------------------------------------- #
   # Neighborhood support
@@ -382,18 +397,19 @@ detect_gnrh <- function(
   # Independent transcriptomic support score
   #
   # IMPORTANT:
-  # - no direct GNRH1 expression
-  # - no ambient GNRH1 ratio
   #
-  # This score is used to evaluate supported and dropout-rescue candidates.
+  # - excludes direct GNRH1 expression;
+  # - excludes ambient GNRH1 ratio;
+  # - heavily favors GnRH identity;
+  # - migration and generic neuroendocrine programs are supportive only.
   # --------------------------------------------------------------------------- #
 
   support_score_raw <-
-    3.0 * identity_score +
-    0.75 * migration_score +
-    1.5 * neuro_score +
-    0.25 * hormone_score +
-    0.75 * log1p(knn)
+    4.0 * identity_score +
+    0.35 * migration_score +
+    0.75 * neuro_score +
+    0.10 * hormone_score +
+    0.35 * log1p(knn)
 
   support_score <- .scale0(
     support_score_raw
@@ -417,7 +433,7 @@ detect_gnrh <- function(
       mad_factor *
       stats::mad(nz)
 
-  } else if (length(nz)) {
+  } else if (length(nz) > 0L) {
 
     as.numeric(
       stats::quantile(
@@ -441,15 +457,56 @@ detect_gnrh <- function(
     mig = mig_hits,
     neuro = neuro_hits,
 
-    identity_primary = identity_primary_hits,
-    identity_supportive = identity_supportive_hits,
+    identity_primary =
+      identity_primary_hits,
 
-    migration_primary = migration_primary_hits,
-    migration_supportive = migration_supportive_hits,
+    identity_supportive =
+      identity_supportive_hits,
 
-    neuro_primary = neuro_primary_hits,
-    neuro_supportive = neuro_supportive_hits
+    migration_primary =
+      migration_primary_hits,
+
+    migration_supportive =
+      migration_supportive_hits,
+
+    neuro_primary =
+      neuro_primary_hits,
+
+    neuro_supportive =
+      neuro_supportive_hits
   )
+
+  # --------------------------------------------------------------------------- #
+  # GnRH identity gates
+  #
+  # These gates prevent migration or generic neuroendocrine programs from
+  # independently defining a GnRH candidate.
+  # --------------------------------------------------------------------------- #
+
+  identity_strong <-
+    identity_primary_hits >= 2L |
+    (
+      identity_primary_hits >= 1L &
+        identity_supportive_hits >= 2L
+    )
+
+  identity_moderate <-
+    identity_primary_hits >= 1L |
+    identity_supportive_hits >= 2L
+
+  neuro_support <-
+    neuro_primary_hits >= 1L |
+    neuro_supportive_hits >= 2L
+
+  migration_support <-
+    migration_primary_hits >= 1L
+
+  independent_support <-
+    identity_strong |
+    (
+      identity_moderate &
+        neuro_support
+    )
 
   # --------------------------------------------------------------------------- #
   # Classification
@@ -467,13 +524,18 @@ detect_gnrh <- function(
     min_counts = min_counts,
 
     supported_q = supported_q,
-    dropout_q = dropout_q,
+    candidate_q = candidate_q,
 
     expr_thr = expr_thr,
+
     knn = knn,
 
     alternative_score = alternative_score,
-    max_alternative = max_alternative
+    max_alternative = max_alternative,
+
+    identity_strong = identity_strong,
+    identity_moderate = identity_moderate,
+    independent_support = independent_support
   )
 
   # --------------------------------------------------------------------------- #
@@ -492,22 +554,76 @@ detect_gnrh <- function(
     cls$class,
     levels = c(
       "neg",
-      "dropout_rescue",
       "supported",
       "direct"
     )
   )
 
+  # Direct-cell diagnostic subclass.
+  object$gnrh_direct_supported <-
+    cls$direct_supported
+
+  object$gnrh_direct_isolated <-
+    cls$direct_isolated
+
+  # --------------------------------------------------------------------------- #
+  # Metadata: classification
+  # --------------------------------------------------------------------------- #
+
+  object$gnrh_status <- factor(
+    cls$status,
+    levels = c(
+      "neg",
+      "pos"
+    )
+  )
+
+  object$gnrh_class <- factor(
+    cls$class,
+    levels = c(
+      "neg",
+      "supported",
+      "direct"
+    )
+  )
+
+  # Direct-cell diagnostic subclasses.
+  object$gnrh_direct_supported <-
+    cls$direct_supported
+
+  object$gnrh_direct_isolated <-
+    cls$direct_isolated
+
+  # GNRH1-negative transcriptomic candidate.
+  # Diagnostic only: these cells remain gnrh_status == "neg".
+  object$gnrh_dropout_candidate <-
+    cls$dropout_candidate
+
   # --------------------------------------------------------------------------- #
   # Metadata: scores
   # --------------------------------------------------------------------------- #
 
-  object$gnrh_score <- score
+  object$gnrh_score <-
+    score
 
-  object$gnrh_support_score <- support_score
+  object$gnrh_support_score <-
+    support_score
 
-  object$gnrh_expr <- norm
-  object$gnrh_raw <- raw
+  # --------------------------------------------------------------------------- #
+  # Metadata: scores
+  # --------------------------------------------------------------------------- #
+
+  object$gnrh_score <-
+    score
+
+  object$gnrh_support_score <-
+    support_score
+
+  object$gnrh_expr <-
+    norm
+
+  object$gnrh_raw <-
+    raw
 
   object$gnrh_identity_score <- .scale0(
     identity_score
@@ -529,26 +645,71 @@ detect_gnrh <- function(
     guidance_environment
   )
 
-  object$gnrh_alternative_score <- alternative_score
+  object$gnrh_alternative_score <-
+    alternative_score
 
   # --------------------------------------------------------------------------- #
   # Metadata: marker hits
   # --------------------------------------------------------------------------- #
 
-  object$gnrh_core_hits <- core_hits
+  object$gnrh_core_hits <-
+    core_hits
 
   object$gnrh_identity_primary_hits <-
     identity_primary_hits
 
-  object$gnrh_mig_hits <- mig_hits
-  object$gnrh_neuro_hits <- neuro_hits
+  object$gnrh_identity_supportive_hits <-
+    identity_supportive_hits
+
+  object$gnrh_mig_hits <-
+    mig_hits
+
+  object$gnrh_migration_primary_hits <-
+    migration_primary_hits
+
+  object$gnrh_migration_supportive_hits <-
+    migration_supportive_hits
+
+  object$gnrh_neuro_hits <-
+    neuro_hits
+
+  object$gnrh_neuro_primary_hits <-
+    neuro_primary_hits
+
+  object$gnrh_neuro_supportive_hits <-
+    neuro_supportive_hits
 
   object$gnrh_alternative_hits <-
     alternative_hits
 
-  object$gnrh_knn <- knn
+  object$gnrh_knn <-
+    knn
 
-  object@misc$gnrh_gene <- gnrh_gene
+  # --------------------------------------------------------------------------- #
+  # Metadata: biological gates
+  # --------------------------------------------------------------------------- #
+
+  object$gnrh_identity_moderate <-
+    identity_moderate
+
+  object$gnrh_identity_strong <-
+    identity_strong
+
+  object$gnrh_neuro_support <-
+    neuro_support
+
+  object$gnrh_migration_support <-
+    migration_support
+
+  object$gnrh_independent_support <-
+    independent_support
+
+  # --------------------------------------------------------------------------- #
+  # Store detected GnRH gene
+  # --------------------------------------------------------------------------- #
+
+  object@misc$gnrh_gene <-
+    gnrh_gene
 
   # --------------------------------------------------------------------------- #
   # High-confidence classification
@@ -577,34 +738,66 @@ detect_gnrh <- function(
     mad_factor = mad_factor,
 
     supported_q = supported_q,
-    dropout_q = dropout_q,
+    candidate_q = candidate_q,
 
     scale_factor = scale_factor,
 
     expr_thr = expr_thr,
 
-    supported_thr = cls$supported_thr,
-    dropout_thr = cls$dropout_thr,
+    supported_thr =
+      cls$supported_thr,
 
-    max_alternative = max_alternative,
+    dropout_thr =
+      cls$dropout_thr,
+
+    knn_support_thr =
+      cls$knn_support_thr,
+
+    knn_strong_thr =
+      cls$knn_strong_thr,
+
+    max_alternative =
+      max_alternative,
 
     module_weights = c(
       identity_primary = 3.0,
       identity_supportive = 1.5,
+
       migration_primary = 1.0,
       migration_supportive = 0.5,
+
       neuroendocrine_primary = 1.5,
       neuroendocrine_supportive = 0.75,
+
       hormone_supportive = 0.25,
+
       guidance_environment = 0
     ),
 
     support_weights = c(
-      identity = 3.0,
-      migration = 0.75,
-      neuroendocrine = 1.5,
-      hormone = 0.25,
-      knn = 0.75
+      identity = 4.0,
+      migration = 0.35,
+      neuroendocrine = 0.75,
+      hormone = 0.10,
+      knn = 0.35
+    ),
+
+    identity_rules = list(
+      moderate = paste0(
+        "identity_primary_hits >= 1 OR ",
+        "identity_supportive_hits >= 2"
+      ),
+
+      strong = paste0(
+        "identity_primary_hits >= 2 OR ",
+        "(identity_primary_hits >= 1 AND ",
+        "identity_supportive_hits >= 2)"
+      ),
+
+      independent_support = paste0(
+        "identity_strong OR ",
+        "(identity_moderate AND neuro_support)"
+      )
     )
   )
 
@@ -612,7 +805,8 @@ detect_gnrh <- function(
   # Store modules
   # --------------------------------------------------------------------------- #
 
-  object@misc$gnrh_modules <- modules
+  object@misc$gnrh_modules <-
+    modules
 
   object@misc$gnrh_alternative_modules <-
     alternative_modules
@@ -643,7 +837,9 @@ detect_gnrh <- function(
     verbose = verbose
   )
 
-  log("==== GNRH DETECTION DONE ====")
+  log(
+    "==== GNRH DETECTION DONE ===="
+  )
 
   object
 }

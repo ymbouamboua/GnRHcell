@@ -16,33 +16,32 @@
   modules <- list(
     identity = list(
       primary = c(
-        #"GNRH1",
         "FEZF1",
-        "ISL1"
+        "ISL1",
+        "SIX6"
       ),
       supportive = c(
         "OTX2",
         "SIX3",
-        "SIX6",
         "DLX1",
         "DLX2",
         "DLX5",
-        "DLX6"
+        "DLX6",
+        "PBX3"
       )
     ),
     migration = list(
       primary = c(
         "PROKR2",
-        "NRP1",
-        "NRP2",
-        "PLXNA1",
-        "ROBO1",
-        "ROBO2",
-        "ROBO3",
-        "CXCR4",
-        "NSMF"
+        "NSMF",
+        "ROBO3"
       ),
       supportive = c(
+        "NRP1",
+        "NRP2",
+        "ROBO1",
+        "ROBO2",
+        "CXCR4",
         "L1CAM",
         "DCX"
       )
@@ -105,8 +104,9 @@
 #' Defines neuronal and neuroendocrine programs that may partially overlap
 #' with GnRH-associated transcriptional programs.
 #'
-#' These modules are used only to guard against false-positive dropout rescue
-#' and do not penalize cells with direct \code{GNRH1} evidence.
+#' These modules do not reject cells with detectable \code{GNRH1}. They are
+#' used only when identifying exploratory GNRH1-negative transcriptomic
+#' candidates.
 #'
 #' @param genes Character vector containing genes available in the expression
 #'   matrix.
@@ -306,30 +306,24 @@
       "PTPRN",
       "BAIAP3",
       "ECEL1",
-      "SCG2", "SCG5",
-      "SYP",
-      "VAMP2",
-      "SNAP25",
-      "RAB3A", "RAB3B", "RAB3C",
+      "SCG2",
+      "SCG5",
       "HCN1",
-      "NALCN",
-      "SCN3A",
-      "GAD1"
+      "NALCN"
     ), genes),
 
     secreting = .match_genes(c(
-      "PCSK1", "PCSK2",
+      "PCSK1",
+      "PCSK2",
       "CPE",
-      "CHGA", "CHGB",
+      "CHGA",
+      "CHGB",
       "VGF",
-      "SCG2", "SCG5",
+      "SCG2",
+      "SCG5",
       "PTPRN",
       "BAIAP3",
-      "DOC2B",
-      "SYT1",
-      "STX1A",
-      "FOS", "JUN", "EGR1",
-      "ESR1", "PGR", "AR"
+      "DOC2B"
     ), genes)
   )
 }

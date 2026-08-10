@@ -208,51 +208,87 @@
 }
 
 
-#' Compute high-confidence GnRH confident labels
+#' Compute high-confidence GnRH classification
 #'
-#' Internal helper that derives high-confidence GnRH confident labels
-#' from marker hits and raw GnRH expression.
-#'
-#' A cell is labeled \code{"pos"} when it has at least two core
-#' marker hits, at least one migration or neuroendocrine marker hit,
-#' and raw GnRH expression greater than or equal to \code{min_umi}.
-#'
-#' @param md Metadata data frame containing GnRH detection columns.
-#' @param min_umi Minimum raw GnRH UMI count required.
-#'
-#' @return Factor vector with levels \code{"neg"} and \code{"pos"}.
+#' High-confidence GnRH cells must contain detected GNRH1.
 #'
 #' @keywords internal
 #' @noRd
-.compute_gnrh_confident <- function(md, min_umi) {
+.compute_gnrh_confident <- function(
+    metadata,
+    min_umi = 2
+) {
 
   required <- c(
-    "gnrh_core_hits",
-    "gnrh_mig_hits",
-    "gnrh_neuro_hits",
-    "gnrh_raw"
+    "gnrh_class",
+    "gnrh_raw",
+    "gnrh_identity_moderate"
   )
 
-  missing <- setdiff(required, colnames(md))
+  missing <- setdiff(
+    required,
+    colnames(metadata)
+  )
 
-  if (length(missing) > 0) {
+  if (length(missing) > 0L) {
     stop(
-      "Missing required columns for gnrh_confident: ",
-      paste(missing, collapse = ", ")
+      "Missing metadata columns required for confidence classification: ",
+      paste(
+        missing,
+        collapse = ", "
+      ),
+      call. = FALSE
     )
   }
 
-  gnrh_confident <- (
-    md$gnrh_core_hits >= 2 &
-      (md$gnrh_mig_hits >= 1 | md$gnrh_neuro_hits >= 1) &
-      md$gnrh_raw >= min_umi
+  gnrh_class <- as.character(
+    metadata$gnrh_class
   )
 
-  factor(
-    ifelse(gnrh_confident, "pos", "neg"),
-    levels = c("neg", "pos")
-  )
+  gnrh_raw <- metadata$gnrh_raw
+
+  identity_moderate <-
+    !is.na(metadata$gnrh_identity_moderate) &
+    metadata$gnrh_identity_moderate
+
+  # --------------------------------------------------------------------------- #
+  # Direct candidates
+  # --------------------------------------------------------------------------- #
+
+  direct_confident <-
+    gnrh_class == "direct" &
+    (
+      identity_moderate |
+        gnrh_raw >= (min_umi + 1L)
+    )
+
+  # --------------------------------------------------------------------------- #
+  # Supported candidates
+  #
+  # Supported cells already passed independent identity and support gates
+  # during classification.
+  # --------------------------------------------------------------------------- #
+
+  supported_confident <-
+    gnrh_class == "supported" &
+    identity_moderate
+
+  # --------------------------------------------------------------------------- #
+  # Final confidence
+  # --------------------------------------------------------------------------- #
+
+  confident <-
+    direct_confident |
+    supported_confident
+
+  confident[
+    is.na(confident)
+  ] <- FALSE
+
+  confident
 }
+
+
 
 
 #' Add total GnRH marker hit summaries

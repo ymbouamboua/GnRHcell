@@ -139,8 +139,12 @@ devtools::install_github("ymbouamboua/GnRHcell")
 ## Quick start
 
 ```{r quick-start, eval=FALSE}
-library(GnRHcell)
-library(Seurat)
+suppressPackageStartupMessages({
+  suppressWarnings({
+    library(GnRHcell)
+    library(Seurat)
+  })
+})
 
 # `obj` is a normalized Seurat object with a dimensional reduction.
 obj <- run_gnrh(obj)
@@ -165,7 +169,6 @@ obj[[]][
     "gnrh_class",
     "gnrh_support_score",
     "gnrh_identity_score",
-    "gnrh_exclusion_score",
     "gnrh_stage"
   )
 ] |>
@@ -176,7 +179,7 @@ obj[[]][
 
 ### Embedding
 
-```{r embedding, eval=FALSE}
+```{r embedding, eval=FALSE, fig.width=14, fig.height=4}
 plot_gnrh_embedding(
   obj,
   group.by = c(
@@ -190,7 +193,7 @@ plot_gnrh_embedding(
 
 ### Feature expression
 
-```{r features, eval=FALSE}
+```{r features, eval=FALSE, fig.width=14, fig.height=4}
 plot_gnrh_feature(
   obj,
   feature_type = "all",
@@ -213,7 +216,7 @@ plot_gnrh_distribution(
 
 ### Diagnostic report
 
-```{r report, eval=FALSE}
+```{r report, eval=FALSE, fig.width=14, fig.height=10}
 gnrh_report(obj)
 ```
 
@@ -226,9 +229,10 @@ Identify genes enriched in confident GnRH cells relative to a biologically relev
 ```{r markers, eval=FALSE}
 genes <- find_gnrh_genes(
   object = obj,
-  annotation_col = "ann1",
-  control_label = "Neuronal",
-  donor_col = "status"
+  annotation_col = "ann2",
+  status_col = "gnrh_status",
+  control_ident = "GLU",
+  donor_col = "orig.ident"
 )
 
 head(genes$candidates)
