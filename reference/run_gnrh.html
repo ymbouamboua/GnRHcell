@@ -66,75 +66,29 @@ developmental staging, diagnostics, and runtime reporting.</p>
 
 
 <dt id="arg-detect">detect<a class="anchor" aria-label="anchor" href="#arg-detect"></a></dt>
-<dd><p>Logical; run GnRH detection.
-Default is <code>TRUE</code>.</p></dd>
+<dd><p>Logical; run GnRH detection. Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-stage">stage<a class="anchor" aria-label="anchor" href="#arg-stage"></a></dt>
-<dd><p>Logical; run developmental staging.
-Default is <code>TRUE</code>.</p></dd>
+<dd><p>Logical; run developmental staging. Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-diagnostics">diagnostics<a class="anchor" aria-label="anchor" href="#arg-diagnostics"></a></dt>
-<dd><p>Logical; run diagnostic analysis.
-Default is <code>TRUE</code>.</p></dd>
+<dd><p>Logical; run diagnostic analysis. Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Logical; print progress messages.
-Default is <code>TRUE</code>.</p></dd>
+<dd><p>Logical; print progress messages. Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to
-<code><a href="detect_gnrh.html">detect_gnrh</a></code>.</p></dd>
+<dd><p>Additional arguments passed to <code><a href="detect_gnrh.html">detect_gnrh</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A Seurat object updated with GnRH detection,
 developmental staging, diagnostics, and runtime metadata.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The pipeline can perform:</p><ul><li><p>GnRH neuron detection via <code><a href="detect_gnrh.html">detect_gnrh</a></code></p></li>
-<li><p>developmental stage assignment via <code><a href="stage_gnrh.html">stage_gnrh</a></code></p></li>
-<li><p>diagnostic analysis via <code><a href="gnrh_diagnostics.html">gnrh_diagnostics</a></code></p></li>
-</ul><p>Runtime metrics, dataset summaries, analysis parameters,
-and session information are stored in
-<code>object@misc$gnrh$run_info</code>.</p>
-<p>Workflow steps:</p><ol><li><p>GnRH detection using transcriptomic and marker-based scoring</p></li>
-<li><p>developmental state assignment</p></li>
-<li><p>diagnostic performance evaluation</p></li>
-<li><p>runtime and summary reporting</p></li>
-</ol><p>Metadata added may include:</p><dl><dt><code>gnrh_status</code></dt>
-<dd><p>Binary GnRH classification.</p></dd>
-
-<dt><code>gnrh_class</code></dt>
-<dd><p>Internal classification labels.</p></dd>
-
-<dt><code>gnrh_truth</code></dt>
-<dd><p>High-confidence truth labels.</p></dd>
-
-<dt><code>gnrh_stage</code></dt>
-<dd><p>Developmental stage assignments.</p></dd>
-
-
-</dl><p>Stored runtime metadata:</p><dl><dt><code>detect_sec</code></dt>
-<dd><p>Detection runtime in seconds.</p></dd>
-
-<dt><code>stage_sec</code></dt>
-<dd><p>Staging runtime in seconds.</p></dd>
-
-<dt><code>diagnostics_sec</code></dt>
-<dd><p>Diagnostics runtime in seconds.</p></dd>
-
-<dt><code>total_sec</code></dt>
-<dd><p>Total pipeline runtime.</p></dd>
-
-
-</dl><p>If specific steps are disabled, only selected workflow components
-are executed.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -144,21 +98,6 @@ are executed.</p>
 <code><a href="extract_gnrh_run_info.html">extract_gnrh_run_info</a></code></p></div>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">run_gnrh</span><span class="op">(</span><span class="va">seurat_obj</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu">run_gnrh</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">seurat_obj</span>,</span></span>
-<span class="r-in"><span>  detect <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  stage <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  diagnostics <span class="op">=</span> <span class="cn">TRUE</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -10,7 +10,9 @@ stage_gnrh(
   object,
   assay = "RNA",
   layer = "data",
-  min_migration_hits = 1L,
+  min_migration_hits = 2L,
+  min_secretory_core_hits = 1L,
+  min_secretory_supportive_hits = 2L,
   verbose = TRUE
 )
 ```
@@ -23,110 +25,132 @@ stage_gnrh(
 
 - assay:
 
-  Assay used for expression extraction. Default is `"RNA"`.
+  Assay used for developmental and secretory module scoring. Default is
+  `"RNA"`.
 
 - layer:
 
-  Expression layer used for developmental module scoring. Default is
-  `"data"`.
+  Expression layer used for module scoring. Default is `"data"`.
 
 - min_migration_hits:
 
   Minimum number of expressed migration-core markers required to retain
-  a raw `migrating` assignment. Default is `1L`.
+  a raw `migrating` assignment. Default is `2L`.
+
+- min_secretory_core_hits:
+
+  Minimum number of core secretory markers required before secretory
+  support can be assigned. Default is `1L`.
+
+- min_secretory_supportive_hits:
+
+  Minimum number of supportive secretory markers required when only one
+  core secretory marker is detected. Default is `2L`.
 
 - verbose:
 
-  Logical; print progress messages. Default is `TRUE`.
+  Logical. Retained for API consistency. Progress reporting is normally
+  handled by
+  [`run_gnrh`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh.md).
 
 ## Value
 
-A Seurat object updated with:
+A Seurat object containing developmental stage assignments,
+developmental scores, migration-core evidence, and independent secretory
+transcriptional support.
+
+Added metadata include:
 
 - `gnrh_stage_raw`:
 
-  Developmental stage assigned directly from the maximum module score.
+  Developmental stage assigned directly from the maximum developmental
+  module score.
 
 - `gnrh_stage`:
 
-  Final developmental stage after migration validation and masking of
-  non-GnRH cells.
+  Final developmental stage after migration-core validation and masking
+  of GnRH-negative cells.
 
 - `gnrh_stage_reassigned`:
 
   Logical indicator specifying whether the raw developmental stage was
-  reassigned during migration validation.
+  reassigned.
 
 - `gnrh_stage_reason`:
 
-  Reason for the final stage assignment.
+  Reason for the final developmental-stage assignment.
 
 - `gnrh_migration_core_hits`:
 
   Number of expressed migration-core markers detected per cell.
 
-- `gnrh_identity_score`:
+- `gnrh_secretory_core_hits`:
 
-  Identity module score.
+  Number of expressed core secretory markers detected per cell.
 
-- `gnrh_migrating_score`:
+- `gnrh_secretory_supportive_hits`:
 
-  Migration module score.
+  Number of expressed supportive secretory markers detected per cell.
 
-- `gnrh_mature_score`:
+- `gnrh_secretory_hits`:
 
-  Mature neuroendocrine module score.
+  Total number of core and supportive secretory markers detected.
 
-- `gnrh_secreting_score`:
+- `gnrh_secretory`:
 
-  Secretory activity module score.
-
-Developmental module definitions, migration-core markers, and staging
-parameters are stored in:
-
-- `object@misc$gnrh_stage_modules`
-
-- `object@misc$gnrh_migration_core`
-
-- `object@misc$gnrh_stage_parameters`
+  Independent transcriptional support for secretory machinery,
+  classified as `limited`, `supported`, or `non-gnrh`.
 
 ## Details
 
-Cells are scored against predefined developmental modules representing
-major GnRH neuron states:
+Developmental staging is based on three mutually exclusive states:
 
-- `identity`: lineage specification and early GnRH identity
+- `identity`: lineage specification and early GnRH identity;
 
-- `migrating`: migration and axon-guidance programs
+- `migrating`: migration and axon-guidance programs; and
 
-- `mature`: neuroendocrine maturation
+- `mature`: neuroendocrine maturation.
 
-- `secreting`: secretory and vesicle machinery activation
+Secretory machinery is evaluated independently from developmental stage.
+This allows cells to retain a developmental annotation such as
+`migrating` or `mature` while independently receiving evidence for a
+neuroendocrine secretory transcriptional program.
 
-A raw developmental stage is first assigned from the highest module
-score. Migration assignments are then validated using migration-specific
-marker evidence. Cells initially assigned as `migrating` but lacking the
-required number of migration-core marker hits are reassigned to the
-highest-scoring alternative stage.
+A raw developmental stage is first assigned from the highest
+developmental module score. Raw `migrating` assignments are then
+validated using a curated migration-core marker set. Cells lacking
+sufficient migration-core evidence are reassigned to the highest-scoring
+alternative developmental stage.
 
-If GnRH classification metadata are present, non-GnRH cells are labeled
-as `non-gnrh` in the final stage assignment.
+Secretory support requires expression of at least one core secretory
+marker together with either an additional core marker or sufficient
+supportive secretory evidence. The resulting annotation is classified as
+`limited` or `supported`.
 
-Developmental staging is based on predefined transcriptional programs
-reflecting known biological states of GnRH neuron development.
+Cells classified as GnRH-negative by
+[`detect_gnrh`](https://ymbouamboua.github.io/GnRHcell/reference/detect_gnrh.md)
+are labeled `non-gnrh` in both developmental-stage and secretory
+annotations.
 
-Raw stage assignments are obtained from the highest developmental module
-score. Because general neuronal and axon-guidance genes can produce
-elevated migration scores in mature neurons, raw `migrating` assignments
-require additional migration-core evidence.
+Developmental stage and secretory support are intentionally modeled as
+separate dimensions. Secretory-program expression therefore does not
+replace or override the developmental-stage assignment.
 
-Cells failing this migration criterion are reassigned to the
-highest-scoring stage among `identity`, `mature`, and `secreting`.
+A raw `migrating` assignment is retained only when at least
+`min_migration_hits` migration-core markers are detected. Otherwise, the
+cell is reassigned to the highest-scoring alternative developmental
+state among `identity` and `mature`.
 
-If `gnrh_status` metadata are present from
-[`detect_gnrh`](https://ymbouamboua.github.io/GnRHcell/reference/detect_gnrh.md),
-cells classified as negative are labeled `non-gnrh` in the final stage
-assignment.
+Secretory support is assigned when the cell expresses at least
+`min_secretory_core_hits` core secretory markers and either:
+
+- at least two core secretory markers; or
+
+- at least `min_secretory_supportive_hits` supportive secretory markers.
+
+The secretory annotation reflects transcriptional support for
+neuroendocrine secretory machinery and should not be interpreted as a
+direct measurement of GnRH peptide release.
 
 ## See also
 
