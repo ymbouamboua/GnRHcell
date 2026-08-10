@@ -18,7 +18,7 @@ detect_gnrh(
   min_counts = 500,
   mad_factor = 2,
   supported_q = 0.6,
-  dropout_q = 0.95,
+  candidate_q = 0.95,
   scale_factor = 10000,
   max_alternative = 0.75,
   verbose = TRUE
@@ -69,12 +69,13 @@ detect_gnrh(
 - supported_q:
 
   Quantile of the direct-cell transcriptomic support distribution used
-  for low-expression supported candidates. Default is 0.25.
+  for low-expression supported candidates. Default is 0.60.
 
-- dropout_q:
+- candidate_q:
 
   Quantile of the direct-cell transcriptomic support distribution used
-  for dropout rescue. Default is 0.90.
+  only to flag GNRH1-negative transcriptomic candidates. These cells are
+  never classified as GnRH-positive. Default is 0.95.
 
 - scale_factor:
 
@@ -116,18 +117,26 @@ Detection integrates:
 
 - adaptive transcriptomic support thresholds.
 
-Classification uses three routes: `direct`, `supported`, and
-`dropout_rescue`. The transcriptomic support score used for the latter
-two routes is calculated independently of direct `GNRH1` expression.
+Classification uses two GnRH-positive routes: `direct` and `supported`.
+Both routes require detectable `GNRH1` expression.
+
+Cells without detected `GNRH1` are never classified as GnRH-positive.
+However, cells showing strong GnRH-like transcriptomic evidence can be
+flagged separately as `gnrh_dropout_candidate` for diagnostic purposes.
 
 Direct candidates require at least `min_umi` raw `GNRH1` counts.
-Supported candidates contain detectable but sub-threshold `GNRH1` and
-must show independent GnRH transcriptomic support.
 
-Dropout-rescue candidates contain no detected `GNRH1` and therefore
-require stronger GnRH-associated transcriptomic evidence, strong
-neighborhood support, and absence of a dominant alternative neuronal
-program.
+Supported candidates contain detectable but sub-threshold `GNRH1` and
+additionally require independent GnRH identity and transcriptomic
+support.
+
+Cells with no detected `GNRH1` are not classified as GnRH-positive,
+regardless of their transcriptomic support score. Strong GnRH-like
+GNRH1-negative cells may instead be flagged as `gnrh_dropout_candidate`
+for exploratory or diagnostic analyses.
+
+Migration-associated expression contributes supportive evidence but
+cannot independently establish GnRH identity.
 
 The main `gnrh_score` includes direct `GNRH1` information, whereas
 `gnrh_support_score` deliberately excludes direct `GNRH1` expression and

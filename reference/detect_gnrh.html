@@ -61,7 +61,7 @@ transcriptomic evidence.</p>
 <span>  min_counts <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  mad_factor <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  supported_q <span class="op">=</span> <span class="fl">0.6</span>,</span>
-<span>  dropout_q <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  candidate_q <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  scale_factor <span class="op">=</span> <span class="fl">10000</span>,</span>
 <span>  max_alternative <span class="op">=</span> <span class="fl">0.75</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -116,12 +116,13 @@ detection. Default is 2.</p></dd>
 <dt id="arg-supported-q">supported_q<a class="anchor" aria-label="anchor" href="#arg-supported-q"></a></dt>
 <dd><p>Quantile of the direct-cell transcriptomic support
 distribution used for low-expression supported candidates.
-Default is 0.25.</p></dd>
+Default is 0.60.</p></dd>
 
 
-<dt id="arg-dropout-q">dropout_q<a class="anchor" aria-label="anchor" href="#arg-dropout-q"></a></dt>
+<dt id="arg-candidate-q">candidate_q<a class="anchor" aria-label="anchor" href="#arg-candidate-q"></a></dt>
 <dd><p>Quantile of the direct-cell transcriptomic support
-distribution used for dropout rescue. Default is 0.90.</p></dd>
+distribution used only to flag GNRH1-negative transcriptomic candidates.
+These cells are never classified as GnRH-positive. Default is 0.95.</p></dd>
 
 
 <dt id="arg-scale-factor">scale_factor<a class="anchor" aria-label="anchor" href="#arg-scale-factor"></a></dt>
@@ -153,16 +154,23 @@ diagnostics, and detection parameters.</p>
 <li><p>ambient RNA information;</p></li>
 <li><p>neighborhood enrichment using k-nearest neighbors; and</p></li>
 <li><p>adaptive transcriptomic support thresholds.</p></li>
-</ul><p>Classification uses three routes: <code>direct</code>, <code>supported</code>, and
-<code>dropout_rescue</code>. The transcriptomic support score used for the latter
-two routes is calculated independently of direct <code>GNRH1</code> expression.</p>
+</ul><p>Classification uses two GnRH-positive routes: <code>direct</code> and
+<code>supported</code>. Both routes require detectable <code>GNRH1</code> expression.</p>
+<p>Cells without detected <code>GNRH1</code> are never classified as GnRH-positive.
+However, cells showing strong GnRH-like transcriptomic evidence can be
+flagged separately as <code>gnrh_dropout_candidate</code> for diagnostic
+purposes.</p>
 <p>Direct candidates require at least <code>min_umi</code> raw <code>GNRH1</code>
-counts. Supported candidates contain detectable but sub-threshold
-<code>GNRH1</code> and must show independent GnRH transcriptomic support.</p>
-<p>Dropout-rescue candidates contain no detected <code>GNRH1</code> and therefore
-require stronger GnRH-associated transcriptomic evidence, strong
-neighborhood support, and absence of a dominant alternative neuronal
-program.</p>
+counts.</p>
+<p>Supported candidates contain detectable but sub-threshold <code>GNRH1</code>
+and additionally require independent GnRH identity and transcriptomic
+support.</p>
+<p>Cells with no detected <code>GNRH1</code> are not classified as GnRH-positive,
+regardless of their transcriptomic support score. Strong GnRH-like
+GNRH1-negative cells may instead be flagged as
+<code>gnrh_dropout_candidate</code> for exploratory or diagnostic analyses.</p>
+<p>Migration-associated expression contributes supportive evidence but cannot
+independently establish GnRH identity.</p>
 <p>The main <code>gnrh_score</code> includes direct <code>GNRH1</code> information,
 whereas <code>gnrh_support_score</code> deliberately excludes direct
 <code>GNRH1</code> expression and ambient-RNA information.</p>

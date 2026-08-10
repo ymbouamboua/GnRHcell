@@ -172,8 +172,12 @@
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ymbouamboua.github.io/GnRHcell/">GnRHcell</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ymbouamboua.github.io/GnRHcell/">GnRHcell</a></span><span class="op">)</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># `obj` is a normalized Seurat object with a dimensional reduction.</span></span>
 <span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh.html">run_gnrh</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
@@ -192,7 +196,6 @@
 <span>    <span class="st">"gnrh_class"</span>,</span>
 <span>    <span class="st">"gnrh_support_score"</span>,</span>
 <span>    <span class="st">"gnrh_identity_score"</span>,</span>
-<span>    <span class="st">"gnrh_exclusion_score"</span>,</span>
 <span>    <span class="st">"gnrh_stage"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">]</span> <span class="op">|&gt;</span></span>
@@ -253,9 +256,10 @@
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/find_gnrh_genes.html">find_gnrh_genes</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">obj</span>,</span>
-<span>  annotation_col <span class="op">=</span> <span class="st">"ann1"</span>,</span>
-<span>  control_label <span class="op">=</span> <span class="st">"Neuronal"</span>,</span>
-<span>  donor_col <span class="op">=</span> <span class="st">"status"</span></span>
+<span>  annotation_col <span class="op">=</span> <span class="st">"ann2"</span>,</span>
+<span>  status_col <span class="op">=</span> <span class="st">"gnrh_status"</span>,</span>
+<span>  control_ident <span class="op">=</span> <span class="st">"GLU"</span>,</span>
+<span>  donor_col <span class="op">=</span> <span class="st">"orig.ident"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">genes</span><span class="op">$</span><span class="va">candidates</span><span class="op">)</span></span></code></pre></div>

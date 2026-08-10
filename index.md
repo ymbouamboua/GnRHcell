@@ -130,8 +130,12 @@ devtools::install_github("ymbouamboua/GnRHcell")
 
 ``` r
 
-library(GnRHcell)
-library(Seurat)
+suppressPackageStartupMessages({
+  suppressWarnings({
+    library(GnRHcell)
+    library(Seurat)
+  })
+})
 
 # `obj` is a normalized Seurat object with a dimensional reduction.
 obj <- run_gnrh(obj)
@@ -160,7 +164,6 @@ obj[[]][
     "gnrh_class",
     "gnrh_support_score",
     "gnrh_identity_score",
-    "gnrh_exclusion_score",
     "gnrh_stage"
   )
 ] |>
@@ -229,9 +232,10 @@ biologically relevant control population:
 
 genes <- find_gnrh_genes(
   object = obj,
-  annotation_col = "ann1",
-  control_label = "Neuronal",
-  donor_col = "status"
+  annotation_col = "ann2",
+  status_col = "gnrh_status",
+  control_ident = "GLU",
+  donor_col = "orig.ident"
 )
 
 head(genes$candidates)
