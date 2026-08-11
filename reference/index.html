@@ -21,6 +21,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Vignettes</h6></li>
+    <li><a class="dropdown-item" href="../articles/demo-results.html">Demo results and visualization gallery</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -58,11 +59,113 @@
           <code><a href="gnrh_report.html">gnrh_report()</a></code>
 
         </dt>
-        <dd>Generate a comprehensive GnRH diagnostic report</dd>
+        <dd>Generate a publication-ready GnRHcell diagnostic report</dd>
+      </dl></div><div class="section level2">
+      <h2 id="gnrh-neuron-detection-and-staging">GnRH-neuron detection and staging<a class="anchor" aria-label="anchor" href="#gnrh-neuron-detection-and-staging"></a></h2>
+
+      <div class="section-desc"><p>Input validation, detection, classification, and developmental-stage assignment.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="validate_input.html">validate_input()</a></code>
+
+        </dt>
+        <dd>Validate input Seurat object for GnRH analysis</dd>
+
+        <dt>
+
+          <code><a href="detect_gnrh.html">detect_gnrh()</a></code>
+
+        </dt>
+        <dd>Detect GnRH neurons from single-cell RNA-seq data</dd>
+
+        <dt>
+
+          <code><a href="stage_gnrh.html">stage_gnrh()</a></code>
+
+        </dt>
+        <dd>Stage GnRH lineage cells</dd>
+
+        <dt>
+
+          <code><a href="gnrh_diagnostics.html">gnrh_diagnostics()</a></code>
+
+        </dt>
+        <dd>Run GnRH detection diagnostics</dd>
+      </dl></div><div class="section level2">
+      <h2 id="marker-discovery-and-biological-programs">Marker discovery and biological programs<a class="anchor" aria-label="anchor" href="#marker-discovery-and-biological-programs"></a></h2>
+
+      <div class="section-desc"><p>GnRH-lineage and stage-specific marker discovery, developmental programs, co-expression, and cross-dataset overlap.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="gnrh_markers.html">gnrh_markers()</a></code>
+
+        </dt>
+        <dd>Detect positive GnRH lineage markers</dd>
+
+        <dt>
+
+          <code><a href="find_gnrh_genes.html">find_gnrh_genes()</a></code>
+
+        </dt>
+        <dd>Identify specific and reproducible GnRH-expressed genes</dd>
+
+        <dt>
+
+          <code><a href="find_gnrh_stage_markers.html">find_gnrh_stage_markers()</a></code>
+
+        </dt>
+        <dd>Identify stage-specific markers in GnRH-lineage cells</dd>
+
+        <dt>
+
+          <code><a href="gnrh_stage_modules.html">gnrh_stage_modules()</a></code>
+
+        </dt>
+        <dd>Default GnRH developmental marker programs</dd>
+
+        <dt>
+
+          <code><a href="gnrh_stage_gene_references.html">gnrh_stage_gene_references()</a></code>
+
+        </dt>
+        <dd>GnRH developmental marker gene references</dd>
+
+        <dt>
+
+          <code><a href="build_gene_sets.html">build_gene_sets()</a></code>
+
+        </dt>
+        <dd>Build gene sets from marker tables</dd>
+
+        <dt>
+
+          <code><a href="gnrh_gene_upset.html">gnrh_gene_upset()</a></code>
+
+        </dt>
+        <dd>Gene Set Overlap Analysis and Visualization</dd>
+
+        <dt>
+
+          <code><a href="gnrh_marker_programs.html">gnrh_marker_programs()</a></code>
+
+        </dt>
+        <dd>Classify GnRH marker candidates into developmental programs</dd>
       </dl></div><div class="section level2">
       <h2 id="multi-dataset-workflows">Multi-dataset workflows<a class="anchor" aria-label="anchor" href="#multi-dataset-workflows"></a></h2>
 
-      <div class="section-desc"><p>Functions for preparing, processing, comparing, and validating collections of single-cell datasets with GnRHcell.</p></div>
+      <div class="section-desc"><p>Preparation, processing, comparison, and validation of single-cell dataset collections.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -103,138 +206,8 @@
 
         </dt>
         <dd>Validate a GnRHcell multi-dataset collection</dd>
-      </dl></div><div class="section level2">
-      <h2 id="gnrh-neuron-detection-and-staging">GnRH-neuron detection and staging<a class="anchor" aria-label="anchor" href="#gnrh-neuron-detection-and-staging"></a></h2>
-
-      <div class="section-desc"><p>Detection, classification, input validation, and developmental-stage assignment.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="detect_gnrh.html">detect_gnrh()</a></code>
-
-        </dt>
-        <dd>Detect GnRH neurons from single-cell RNA-seq data</dd>
 
         <dt>
-
-          <code><a href="stage_gnrh.html">stage_gnrh()</a></code>
-
-        </dt>
-        <dd>Stage GnRH lineage cells</dd>
-
-        <dt>
-
-          <code><a href="validate_input.html">validate_input()</a></code>
-
-        </dt>
-        <dd>Validate input Seurat object for GnRH analysis</dd>
-      </dl></div><div class="section level2">
-      <h2 id="marker-discovery-and-programs">Marker discovery and programs<a class="anchor" aria-label="anchor" href="#marker-discovery-and-programs"></a></h2>
-
-      <div class="section-desc"><p>Identification of GnRH-specific genes, marker programs, co-expression patterns, and cross-dataset overlap.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="find_gnrh_genes.html">find_gnrh_genes()</a></code>
-
-        </dt>
-        <dd>Identify specific and reproducible GnRH-expressed genes</dd>
-
-        <dt>
-
-          <code><a href="gene_upset.html">gene_upset()</a></code>
-
-        </dt>
-        <dd>Gene Set Overlap Analysis and Visualization</dd>
-
-        <dt>
-
-          <code><a href="gnrh_stage_gene_references.html">gnrh_stage_gene_references()</a></code>
-
-        </dt>
-        <dd>GnRH developmental marker gene references</dd>
-
-        <dt>
-
-          <code><a href="gnrh_marker_programs.html">gnrh_marker_programs()</a></code>
-
-        </dt>
-        <dd>Classify GnRH marker candidates into developmental programs</dd>
-
-        <dt>
-
-          <code><a href="gnrh_markers.html">gnrh_markers()</a></code>
-
-        </dt>
-        <dd>Detect positive GnRH lineage markers</dd>
-
-        <dt>
-
-          <code><a href="plot_gnrh_marker_programs.html">plot_gnrh_marker_programs()</a></code>
-
-        </dt>
-        <dd>Plot GnRH Marker Program Results</dd>
-
-        <dt>
-
-          <code><a href="build_gene_sets.html">build_gene_sets()</a></code>
-
-        </dt>
-        <dd>Build gene sets from marker tables</dd>
-
-        <dt>
-
-          <code><a href="gnrh_stage_modules.html">gnrh_stage_modules()</a></code>
-
-        </dt>
-        <dd>Default GnRH developmental marker programs</dd>
-      </dl></div><div class="section level2">
-      <h2 id="diagnostics-and-quality-control">Diagnostics and quality control<a class="anchor" aria-label="anchor" href="#diagnostics-and-quality-control"></a></h2>
-
-      <div class="section-desc"><p>Diagnostic summaries and quality-control functions.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="gnrh_diagnostics.html">gnrh_diagnostics()</a></code>
-
-        </dt>
-        <dd>Run GnRH detection diagnostics</dd>
-      </dl></div><div class="section level2">
-      <h2 id="scores-and-classification">Scores and classification<a class="anchor" aria-label="anchor" href="#scores-and-classification"></a></h2>
-
-      <div class="section-desc"><p>Functions for computing detection scores, classification confidence, and developmental-stage scores.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl></dl></div><div class="section level2">
-      <h2 id="data-extraction-and-summaries">Data extraction and summaries<a class="anchor" aria-label="anchor" href="#data-extraction-and-summaries"></a></h2>
-
-      <div class="section-desc"><p>Extraction and summarization of GnRHcell results.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
 
           <code><a href="extract_gnrh_run_info.html">extract_gnrh_run_info()</a></code>
 
@@ -243,7 +216,7 @@
       </dl></div><div class="section level2">
       <h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a></h2>
 
-      <div class="section-desc"><p>Visualization of cellular embeddings, expression, stages, co-expression patterns, distributions, and cross-dataset summaries.</p></div>
+      <div class="section-desc"><p>Publication-ready cellular embeddings, expression plots, diagnostic summaries, distributions, networks, and cross-dataset figures.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -252,73 +225,31 @@
 
       <dl><dt>
 
-          <code><a href="celldot.html">celldot()</a></code>
-
-        </dt>
-        <dd>Create an enhanced Seurat dot plot</dd>
-
-        <dt>
-
-          <code><a href="cellfeature.html">cellfeature()</a></code>
-
-        </dt>
-        <dd>Cell Feature Plot for Seurat Objects</dd>
-
-        <dt>
-
-          <code><a href="cellmap.html">cellmap()</a></code>
-
-        </dt>
-        <dd>Visualize cells on a Seurat embedding</dd>
-
-        <dt>
-
-          <code><a href="cellviolin.html">cellviolin()</a></code>
-
-        </dt>
-        <dd>Create violin plots for Seurat features</dd>
-
-        <dt>
-
-          <code><a href="dark_theme.html">dark_theme()</a></code>
-
-        </dt>
-        <dd>Dark ggplot2 theme</dd>
-
-        <dt>
-
-          <code><a href="plot_gnrh_coexpr.html">plot_gnrh_coexpr()</a></code>
-
-        </dt>
-        <dd>Plot GnRH coexpression markers</dd>
-
-        <dt>
-
-          <code><a href="plot_gnrh_detected.html">plot_gnrh_detected()</a></code>
-
-        </dt>
-        <dd>Plot detected GnRH-positive cells across datasets</dd>
-
-        <dt>
-
-          <code><a href="plot_gnrh_distribution.html">plot_gnrh_distribution()</a></code>
-
-        </dt>
-        <dd>Plot metadata distributions</dd>
-
-        <dt>
-
           <code><a href="plot_gnrh_embedding.html">plot_gnrh_embedding()</a></code>
 
         </dt>
-        <dd>Plot GnRHcell metadata on cell embeddings</dd>
+        <dd>Plot GnRH embedding</dd>
 
         <dt>
 
           <code><a href="plot_gnrh_feature.html">plot_gnrh_feature()</a></code>
 
         </dt>
-        <dd>Plot GnRH feature maps</dd>
+        <dd>Cell Feature Plot for Seurat Objects</dd>
+
+        <dt>
+
+          <code><a href="plot_gnrh_dot.html">plot_gnrh_dot()</a></code>
+
+        </dt>
+        <dd>Create an enhanced Seurat dot plot</dd>
+
+        <dt>
+
+          <code><a href="plot_gnrh_distribution.html">plot_gnrh_distribution()</a></code>
+
+        </dt>
+        <dd>Plot GnRHcell metadata distributions</dd>
 
         <dt>
 
@@ -329,17 +260,24 @@
 
         <dt>
 
-          <code><a href="plot_gnrh_marker_programs.html">plot_gnrh_marker_programs()</a></code>
+          <code><a href="plot_gnrh_coexpr.html">plot_gnrh_coexpr()</a></code>
 
         </dt>
-        <dd>Plot GnRH Marker Program Results</dd>
+        <dd>Plot GnRH coexpression markers</dd>
 
         <dt>
 
-          <code><a href="plot_gnrh_runtime_curve.html">plot_gnrh_runtime_curve()</a></code>
+          <code><a href="plot_gnrh_specificity.html">plot_gnrh_specificity()</a></code>
 
         </dt>
-        <dd>Plot GnRHcell runtime across datasets</dd>
+        <dd>Plot GnRH specificity landscape</dd>
+
+        <dt>
+
+          <code><a href="plot_class_counts.html">plot_class_counts()</a></code>
+
+        </dt>
+        <dd>Plot GnRH classification counts</dd>
 
         <dt>
 
@@ -350,14 +288,28 @@
 
         <dt>
 
-          <code><a href="plot_theme.html">plot_theme()</a></code>
+          <code><a href="plot_gnrh_marker_programs.html">plot_gnrh_marker_programs()</a></code>
 
         </dt>
-        <dd>GnRHcell ggplot2 theme</dd>
-      </dl></div><div class="section level2">
-      <h2 id="colors-and-themes">Colors and themes<a class="anchor" aria-label="anchor" href="#colors-and-themes"></a></h2>
+        <dd>Plot GnRH marker program results</dd>
 
-      <div class="section-desc"><p>Color palettes and graphical helpers.</p></div>
+        <dt>
+
+          <code><a href="plot_gnrh_runtime_curve.html">plot_gnrh_runtime_curve()</a></code>
+
+        </dt>
+        <dd>Plot GnRHcell runtime across datasets</dd>
+
+        <dt>
+
+          <code><a href="plot_gnrh_detected.html">plot_gnrh_detected()</a></code>
+
+        </dt>
+        <dd>Plot detected GnRH-positive cells across datasets</dd>
+      </dl></div><div class="section level2">
+      <h2 id="colors">Colors<a class="anchor" aria-label="anchor" href="#colors"></a></h2>
+
+      <div class="section-desc"><p>Stable color palettes for GnRHcell classifications and stages.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -365,13 +317,6 @@
 
 
       <dl><dt>
-
-          <code><a href="cellpal.html">cellpal()</a></code>
-
-        </dt>
-        <dd>Generate a discrete color palette</dd>
-
-        <dt>
 
           <code><a href="gnrh_colors.html">gnrh_colors()</a></code>
 
@@ -380,7 +325,7 @@
       </dl></div><div class="section level2">
       <h2 id="example-data">Example data<a class="anchor" aria-label="anchor" href="#example-data"></a></h2>
 
-      <div class="section-desc"><p>Example datasets distributed with GnRHcell.</p></div>
+      <div class="section-desc"><p>Sampled Seurat objects and reference data for examples and testing.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -389,10 +334,10 @@
 
       <dl><dt>
 
-          <code><a href="hpsc_gnrh.html">hpsc_gnrh</a></code>
+          <code><a href="hpsc.html">hpsc</a></code>
 
         </dt>
-        <dd>Example GnRHcell Seurat object</dd>
+        <dd>Human hPSC GnRH demo dataset</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

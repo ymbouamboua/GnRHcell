@@ -300,10 +300,8 @@ Plot GnRH status and stage on a Seurat embedding:
 ``` r
 
 
-p <- plot_gnrh_embedding(
-  hpsc_gnrh,
-  group.by = c("gnrh_status", "gnrh_stage")
-)
+p <- plot_gnrh_embedding(hpsc_gnrh, group_by = "gnrh_status") |
+  plot_gnrh_embedding(hpsc_gnrh, group_by = "gnrh_stage")
 
 p
 ```
@@ -317,7 +315,7 @@ Plot GnRH diagnostic features:
 
 p <- plot_gnrh_feature(
   hpsc_gnrh,
-  feature_type = "all"
+  preset = "all"
 )
 
 p
@@ -516,8 +514,9 @@ obj <- RunPCA(obj)
 obj <- RunUMAP(obj, dims = 1:30)
 obj <- run_gnrh(obj)
 gnrh_report(obj)
-plot_gnrh_embedding(obj, group.by = c("gnrh_status", "gnrh_stage"))
-plot_gnrh_feature(obj, feature_type = "all")
+plot_gnrh_embedding(obj, group_by = "gnrh_status")
+plot_gnrh_embedding(obj, group_by = "gnrh_stage")
+plot_gnrh_feature(obj, preset = "all")
 markers <- gnrh_markers(obj)
 df <- subset(markers, coexpr_flag == TRUE)
 plot_gnrh_coexpr(df, coexp_cutoff = 0.3)

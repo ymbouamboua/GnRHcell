@@ -2,7 +2,7 @@
 
 ![GnRHcell logo](reference/figures/GnRHcell-logo.svg)
 
-### High-confidence detection, developmental staging, validation, and marker discovery of GnRH neurons from single-cell RNA-seq data
+### Detection, developmental staging, validation, and marker discovery for GnRH neurons in single-cell RNA-seq data
 
 [![R-CMD-check](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml)
 [![Reproducibility](https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml/badge.svg)](https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml)
@@ -10,107 +10,31 @@
 [![License:
 MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://ymbouamboua.github.io/GnRHcell/LICENSE)
 
-`GnRHcell` is an R package for identifying, characterizing, and
-validating rare gonadotropin-releasing hormone (GnRH) neurons in
-single-cell transcriptomic datasets.
+`GnRHcell` is an R package for identifying and characterizing rare
+gonadotropin-releasing hormone (GnRH) neurons in single-cell
+transcriptomic datasets. It combines `GNRH1` expression with lineage,
+migration, neuroendocrine, neighborhood, and alternative-program
+evidence in a Seurat-compatible workflow.
 
-It provides:
+The package provides:
 
-- high-confidence GnRH-cell detection;
-- multi-signal assessment of GnRH identity;
-- developmental-stage assignment and stage refinement;
-- diagnostic and biological validation;
-- GnRH-specific marker discovery and `GNRH1` co-expression analysis;
-- multi-dataset processing and comparison;
-- conserved cross-dataset marker-program analysis;
-- publication-ready visualizations and reports.
+- GnRH-cell detection with direct, supported, and dropout-rescue
+  evidence;
+- confidence classification and diagnostic scoring;
+- developmental staging and stage refinement;
+- GnRH-lineage and stage-specific marker discovery;
+- donor-aware marker prioritization;
+- multi-dataset processing, comparison, and validation;
+- publication-ready embeddings, feature plots, dot plots, networks, and
+  reports;
+- five reference Seurat datasets for examples and validation.
 
-## Workflow
-
-``` text
-Single-cell RNA-seq object
-          │
-          ▼
- Input validation
-          │
-          ├── assay and expression-layer checks
-          ├── metadata validation
-          ├── gene-symbol harmonization
-          ├── dimensional-reduction checks
-          └── required-feature assessment
-          │
-          ▼
- GnRH-neuron detection
-          │
-          ├── GNRH1 expression assessment
-          ├── GnRH identity-program scoring
-          ├── migration / guidance evidence
-          ├── neuroendocrine evidence
-          ├── competing-program exclusion
-          ├── nearest-neighbor support
-          ├── adaptive thresholding
-          └── confidence classification
-          │
-          ▼
- Developmental staging
-          │
-          ├── neurogenesis
-          ├── identity acquisition
-          ├── migration
-          ├── maturation
-          ├── secretion
-          └── stage refinement using biological evidence
-          │
-          ▼
- GnRH-cell characterization
-          │
-          ├── identity-program activity
-          ├── migration-core evidence
-          ├── neuroendocrine maturation
-          ├── co-expression analysis
-          └── GnRH-specific marker discovery
-          │
-          ▼
- Validation and diagnostics
-          │
-          ├── detection-class consistency
-          ├── score distributions
-          ├── developmental-stage composition
-          ├── raw-to-final stage transitions
-          ├── migration-core validation
-          ├── biological marker expression
-          └── dataset-level summaries
-          │
-          ▼
- Multi-dataset analysis
-          │
-          ├── sequential dataset processing
-          ├── runtime comparison
-          ├── detected-cell comparison
-          ├── marker overlap
-          ├── conserved marker programs
-          └── cross-dataset validation
-          │
-          ▼
- Visualization and reporting
-          │
-          ├── embedding plots
-          ├── feature-expression plots
-          ├── stage distributions
-          ├── co-expression networks
-          ├── marker-overlap plots
-          └── reproducible reports and tables
-```
-
-The package integrates naturally with
-[Seurat](https://satijalab.org/seurat/) workflows.
-
-Full documentation is available at
-<https://ymbouamboua.github.io/GnRHcell/>
+Documentation:
+[ymbouamboua.github.io/GnRHcell](https://ymbouamboua.github.io/GnRHcell/)
 
 ## Installation
 
-Install the development version from GitHub:
+Install the development version from GitHub with `pak`:
 
 ``` r
 
@@ -118,92 +42,338 @@ Install the development version from GitHub:
 pak::pak("ymbouamboua/GnRHcell")
 ```
 
-Alternatively:
+Alternatively, use `remotes`:
 
 ``` r
 
-# install.packages("devtools")
-devtools::install_github("ymbouamboua/GnRHcell")
+# install.packages("remotes")
+remotes::install_github("ymbouamboua/GnRHcell")
+```
+
+Load the package:
+
+``` r
+
+library(GnRHcell)
+library(Seurat)
 ```
 
 ## Quick start
 
+[`run_gnrh()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh.md)
+performs detection, developmental staging, and diagnostics and returns
+the updated Seurat object.
+
 ``` r
 
-suppressPackageStartupMessages({
-  suppressWarnings({
-    library(GnRHcell)
-    library(Seurat)
-  })
-})
-
-# `obj` is a normalized Seurat object with a dimensional reduction.
+# `obj` should contain normalized expression data.
+# A dimensional reduction is recommended for visualization.
 obj <- run_gnrh(obj)
 ```
 
-The processed Seurat object contains GnRH detection, confidence,
-evidence scores, and developmental-stage assignments.
+Observed log for the bundled `hpsc` object:
 
-``` r
-
-table(obj$gnrh_status)
-table(obj$gnrh_class)
-table(obj$gnrh_confident)
-table(obj$gnrh_stage)
+``` text
+[GNRH] ==== STARTING GnRHcell PIPELINE ====
+[STEP] [1/3] Detecting GnRH cells
+[INFO] Using assay: RNA
+[INFO] Matrix loaded: 33538 genes by 2400 cells
+[INFO] Using GnRH gene: GNRH1
+[DONE] Detection complete. Duration: 0.4s
+[STEP] [2/3] Assigning developmental stages
+[DONE] Staging complete. Duration: 0.1s
+[STEP] [3/3] Running diagnostics
+[DONE] Diagnostics complete. Duration: 0.0s
+[INFO] PIPELINE SUMMARY
+[INFO] Status:
+[INFO]   neg: 1743
+[INFO]   pos: 657
+[INFO] Stage:
+[INFO]   identity: 341
+[INFO]   migrating: 118
+[INFO]   mature: 198
+[INFO]   non-gnrh: 1743
+[INFO] Secretory:
+[INFO]   limited: 118
+[INFO]   supported: 539
+[INFO]   non-gnrh: 1743
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s
 ```
 
-Additional metadata can include identity, migration, neuroendocrine,
-exclusion, nearest-neighbor, and stage-refinement metrics.
+Inspect the principal outputs:
 
 ``` r
 
-obj[[]][
-  ,
-  c(
-    "gnrh_status",
-    "gnrh_class",
-    "gnrh_support_score",
-    "gnrh_identity_score",
-    "gnrh_stage"
+table(obj$gnrh_status, useNA = "ifany")
+table(obj$gnrh_class, useNA = "ifany")
+table(obj$gnrh_confident, useNA = "ifany")
+table(obj$gnrh_stage, useNA = "ifany")
+```
+
+Result:
+
+| Output | Category    | Cells |
+|--------|-------------|------:|
+| Status | `neg`       | 1,743 |
+| Status | `pos`       |   657 |
+| Stage  | `identity`  |   341 |
+| Stage  | `migrating` |   118 |
+| Stage  | `mature`    |   198 |
+| Stage  | `non-gnrh`  | 1,743 |
+
+The most frequently used metadata columns include:
+
+``` r
+
+grep(
+  "^gnrh_",
+  colnames(obj[[]]),
+  value = TRUE
+)
+```
+
+Important output groups are:
+
+| Output | Typical values or interpretation |
+|----|----|
+| `gnrh_status` | Binary detection status: `neg`, `pos` |
+| `gnrh_class` | Detection evidence: `neg`, `dropout_rescue`, `supported`, `direct` |
+| `gnrh_confident` | High-confidence detection flag |
+| `gnrh_stage` | `non-gnrh`, `identity`, `migrating`, `mature`, `secreting` |
+| `gnrh_score` | Composite GnRH detection score |
+| `gnrh_support_score` | Supporting lineage and biological evidence |
+| `gnrh_identity_score` | Identity-stage evidence |
+| `gnrh_migrating_score` | Migration-stage evidence |
+| `gnrh_mature_score` | Maturation-stage evidence |
+
+## Results at a glance
+
+The bundled demo objects provide a compact test of the same workflow
+across developmental models, peripheral migratory tissue, and mouse and
+human hypothalamic references.
+
+| Demo dataset          | Cells | GnRH detected | Identity | Migrating | Mature |
+|-----------------------|------:|--------------:|---------:|----------:|-------:|
+| hPSC-derived GnRH     | 2,400 |           657 |      341 |       118 |    198 |
+| Human fetal nose      | 2,125 |           125 |       57 |        58 |     10 |
+| Human median eminence | 2,161 |           161 |       42 |        25 |     94 |
+| Mouse HypoMap         | 2,174 |           174 |       10 |         0 |    164 |
+| Human HypoMap         | 2,400 |           400 |       27 |       105 |    268 |
+
+> **Interpretation.** These demo objects were intentionally sampled to
+> retain GnRH-relevant cells. Counts and percentages describe only the
+> bundled objects; they are not prevalence estimates for the complete
+> source atlases. Detection and staging are GnRHcell outputs and require
+> independent biological validation.
+
+![UMAP comparison of GnRHcell detection in five demo
+datasets](reference/figures/demo-umap-status.png)
+
+Detected cells occupy coherent transcriptional neighborhoods across the
+five demo objects, while their distribution varies with biological
+context and source study.
+
+![Developmental-stage composition among GnRH-detected
+cells](reference/figures/demo-stage-composition.png)
+
+Stage composition separates identity-rich differentiation and fetal-nose
+objects from the mature-cell-dominated hypothalamic references. The full
+table, figure-building code, and interpretation notes are available in
+the [demo results
+gallery](https://ymbouamboua.github.io/GnRHcell/articles/demo-results.html).
+
+## Demo datasets and primary references
+
+The repository includes five compact, preprocessed Seurat objects for
+examples, testing, and method demonstration. These objects are **sampled
+derivatives** of the source studies: their cell counts and cell-type
+proportions therefore differ from the complete published datasets and
+should not be used to reproduce the original study statistics.
+
+| ID | Demo object | Cells | Source study |
+|----|----|---:|----|
+| `hpsc` | Human pluripotent stem cell-derived GnRH differentiation | 2,400 | [*Deciphering the Transcriptional Landscape of Human Pluripotent Stem Cell-Derived GnRH Neurons*](https://pmc.ncbi.nlm.nih.gov/articles/PMC9806769/) ([GEO: GSE212901](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE212901)) |
+| `hudeca_nose` | Human fetal nose, post-conception weeks 7–12 | 2,125 | [*A single-cell and spatial atlas of early human olfactory development*](https://doi.org/10.1038/s41467-026-71595-6) ([EGA: EGAD50000001712](https://ega-archive.org/datasets/EGAD50000001712)) |
+| `human_me` | Human median eminence/hypothalamic samples from control, Alzheimer’s disease, and frontotemporal dementia donors | 2,161 | Sauve et al. (2026), [*Tanycytic degeneration impairs tau clearance and contributes to Alzheimer’s disease pathology*](https://doi.org/10.1016/j.cpblue.2026.100003) |
+| `mouse_hypomap` | Integrated mouse hypothalamus atlas | 2,174 | Steuernagel, Lam, Klemm et al. (2022), [*HypoMap—a unified single-cell gene expression atlas of the murine hypothalamus*](https://doi.org/10.1038/s42255-022-00657-y) |
+| `human_hypomap` | Human hypothalamus atlas | 2,400 | Tadross, Steuernagel, Dowsett et al. (2025), [*A comprehensive spatio-cellular map of the human hypothalamus*](https://doi.org/10.1038/s41586-024-08504-8) |
+
+Please cite both **GnRHcell** and the corresponding primary study when
+using a demo object. Consult the linked source repository or archive for
+the complete dataset, original processing details, access conditions,
+and reuse terms.
+
+Because these objects are stored as `.rds` files, load them with
+[`readRDS()`](https://rdrr.io/r/base/readRDS.html) rather than
+[`data()`](https://rdrr.io/r/utils/data.html):
+
+``` r
+
+load_gnrh_data <- function(name) {
+  available <- c(
+    "hpsc",
+    "hudeca_nose",
+    "human_me",
+    "mouse_hypomap",
+    "human_hypomap"
   )
-] |>
-  head()
+
+  name <- match.arg(name, available)
+  path <- system.file(
+    "extdata",
+    paste0(name, ".rds"),
+    package = "GnRHcell"
+  )
+
+  if (!nzchar(path)) {
+    stop("Dataset not found in the installed GnRHcell package: ", name)
+  }
+
+  readRDS(path)
+}
+
+hpsc <- load_gnrh_data("hpsc")
+hpsc
 ```
+
+``` text
+An object of class Seurat
+33538 features across 2400 samples within 1 assay
+Active assay: RNA (33538 features, 2000 variable features)
+ 3 layers present: data, counts, scale.data
+ 3 dimensional reductions calculated: pca, harmony, umap
+```
+
+Load all reference datasets when sufficient memory is available:
+
+``` r
+
+dataset_ids <- c(
+  "hpsc",
+  "hudeca_nose",
+  "human_me",
+  "mouse_hypomap",
+  "human_hypomap"
+)
+
+reference_objects <- setNames(
+  lapply(dataset_ids, load_gnrh_data),
+  dataset_ids
+)
+```
+
+For memory-constrained analyses, load and process one object at a time.
 
 ## Visualization
 
-### Embedding
+### Embeddings
 
 ``` r
 
 plot_gnrh_embedding(
-  obj,
-  group.by = c(
-    "gnrh_status",
-    "gnrh_confident",
-    "gnrh_stage"
-  ),
-  reduction = "umap"
+  hpsc,
+  group_by = "gnrh_status",
+  reduction = "umap",
+  style = "classic"
+)
+
+plot_gnrh_embedding(
+  hpsc,
+  group_by = "gnrh_stage",
+  reduction = "umap",
+  percentage = TRUE,
+  label = TRUE,
+  repel = TRUE,
+  cols = gnrh_colors("stage")
 )
 ```
 
-### Feature expression
+Result from the bundled `hpsc` object:
+
+![GnRH detection and developmental-stage embeddings in the hPSC demo
+object](reference/figures/hpsc-embedding-results.png)
+
+Large datasets are rasterized automatically when appropriate.
+
+### Feature presets
+
+[`plot_gnrh_feature()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_feature.md)
+supports direct feature names and GnRHcell presets.
 
 ``` r
 
 plot_gnrh_feature(
-  obj,
-  feature_type = "all",
-  reduction = "umap"
+  hpsc,
+  preset = "core",
+  reduction = "umap",
+  ncol = 4
+)
+
+plot_gnrh_feature(
+  hpsc,
+  preset = "modules",
+  theme.cols = "viridis",
+  reduction = "umap",
+  ncol = 4
+)
+
+plot_gnrh_feature(
+  hpsc,
+  preset = "staging",
+  theme.cols = "gnrh",
+  reduction = "umap",
+  ncol = 3
 )
 ```
 
-### Distribution across samples
+Core-feature result:
+
+![Core GnRH feature maps in the hPSC demo
+object](reference/figures/hpsc-feature-core.png)
+
+Plot arbitrary genes or metadata fields:
+
+``` r
+
+plot_gnrh_feature(
+  hpsc,
+  features = c("GNRH1", "FEZF1", "ISL1", "DCX"),
+  ncol = 4
+)
+```
+
+![Core GnRH feature maps in the hPSC demo
+object](reference/figures/hpsc-genes.png)
+
+### Dot plots
+
+``` r
+
+plot_gnrh_dot(
+  hpsc,
+  features = c(
+    "GNRH1", "FEZF1", "ISL1",
+    "ANOS1", "PROKR2", "DCX",
+    "CHGA", "PCSK2"
+  ),
+  group.by = "gnrh_stage",
+  dot.outline = TRUE,
+  th.cols = "RdYlBu",
+  title = "GnRH developmental programs"
+)
+```
+
+Result:
+
+![GnRH developmental-program dot
+plot](reference/figures/hpsc-program-dotplot.png)
+
+### Distributions
 
 ``` r
 
 plot_gnrh_distribution(
-  obj,
+  hpsc,
   group.by = "gnrh_stage",
   split.by = "orig.ident",
   proportion = TRUE,
@@ -212,110 +382,255 @@ plot_gnrh_distribution(
 )
 ```
 
+Result:
+
+![GnRH developmental-stage distribution by hPSC
+sample](reference/figures/hpsc-stage-distribution.png)
+
 ### Diagnostic report
 
 ``` r
 
-gnrh_report(obj)
+report <- gnrh_report(
+  hpsc,
+  roc_mode = "internal",
+  style = "bw"
+)
+
+report
 ```
 
-The report summarizes detection signals, threshold performance,
-GnRH-module activity, classification confidence, and developmental-stage
-composition.
+Compact internal diagnostic result:
 
-## GnRH-specific gene discovery
+![Internal GnRHcell diagnostic
+summary](reference/figures/hpsc-report.png)
 
-Identify genes enriched in confident GnRH cells relative to a
-biologically relevant control population:
+Internal ROC curves describe score discrimination against
+classifications produced by the same scoring system. They are diagnostic
+and should not be interpreted as independent validation.
+
+When an independent manual or reference annotation is available:
+
+``` r
+
+report <- gnrh_report(
+  hpsc,
+  truth = "gnrh_class",
+  positive_truth = c("GnRH", "pos", "TRUE"),
+  roc_mode = "external",
+  style = "bw"
+)
+report
+```
+
+![Internal GnRHcell diagnostic
+summary](reference/figures/hpsc-report-class.png)
+
+Export a vector report:
+
+``` r
+
+ggplot2::ggsave(
+  "gnrh_diagnostic_report.pdf",
+  report,
+  width = 12,
+  height = 7.5,
+  units = "in",
+  device = grDevices::cairo_pdf,
+  bg = "white"
+)
+```
+
+## GnRH-lineage marker discovery
+
+[`find_gnrh_genes()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_genes.md)
+identifies genes enriched in GnRH-positive cells relative to
+biologically matched controls and ranks them using differential
+expression, specificity, `GNRH1` co-detection, and donor recurrence.
 
 ``` r
 
 genes <- find_gnrh_genes(
-  object = obj,
+  object = hpsc,
   annotation_col = "ann2",
-  status_col = "gnrh_status",
   control_ident = "GLU",
-  donor_col = "orig.ident"
+  donor_col = "orig.ident",
+  assay = "RNA",
+  layer = "data"
 )
 
-head(genes$candidates)
+head(genes$candidates, 20)
+genes$donor_cells
 ```
 
-The returned results combine differential expression, `GNRH1`
-co-expression, specificity, and donor recurrence.
+Top results from the `hpsc` comparison (`gnrh_status == "pos"` versus
+`ann2 == "GLU"` controls):
 
-Consult
-[`?find_gnrh_genes`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_genes.md)
-for available thresholds and returned tables.
+| Gene | log2 fold change | Target detection | Control detection | Specificity | GNRH1 co-expression |
+|----|---:|---:|---:|---:|---:|
+| `DLX5` | 6.40 | 38.7% | 1.1% | 0.376 | 0.529 |
+| `DLX1` | 6.90 | 33.6% | 0.5% | 0.331 | 0.486 |
+| `ARX` | 7.25 | 31.2% | 0.4% | 0.308 | 0.499 |
+| `DLX2` | 6.58 | 30.9% | 0.5% | 0.304 | 0.449 |
+| `RASD1` | 6.85 | 27.9% | 0.5% | 0.273 | 0.442 |
 
-### Co-expression and network visualization
+The complete result is available in
+[`hpsc-lineage-markers.csv`](https://github.com/ymbouamboua/GnRHcell/blob/main/man/figures/hpsc-lineage-markers.csv).
+
+Choose `annotation_col` and `control_ident` according to the metadata
+and biology of the dataset. The control population should represent a
+relevant non-GnRH neuronal comparison rather than all cells
+indiscriminately.
+
+### Co-expression and gene networks
 
 ``` r
 
-coexpressed <- subset(
-  genes$markers,
-  coexpr_flag %in% TRUE
-)
-
 plot_gnrh_coexpr(
-  coexpressed,
-  coexp_cutoff = 0.3
+  genes$markers,
+  coexp_cutoff = 0.30
 )
 
 plot_network(
   genes$markers,
-  top_n = 50,
-  threshold = 0.1
+  top_n = 40,
+  threshold = 0.20
 )
 ```
 
+Result:
+
+![GnRH-lineage co-expression and marker network
+results](reference/figures/hpsc-lineage-marker-results.png)
+
+## Stage-specific marker discovery
+
+[`find_gnrh_stage_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_stage_markers.md)
+compares each selected developmental stage with the other GnRH-positive
+stages. It does not require coexpression with `GNRH1`, avoiding
+enrichment for general GnRH-lineage markers.
+
+``` r
+
+stage_markers <- find_gnrh_stage_markers(
+  object = hpsc,
+  stage_col = "gnrh_stage",
+  stages = c("identity", "migrating", "mature"),
+  class_col = "gnrh_class",
+  positive_classes = c("direct", "supported"),
+  donor_col = "orig.ident",
+  assay = "RNA",
+  layer = "data"
+)
+
+stage_markers$stage_counts
+head(stage_markers$candidates, 20)
+```
+
+Top stage-associated results in the `hpsc` demo:
+
+| Stage | Gene | log2 fold change | Detected in target | Detected in reference | Adjusted P |
+|----|----|---:|---:|---:|---:|
+| Identity | `DLX5` | 4.28 | 67.2% | 7.9% | 2.83e-51 |
+| Identity | `DLX1` | 5.18 | 61.3% | 3.8% | 9.13e-50 |
+| Identity | `SIX3` | 2.32 | 85.0% | 52.2% | 5.87e-45 |
+| Migrating | `SLIT1` | 1.70 | 78.0% | 32.3% | 1.79e-21 |
+| Migrating | `UBE2E3` | 0.54 | 97.5% | 97.0% | 9.69e-08 |
+| Migrating | `TBR1` | 0.98 | 72.9% | 45.8% | 6.74e-06 |
+| Mature | `SCG2` | 2.44 | 80.3% | 25.7% | 2.79e-40 |
+| Mature | `EMX2` | 1.54 | 94.4% | 44.7% | 1.69e-35 |
+| Mature | `LHX5-AS1` | 1.35 | 95.5% | 50.5% | 1.42e-29 |
+
+![Top stage-associated markers in the hPSC demo
+object](reference/figures/hpsc-stage-marker-dotplot.png)
+
+The complete result is available in
+[`hpsc-stage-markers.csv`](https://github.com/ymbouamboua/GnRHcell/blob/main/man/figures/hpsc-stage-markers.csv).
+
+Retrieve the top markers per stage:
+
+``` r
+
+top_stage_markers <- stage_markers$candidates |>
+  dplyr::group_by(.data$stage) |>
+  dplyr::slice_max(
+    order_by = .data$stage_score,
+    n = 20,
+    with_ties = FALSE
+  ) |>
+  dplyr::ungroup()
+
+top_stage_markers
+```
+
+Cell-level differential expression is intended for marker discovery.
+Replicate-aware pseudobulk testing is recommended before making formal
+population-level claims.
+
 ## Multi-dataset workflow
 
-`GnRHcell` can process collections of independent Seurat datasets
-sequentially, allowing large studies to be analyzed without loading all
-objects into memory simultaneously.
+### Configure datasets
 
-### 1. Define the dataset configuration
-
-Each row describes one dataset.
+Each row defines an independent Seurat dataset:
 
 ``` r
 
 datasets <- data.frame(
   id = c(
-    "human_hpsc",
-    "human_nose",
-    "mouse_hypomap"
+    "hpsc",
+    "hudeca_nose",
+    "human_me",
+    "mouse_hypomap",
+    "human_hypomap"
   ),
   label = c(
-    "hPSC GnRH (Wang 2022)",
-    "Human fetal nose",
-    "Mouse HypoMap"
+    "Human hPSC",
+    "HuDeCa nose",
+    "Human medial eminence",
+    "Mouse HypoMap",
+    "Human HypoMap"
   ),
   species = c(
     "Human",
     "Human",
-    "Mouse"
+    "Human",
+    "Mouse",
+    "Human"
   ),
-  file = c(
-    "data/human_hpsc.rds",
-    "data/human_nose.rds",
-    "data/mouse_hypomap.rds"
+  file = file.path(
+    "inst/extdata",
+    paste0(
+      c(
+        "hpsc",
+        "hudeca_nose",
+        "human_me",
+        "mouse_hypomap",
+        "human_hypomap"
+      ),
+      ".rds"
+    )
   ),
   split_by = c(
     "orig.ident",
-    "status",
+    "orig.ident",
+    "orig.ident",
+    "orig.ident",
     "orig.ident"
   ),
   reduction = c(
     "umap",
     "umap",
-    "umap_scvi"
+    "umap",
+    "umap",
+    "umap"
   )
 )
 ```
 
-### 2. Validate the configuration
+For installed package data, replace the paths with calls to
+[`system.file()`](https://rdrr.io/r/base/system.file.html).
+
+### Validate the configuration
 
 ``` r
 
@@ -328,11 +643,17 @@ datasets <- prepare_gnrh_datasets(
 datasets
 ```
 
-[`prepare_gnrh_datasets()`](https://ymbouamboua.github.io/GnRHcell/reference/prepare_gnrh_datasets.md)
-standardizes dataset metadata, expands file paths, checks file
-availability, detects duplicated IDs, and validates species labels.
+Validation result for the bundled configuration:
 
-### 3. Run GnRHcell across all datasets
+| ID              | Species | File                             | Reduction | Status |
+|-----------------|---------|----------------------------------|-----------|--------|
+| `hpsc`          | Human   | `inst/extdata/hpsc.rds`          | UMAP      | Ready  |
+| `hudeca_nose`   | Human   | `inst/extdata/hudeca_nose.rds`   | UMAP      | Ready  |
+| `human_me`      | Human   | `inst/extdata/human_me.rds`      | UMAP      | Ready  |
+| `mouse_hypomap` | Mouse   | `inst/extdata/mouse_hypomap.rds` | UMAP      | Ready  |
+| `human_hypomap` | Human   | `inst/extdata/human_hypomap.rds` | UMAP      | Ready  |
+
+### Run the collection
 
 ``` r
 
@@ -342,65 +663,147 @@ collection <- run_gnrh_collection(
   run_markers = TRUE,
   run_comparisons = TRUE,
   run_programs = TRUE,
-  clean_objects = TRUE,
+  clean_objects = FALSE,
   save_objects = FALSE
 )
 ```
 
-The workflow:
+``` r
 
-- loads datasets sequentially;
-- runs
-  [`run_gnrh()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh.md)
-  on each object;
-- generates dataset-level diagnostics and figures;
-- identifies GnRH-associated markers;
-- writes run-information and marker tables;
-- compares datasets;
-- optionally identifies conserved marker programs.
+names(collection$results)
+names(collection$comparisons)
 
-The returned object has class `"gnrh_collection"`.
+collection$comparisons$runtime_plot
+collection$comparisons$detected_plot
+collection$comparisons$programs$summary
+```
+
+The workflow loads datasets sequentially, runs GnRHcell, creates
+dataset-level outputs, compares markers, and optionally identifies
+conserved programs.
+
+For lower memory use:
 
 ``` r
 
-class(collection)
-names(collection$results)
-collection$datasets
-collection$comparisons
+collection <- run_gnrh_collection(
+  datasets = datasets,
+  output_dir = "gnrh_results",
+  clean_objects = TRUE,
+  save_objects = TRUE
+)
 ```
 
-### Running a single dataset through the collection workflow
+### Validate a collection
+
+Processed objects must remain available in the collection when running
+validation directly:
+
+``` r
+
+validation <- validate_gnrh_collection(
+  collection,
+  positive_classes = c("direct", "supported"),
+  assay = "RNA",
+  layer = "data"
+)
+```
+
+``` text
+==== GNRH COLLECTION VALIDATION START ====
+Summarizing datasets
+Validating GnRH detection
+Summarizing GNRH1-negative transcriptomic candidates
+Checking status/class consistency
+Summarizing GnRH evidence scores
+Validating developmental stages
+Summarizing biological marker expression
+Validated 5 datasets; 11,260 cells; 1,517 GnRH-positive cells.
+GNRH1-negative transcriptomic candidates: 14 (diagnostic only; not counted as GnRH-positive).
+Developmental-stage refinements: 66 cells.
+Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
+==== GNRH COLLECTION VALIDATION DONE ====
+```
+
+``` r
+
+validation$detection
+validation$status_class
+validation$scores
+validation$stages
+validation$stage_class
+validation$stage_refinement
+validation$stage_reassignment
+validation$migration_core
+validation$biological_markers
+```
+
+Cross-dataset result:
+
+| Dataset               | Cells | GnRH detected | Identity | Migrating | Mature |
+|-----------------------|------:|--------------:|---------:|----------:|-------:|
+| hPSC-derived GnRH     | 2,400 |           657 |      341 |       118 |    198 |
+| Human fetal nose      | 2,125 |           125 |       57 |        58 |     10 |
+| Human median eminence | 2,161 |           161 |       42 |        25 |     94 |
+| Mouse HypoMap         | 2,174 |           174 |       10 |         0 |    164 |
+| Human HypoMap         | 2,400 |           400 |       27 |       105 |    268 |
+
+![Cross-dataset GnRH stage
+composition](reference/figures/demo-stage-composition.png)
+
+### Run one dataset
 
 ``` r
 
 result <- run_gnrh_dataset(
-  object = obj,
-  dataset_id = "human_hpsc",
-  dataset_label = "hPSC GnRH (Wang 2022)",
+  object = hpsc,
+  dataset_id = "hpsc",
+  dataset_label = "Human hPSC",
   split_by = "orig.ident",
   reduction = "umap",
-  output_dir = "gnrh_results",
-  run_markers = TRUE
+  output_dir = "hpsc_gnrh_results",
+  run_markers = TRUE,
+  clean_object = FALSE
 )
 
 result$run_info
 head(result$markers)
 ```
 
-If the requested dimensional reduction is unavailable,
-[`run_gnrh_dataset()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh_dataset.md)
-automatically falls back to `"umap"` when possible.
+``` text
+Running GnRHcell: Human hPSC
+[GNRH] ==== STARTING GnRHcell PIPELINE ====
+[STEP] [1/3] Detecting GnRH cells
+[INFO] Using assay: RNA
+[INFO] Matrix loaded: 33538 genes by 2400 cells
+[INFO] Using GnRH gene: GNRH1
+[DONE] Detection complete. Duration: 0.4s
+[STEP] [2/3] Assigning developmental stages
+[DONE] Staging complete. Duration: 0.1s
+[STEP] [3/3] Running diagnostics
+[DONE] Diagnostics complete. Duration: 0.0s
+[INFO] PIPELINE SUMMARY
+[INFO] Status:
+[INFO]   neg: 1743
+[INFO]   pos: 657
+[INFO] Stage:
+[INFO]   identity: 341
+[INFO]   migrating: 118
+[INFO]   mature: 198
+[INFO]   non-gnrh: 1743
+[INFO] Secretory:
+[INFO]   limited: 118
+[INFO]   supported: 539
+[INFO]   non-gnrh: 1743
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s
+[INFO] Generating publication-ready GnRH QC report
+[GNRH] GnRH marker discovery
+[STEP] Running DE method: wilcox
+[DONE] Markers detected: 105 Duration: 3.1s
+[INFO] Top marker: GNRH1
+```
 
-If the requested splitting variable is absent, commonly used
-alternatives such as `"orig.ident"`, `"sample"`, and `"library_id"` are
-considered.
-
-## Cross-dataset comparison
-
-Cross-dataset comparisons can be run automatically by
-[`run_gnrh_collection()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh_collection.md)
-or independently with
-[`compare_gnrh_datasets()`](https://ymbouamboua.github.io/GnRHcell/reference/compare_gnrh_datasets.md).
+## Cross-dataset comparisons
 
 ``` r
 
@@ -416,272 +819,108 @@ comparison$overlap
 comparison$programs
 ```
 
-The comparison workflow can generate:
-
-- runtime comparisons;
-- numbers of detected GnRH cells;
-- marker-overlap analyses;
-- conserved cross-dataset marker programs.
-
-## Cross-dataset validation
-
-[`validate_gnrh_collection()`](https://ymbouamboua.github.io/GnRHcell/reference/validate_gnrh_collection.md)
-provides an additional validation layer for evaluating GnRH detection
-and developmental staging across datasets.
-
-Because validation uses the processed Seurat objects, retain them in the
-collection by setting `clean_objects = FALSE`.
-
-``` r
-
-collection <- run_gnrh_collection(
-  datasets = datasets,
-  output_dir = "gnrh_results",
-  run_markers = TRUE,
-  run_comparisons = TRUE,
-  run_programs = TRUE,
-  clean_objects = FALSE
-)
-
-validation <- validate_gnrh_collection(
-  collection
-)
-```
-
-The returned object has class `"gnrh_validation"` and contains
-complementary validation tables.
-
-### Detection rates
-
-``` r
-
-validation$detection
-```
-
-This table reports total cell number, direct detections, supported
-detections, dropout-rescued detections, total GnRH-positive cells,
-detection percentages, and the contribution of each detection class.
-
-### Status and class consistency
-
-``` r
-
-validation$status_class
-```
-
-This summary evaluates correspondence between `gnrh_status` and
-`gnrh_class`.
-
-### Evidence-score validation
-
-``` r
-
-validation$scores
-```
-
-Available GnRH evidence variables are summarized by detection class
-using medians and interquartile ranges.
-
-### Developmental-stage composition
-
-``` r
-
-validation$stages
-validation$stage_class
-```
-
-These tables summarize developmental stages across all positive GnRH
-cells and separately within direct, supported, and dropout-rescued
-detection classes.
-
-### Stage-refinement validation
-
-``` r
-
-validation$stage_refinement
-validation$stage_reassignment
-```
-
-When stage-refinement metadata are available, these outputs report
-raw-to-final stage transitions, reassignment frequencies, and reasons
-for stage refinement.
-
-### Migration-core validation
-
-``` r
-
-validation$migration_core
-```
-
-Migration-core evidence is summarized by raw developmental stage using
-median and interquartile-range marker hits together with the percentage
-of cells having at least 1, 2, or 3 migration-core hits.
-
-### Independent biological marker validation
-
-``` r
-
-validation$biological_markers
-```
-
-By default, expression is evaluated for a curated panel spanning GnRH
-identity, specification, migration, guidance, and neuroendocrine
-maturation:
-
-``` text
-GNRH1, GNRHR,
-FEZF1, ISL1, OTX2, SIX3, SIX6,
-CHGA, CHGB, SCG2, PCSK1, PCSK2, CPE, VGF, SYP,
-ANOS1, PROKR2, PROK2, NRP1, NRP2, ROBO1, ROBO2, DCX
-```
-
-For each detection class,
-[`validate_gnrh_collection()`](https://ymbouamboua.github.io/GnRHcell/reference/validate_gnrh_collection.md)
-reports average expression and the percentage of cells expressing each
-available marker.
-
-A custom panel can also be supplied:
-
-``` r
-
-validation <- validate_gnrh_collection(
-  collection,
-  validation_markers = c(
-    "GNRH1",
-    "FEZF1",
-    "ISL1",
-    "ANOS1",
-    "PROKR2",
-    "DCX",
-    "CHGA",
-    "PCSK2"
-  )
-)
-```
-
-Validation tables are written by default to:
-
-``` text
-gnrh_results/
-└── validation/
-    ├── input_summary.csv
-    ├── detection.csv
-    ├── status_class.csv
-    ├── scores.csv
-    ├── stages.csv
-    ├── stage_class.csv
-    ├── stage_refinement.csv
-    ├── stage_reassignment.csv
-    ├── migration_core.csv
-    └── biological_markers.csv
-```
-
-## Cross-dataset marker programs
-
-Marker-program analysis can also be performed manually from previously
-generated marker files.
+Marker programs can also be generated from existing result tables:
 
 ``` r
 
 files <- c(
-  "HuDeCa Nose" = "gnrh_human_nose_markers.tsv",
-  "HPSC Wang 2022" = "gnrh_human_hpsc_markers.tsv",
-  "Human HypoMap" = "gnrh_human_hypomap_markers.tsv"
+  "HuDeCa nose" = "gnrh_hudeca_nose_markers.tsv",
+  "Human hPSC" = "gnrh_hpsc_markers.tsv",
+  "Human medial eminence" = "gnrh_human_me_markers.tsv",
+  "Human HypoMap" = "gnrh_human_hypomap_markers.tsv",
+  "Mouse HypoMap" = "gnrh_mouse_hypomap_markers.tsv"
 )
-
-marker_dir <- file.path(outdir, "markers")
 
 gene_sets <- build_gene_sets(
   files = files,
-  dir = marker_dir
+  dir = file.path("gnrh_results", "markers")
 )
 
-overlap <- gene_upset(
+overlap <- gnrh_gene_upset(
   gene_sets = gene_sets,
-  outdir = file.path(
-    outdir,
-    "comparisons",
-    "marker_overlap"
-  )
+  outdir = file.path("gnrh_results", "comparisons", "marker_overlap")
 )
+
+overlap$plot
+```
+
+![Cross-dataset GnRH stage
+composition](reference/figures/gene_overlap_plot.png)
+
+``` r
+
+marker_dir <- file.path("gnrh_results", "markers")
+
+files <- c(
+  "Human hPSC" = "gnrh_hpsc_markers.tsv",
+  "HuDeCa nose" = "gnrh_hudeca_nose_markers.tsv",
+  "Human medial eminence" = "gnrh_human_me_markers.tsv",
+  "Human HypoMap" = "gnrh_human_hypomap_markers.tsv",
+  "Mouse HypoMap" = "gnrh_mouse_hypomap_markers.tsv"
+)
+
+files <- stats::setNames(
+  file.path(marker_dir, unname(files)),
+  names(files)
+)
+
+stopifnot(all(file.exists(files)))
+files
 
 programs <- gnrh_marker_programs(
   files = files,
   results = overlap,
-  outdir = outdir
+  outdir = "gnrh_results"
 )
-
-head(programs$candidate_table)
-head(programs$high_confidence)
 ```
 
-### Marker-program visualization
+Visualize the results:
 
 ``` r
 
-plot_gnrh_marker_programs(
+p = plot_gnrh_marker_programs(
   programs,
-  table = "summary",
+  table = "high_confidence",
   type = "bar"
 )
-
-plot_gnrh_marker_programs(
-  programs,
-  table = "summary",
-  type = "tile"
-)
 ```
 
-## Output structure
-
-A typical multi-dataset run produces:
-
-``` text
-gnrh_results/
-├── figures/
-│   ├── human_hpsc/
-│   │   ├── human_hpsc_gnrh_report.pdf
-│   │   ├── human_hpsc_gnrh_embedding.pdf
-│   │   ├── human_hpsc_gnrh_features.pdf
-│   │   ├── human_hpsc_status_distribution.pdf
-│   │   ├── human_hpsc_stage_distribution.pdf
-│   │   ├── human_hpsc_coexpression.pdf
-│   │   └── human_hpsc_network.pdf
-│   └── ...
-├── tables/
-│   ├── human_hpsc_gnrh_run_info.tsv
-│   └── ...
-├── markers/
-│   ├── gnrh_human_hpsc_markers.tsv
-│   └── ...
-├── comparisons/
-│   ├── marker_overlap/
-│   └── marker_programs/
-├── validation/
-│   ├── input_summary.csv
-│   ├── detection.csv
-│   ├── status_class.csv
-│   ├── scores.csv
-│   ├── stages.csv
-│   ├── stage_class.csv
-│   ├── stage_refinement.csv
-│   ├── stage_reassignment.csv
-│   ├── migration_core.csv
-│   └── biological_markers.csv
-└── objects/
-    └── human_hpsc_gnrh.rds
-```
-
-The `objects/` directory is populated only when `save_objects = TRUE`.
+![Cross-dataset GnRH stage
+composition](reference/figures/marker-program-plots.png)
 
 ## Main functions
 
-### Core detection and staging
+### Detection, staging, and diagnostics
 
 - [`run_gnrh()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh.md)
 - [`detect_gnrh()`](https://ymbouamboua.github.io/GnRHcell/reference/detect_gnrh.md)
 - [`stage_gnrh()`](https://ymbouamboua.github.io/GnRHcell/reference/stage_gnrh.md)
 - [`gnrh_diagnostics()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_diagnostics.md)
+- [`gnrh_report()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_report.md)
+
+### Marker discovery
+
+- [`gnrh_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_markers.md)
+- [`find_gnrh_genes()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_genes.md)
+- [`find_gnrh_stage_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_stage_markers.md)
+- [`build_gene_sets()`](https://ymbouamboua.github.io/GnRHcell/reference/build_gene_sets.md)
+- `gene_upset()`
+- [`gnrh_marker_programs()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_marker_programs.md)
+
+### Visualization
+
+- [`plot_gnrh_embedding()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_embedding.md)
+- [`plot_gnrh_feature()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_feature.md)
+- [`plot_gnrh_dot()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_dot.md)
+- [`plot_gnrh_distribution()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_distribution.md)
+- [`plot_gnrh_hits()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_hits.md)
+- [`plot_gnrh_coexpr()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_coexpr.md)
+- [`plot_gnrh_specificity()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_specificity.md)
+- [`plot_class_counts()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_class_counts.md)
+- [`plot_network()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_network.md)
+- [`plot_gnrh_marker_programs()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_marker_programs.md)
+- [`plot_gnrh_runtime_curve()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_runtime_curve.md)
+- [`plot_gnrh_detected()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_detected.md)
 
 ### Dataset collections
 
@@ -691,85 +930,44 @@ The `objects/` directory is populated only when `save_objects = TRUE`.
 - [`compare_gnrh_datasets()`](https://ymbouamboua.github.io/GnRHcell/reference/compare_gnrh_datasets.md)
 - [`validate_gnrh_collection()`](https://ymbouamboua.github.io/GnRHcell/reference/validate_gnrh_collection.md)
 
-### Marker analysis
-
-- [`find_gnrh_genes()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_genes.md)
-- [`gnrh_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_markers.md)
-- [`build_gene_sets()`](https://ymbouamboua.github.io/GnRHcell/reference/build_gene_sets.md)
-- [`gene_upset()`](https://ymbouamboua.github.io/GnRHcell/reference/gene_upset.md)
-- [`gnrh_marker_programs()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_marker_programs.md)
-
-### Visualization and reporting
-
-- [`plot_gnrh_embedding()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_embedding.md)
-- [`plot_gnrh_feature()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_feature.md)
-- [`plot_gnrh_distribution()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_distribution.md)
-- [`plot_gnrh_coexpr()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_coexpr.md)
-- [`plot_network()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_network.md)
-- [`plot_gnrh_marker_programs()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_marker_programs.md)
-- [`plot_gnrh_runtime_curve()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_runtime_curve.md)
-- [`plot_gnrh_detected()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_detected.md)
-- [`gnrh_report()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_report.md)
-
-### Utilities
+### Palettes and reference modules
 
 - [`gnrh_colors()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_colors.md)
-- [`cellpal()`](https://ymbouamboua.github.io/GnRHcell/reference/cellpal.md)
-- [`plot_theme()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_theme.md)
+- [`gnrh_stage_modules()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_stage_modules.md)
+- [`gnrh_stage_gene_references()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_stage_gene_references.md)
 
 See the [function
 reference](https://ymbouamboua.github.io/GnRHcell/reference/) for the
 complete API.
 
-## Recommended multi-dataset analysis
+## Typical output structure
 
-For a complete cross-dataset analysis with validation:
-
-``` r
-
-library(GnRHcell)
-
-datasets <- prepare_gnrh_datasets(
-  datasets,
-  check_files = TRUE
-)
-
-collection <- run_gnrh_collection(
-  datasets = datasets,
-  output_dir = "gnrh_results",
-  run_markers = TRUE,
-  run_comparisons = TRUE,
-  run_programs = TRUE,
-  clean_objects = FALSE,
-  save_objects = FALSE
-)
-
-validation <- validate_gnrh_collection(
-  collection
-)
-
-validation$detection
-validation$scores
-validation$stages
-validation$stage_refinement
-validation$migration_core
-validation$biological_markers
+``` text
+gnrh_results/
+├── figures/
+├── tables/
+├── markers/
+├── comparisons/
+│   ├── marker_overlap/
+│   └── marker_programs/
+├── validation/
+└── objects/
 ```
 
-If memory usage is a concern, processed objects can instead be saved
-during the main analysis:
+Objects are written to `objects/` only when `save_objects = TRUE`.
 
-``` r
+## Reproducibility and interpretation
 
-collection <- run_gnrh_collection(
-  datasets = datasets,
-  output_dir = "gnrh_results",
-  clean_objects = TRUE,
-  save_objects = TRUE
-)
-```
-
-This mode minimizes memory usage during large multi-dataset studies.
+- Join split Seurat v5 assay layers with `Seurat::JoinLayers()` when
+  required before marker analysis.
+- Use biological donors or samples as replicates for formal
+  differential-expression inference.
+- Treat internal ROC curves as score-separation diagnostics, not
+  external validation.
+- Confirm stage-specific candidates in independent datasets or with
+  pseudobulk analyses.
+- Report the GnRHcell version and principal thresholds used in an
+  analysis.
 
 ## Development
 
@@ -792,8 +990,8 @@ devtools::build_readme()
 
 If you use `GnRHcell`, please cite:
 
-> Mbouamboua Y. *GnRHcell: high-confidence GnRH neuron detection,
-> developmental staging, and cross-dataset validation from single-cell
+> Mbouamboua Y. *GnRHcell: detection, developmental staging, and marker
+> discovery for gonadotropin-releasing hormone neurons from single-cell
 > RNA-seq data.*
 
 ## License

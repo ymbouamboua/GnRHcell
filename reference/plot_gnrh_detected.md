@@ -9,10 +9,9 @@ plot_gnrh_detected(
   files = NULL,
   dir = file.path("results", "tables"),
   pattern = "_gnrh_run_info\\.tsv$",
-  style = "classic",
   x.ang = 45,
   txtsize = 10,
-  debug = TRUE
+  debug = FALSE
 )
 ```
 
@@ -20,23 +19,19 @@ plot_gnrh_detected(
 
 - files:
 
-  Optional character vector of run-info TSV files.
+  Optional named vector of run-information files.
 
 - dir:
 
-  Directory containing runtime summary tables.
+  Directory searched when `files` is `NULL`.
 
 - pattern:
 
-  Regex pattern used to identify runtime files.
-
-- style:
-
-  Plot style.
+  File-selection regular expression.
 
 - x.ang:
 
-  X-axis text angle.
+  X-axis label angle.
 
 - txtsize:
 
@@ -44,8 +39,8 @@ plot_gnrh_detected(
 
 - debug:
 
-  Print loaded table.
+  Print the imported summary columns.
 
 ## Value
 
-A ggplot2 object.
+A ggplot object.

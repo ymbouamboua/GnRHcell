@@ -1,6 +1,6 @@
 # Plot GnRH module hit distributions
 
-Bar plots of GnRH module hits vs metadata variables
+Plot GnRH module hit distributions
 
 ## Usage
 
@@ -12,10 +12,7 @@ plot_gnrh_hits(
   palette = NULL,
   type = c("count", "fraction"),
   title = NULL,
-  rotate.x = FALSE,
-  txtsize = 12,
-  style = "classic",
-  ...
+  txtsize = 10
 )
 ```
 
@@ -23,41 +20,32 @@ plot_gnrh_hits(
 
 - data:
 
-  data.frame (usually object@meta.data)
+  Data frame containing plotting columns.
 
 - x:
 
-  character. grouping variable (e.g. "total_hits_bin")
+  Column mapped to the x axis.
 
 - fill:
 
-  character. fill variable (e.g. "gnrh_status")
+  Column mapped to fill colour.
 
 - palette:
 
-  named vector of colors
+  Optional named colour vector.
 
 - type:
 
-  "count" or "fraction"
+  Display counts or fractions.
 
 - title:
 
-  plot title
-
-- rotate.x:
-
-  logical
+  Optional plot title.
 
 - txtsize:
 
-  theme text size
+  Base text size.
 
-- style:
+## Value
 
-  theme style
-
-- ...:
-
-  Additional arguments passed to
-  [`plot_theme()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_theme.md).
+A ggplot object.

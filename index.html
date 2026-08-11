@@ -40,6 +40,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Vignettes</h6></li>
+    <li><a class="dropdown-item" href="articles/demo-results.html">Demo results and visualization gallery</a></li>
   </ul>
 </li>
       </ul>
@@ -59,279 +60,805 @@
 <div class="page-header"><h1 id="gnrhcell">GnRHcell<a class="anchor" aria-label="anchor" href="#gnrhcell"></a>
 </h1></div>
 <div align="center">
-<p><img src="reference/figures/GnRHcell-logo.svg" width="500" alt="GnRHcell logo"></p>
+<p><img src="reference/figures/GnRHcell-logo.svg" width="360" alt="GnRHcell logo"></p>
 <div class="section level3">
-<h3 id="high-confidence-detection-developmental-staging-validation-and-marker-discovery-of-gnrh-neurons-from-single-cell-rna-seq-data">High-confidence detection, developmental staging, validation, and marker discovery of GnRH neurons from single-cell RNA-seq data<a class="anchor" aria-label="anchor" href="#high-confidence-detection-developmental-staging-validation-and-marker-discovery-of-gnrh-neurons-from-single-cell-rna-seq-data"></a>
+<h3 id="detection-developmental-staging-validation-and-marker-discovery-for-gnrh-neurons-in-single-cell-rna-seq-data">Detection, developmental staging, validation, and marker discovery for GnRH neurons in single-cell RNA-seq data<a class="anchor" aria-label="anchor" href="#detection-developmental-staging-validation-and-marker-discovery-for-gnrh-neurons-in-single-cell-rna-seq-data"></a>
 </h3>
 <p><a href="https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/ymbouamboua/GnRHcell/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml" class="external-link"><img src="https://github.com/ymbouamboua/GnRHcell/actions/workflows/reproducibility.yaml/badge.svg" alt="Reproducibility"></a> <a href="https://ymbouamboua.github.io/GnRHcell/"><img src="https://img.shields.io/badge/docs-pkgdown-blue.svg" alt="pkgdown"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a></p>
 </div>
 </div>
-<p><code>GnRHcell</code> is an R package for identifying, characterizing, and validating rare gonadotropin-releasing hormone (GnRH) neurons in single-cell transcriptomic datasets.</p>
-<p>It provides:</p>
+<p><code>GnRHcell</code> is an R package for identifying and characterizing rare gonadotropin-releasing hormone (GnRH) neurons in single-cell transcriptomic datasets. It combines <code>GNRH1</code> expression with lineage, migration, neuroendocrine, neighborhood, and alternative-program evidence in a Seurat-compatible workflow.</p>
+<p>The package provides:</p>
 <ul>
-<li>high-confidence GnRH-cell detection;</li>
-<li>multi-signal assessment of GnRH identity;</li>
-<li>developmental-stage assignment and stage refinement;</li>
-<li>diagnostic and biological validation;</li>
-<li>GnRH-specific marker discovery and <code>GNRH1</code> co-expression analysis;</li>
-<li>multi-dataset processing and comparison;</li>
-<li>conserved cross-dataset marker-program analysis;</li>
-<li>publication-ready visualizations and reports.</li>
+<li>GnRH-cell detection with direct, supported, and dropout-rescue evidence;</li>
+<li>confidence classification and diagnostic scoring;</li>
+<li>developmental staging and stage refinement;</li>
+<li>GnRH-lineage and stage-specific marker discovery;</li>
+<li>donor-aware marker prioritization;</li>
+<li>multi-dataset processing, comparison, and validation;</li>
+<li>publication-ready embeddings, feature plots, dot plots, networks, and reports;</li>
+<li>five reference Seurat datasets for examples and validation.</li>
 </ul>
-<div class="section level2">
-<h2 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
-</h2>
-<pre class="text"><code>Single-cell RNA-seq object
-          │
-          ▼
- Input validation
-          │
-          ├── assay and expression-layer checks
-          ├── metadata validation
-          ├── gene-symbol harmonization
-          ├── dimensional-reduction checks
-          └── required-feature assessment
-          │
-          ▼
- GnRH-neuron detection
-          │
-          ├── GNRH1 expression assessment
-          ├── GnRH identity-program scoring
-          ├── migration / guidance evidence
-          ├── neuroendocrine evidence
-          ├── competing-program exclusion
-          ├── nearest-neighbor support
-          ├── adaptive thresholding
-          └── confidence classification
-          │
-          ▼
- Developmental staging
-          │
-          ├── neurogenesis
-          ├── identity acquisition
-          ├── migration
-          ├── maturation
-          ├── secretion
-          └── stage refinement using biological evidence
-          │
-          ▼
- GnRH-cell characterization
-          │
-          ├── identity-program activity
-          ├── migration-core evidence
-          ├── neuroendocrine maturation
-          ├── co-expression analysis
-          └── GnRH-specific marker discovery
-          │
-          ▼
- Validation and diagnostics
-          │
-          ├── detection-class consistency
-          ├── score distributions
-          ├── developmental-stage composition
-          ├── raw-to-final stage transitions
-          ├── migration-core validation
-          ├── biological marker expression
-          └── dataset-level summaries
-          │
-          ▼
- Multi-dataset analysis
-          │
-          ├── sequential dataset processing
-          ├── runtime comparison
-          ├── detected-cell comparison
-          ├── marker overlap
-          ├── conserved marker programs
-          └── cross-dataset validation
-          │
-          ▼
- Visualization and reporting
-          │
-          ├── embedding plots
-          ├── feature-expression plots
-          ├── stage distributions
-          ├── co-expression networks
-          ├── marker-overlap plots
-          └── reproducible reports and tables</code></pre>
-<p>The package integrates naturally with <a href="https://satijalab.org/seurat/" class="external-link">Seurat</a> workflows.</p>
-<p>Full documentation is available at <a href="https://ymbouamboua.github.io/GnRHcell/" class="uri">https://ymbouamboua.github.io/GnRHcell/</a></p>
-</div>
+<p>Documentation: <a href="https://ymbouamboua.github.io/GnRHcell/">ymbouamboua.github.io/GnRHcell</a></p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Install the development version from GitHub:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<p>Install the development version from GitHub with <code>pak</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"ymbouamboua/GnRHcell"</span><span class="op">)</span></span></code></pre></div>
-<p>Alternatively:</p>
+<p>Alternatively, use <code>remotes</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ymbouamboua/GnRHcell"</span><span class="op">)</span></span></code></pre></div>
+<p>Load the package:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ymbouamboua/GnRHcell"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ymbouamboua.github.io/GnRHcell/">GnRHcell</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
+<p><code><a href="reference/run_gnrh.html">run_gnrh()</a></code> performs detection, developmental staging, and diagnostics and returns the updated Seurat object.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ymbouamboua.github.io/GnRHcell/">GnRHcell</a></span><span class="op">)</span></span>
-<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># `obj` is a normalized Seurat object with a dimensional reduction.</span></span>
+<code class="sourceCode R"><span><span class="co"># `obj` should contain normalized expression data.</span></span>
+<span><span class="co"># A dimensional reduction is recommended for visualization.</span></span>
 <span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh.html">run_gnrh</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
-<p>The processed Seurat object contains GnRH detection, confidence, evidence scores, and developmental-stage assignments.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_status</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_class</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_confident</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_stage</span><span class="op">)</span></span></code></pre></div>
-<p>Additional metadata can include identity, migration, neuroendocrine, exclusion, nearest-neighbor, and stage-refinement metrics.</p>
+<p>Observed log for the bundled <code>hpsc</code> object:</p>
+<pre class="text"><code>[GNRH] ==== STARTING GnRHcell PIPELINE ====
+[STEP] [1/3] Detecting GnRH cells
+[INFO] Using assay: RNA
+[INFO] Matrix loaded: 33538 genes by 2400 cells
+[INFO] Using GnRH gene: GNRH1
+[DONE] Detection complete. Duration: 0.4s
+[STEP] [2/3] Assigning developmental stages
+[DONE] Staging complete. Duration: 0.1s
+[STEP] [3/3] Running diagnostics
+[DONE] Diagnostics complete. Duration: 0.0s
+[INFO] PIPELINE SUMMARY
+[INFO] Status:
+[INFO]   neg: 1743
+[INFO]   pos: 657
+[INFO] Stage:
+[INFO]   identity: 341
+[INFO]   migrating: 118
+[INFO]   mature: 198
+[INFO]   non-gnrh: 1743
+[INFO] Secretory:
+[INFO]   limited: 118
+[INFO]   supported: 539
+[INFO]   non-gnrh: 1743
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s</code></pre>
+<p>Inspect the principal outputs:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obj</span><span class="op">[[</span><span class="op">]</span><span class="op">]</span><span class="op">[</span></span>
-<span>  ,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"gnrh_status"</span>,</span>
-<span>    <span class="st">"gnrh_class"</span>,</span>
-<span>    <span class="st">"gnrh_support_score"</span>,</span>
-<span>    <span class="st">"gnrh_identity_score"</span>,</span>
-<span>    <span class="st">"gnrh_stage"</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_status</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_class</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_confident</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">gnrh_stage</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span></code></pre></div>
+<p>Result:</p>
+<table class="table">
+<thead><tr>
+<th>Output</th>
+<th>Category</th>
+<th align="right">Cells</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Status</td>
+<td><code>neg</code></td>
+<td align="right">1,743</td>
+</tr>
+<tr>
+<td>Status</td>
+<td><code>pos</code></td>
+<td align="right">657</td>
+</tr>
+<tr>
+<td>Stage</td>
+<td><code>identity</code></td>
+<td align="right">341</td>
+</tr>
+<tr>
+<td>Stage</td>
+<td><code>migrating</code></td>
+<td align="right">118</td>
+</tr>
+<tr>
+<td>Stage</td>
+<td><code>mature</code></td>
+<td align="right">198</td>
+</tr>
+<tr>
+<td>Stage</td>
+<td><code>non-gnrh</code></td>
+<td align="right">1,743</td>
+</tr>
+</tbody>
+</table>
+<p>The most frequently used metadata columns include:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span></span>
+<span>  <span class="st">"^gnrh_"</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">obj</span><span class="op">[[</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>  value <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Important output groups are:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Output</th>
+<th>Typical values or interpretation</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>gnrh_status</code></td>
+<td>Binary detection status: <code>neg</code>, <code>pos</code>
+</td>
+</tr>
+<tr>
+<td><code>gnrh_class</code></td>
+<td>Detection evidence: <code>neg</code>, <code>dropout_rescue</code>, <code>supported</code>, <code>direct</code>
+</td>
+</tr>
+<tr>
+<td><code>gnrh_confident</code></td>
+<td>High-confidence detection flag</td>
+</tr>
+<tr>
+<td><code>gnrh_stage</code></td>
+<td>
+<code>non-gnrh</code>, <code>identity</code>, <code>migrating</code>, <code>mature</code>, <code>secreting</code>
+</td>
+</tr>
+<tr>
+<td><code>gnrh_score</code></td>
+<td>Composite GnRH detection score</td>
+</tr>
+<tr>
+<td><code>gnrh_support_score</code></td>
+<td>Supporting lineage and biological evidence</td>
+</tr>
+<tr>
+<td><code>gnrh_identity_score</code></td>
+<td>Identity-stage evidence</td>
+</tr>
+<tr>
+<td><code>gnrh_migrating_score</code></td>
+<td>Migration-stage evidence</td>
+</tr>
+<tr>
+<td><code>gnrh_mature_score</code></td>
+<td>Maturation-stage evidence</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="results-at-a-glance">Results at a glance<a class="anchor" aria-label="anchor" href="#results-at-a-glance"></a>
+</h2>
+<p>The bundled demo objects provide a compact test of the same workflow across developmental models, peripheral migratory tissue, and mouse and human hypothalamic references.</p>
+<table class="table">
+<colgroup>
+<col width="31%">
+<col width="9%">
+<col width="20%">
+<col width="13%">
+<col width="14%">
+<col width="10%">
+</colgroup>
+<thead><tr>
+<th>Demo dataset</th>
+<th align="right">Cells</th>
+<th align="right">GnRH detected</th>
+<th align="right">Identity</th>
+<th align="right">Migrating</th>
+<th align="right">Mature</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>hPSC-derived GnRH</td>
+<td align="right">2,400</td>
+<td align="right">657</td>
+<td align="right">341</td>
+<td align="right">118</td>
+<td align="right">198</td>
+</tr>
+<tr>
+<td>Human fetal nose</td>
+<td align="right">2,125</td>
+<td align="right">125</td>
+<td align="right">57</td>
+<td align="right">58</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td>Human median eminence</td>
+<td align="right">2,161</td>
+<td align="right">161</td>
+<td align="right">42</td>
+<td align="right">25</td>
+<td align="right">94</td>
+</tr>
+<tr>
+<td>Mouse HypoMap</td>
+<td align="right">2,174</td>
+<td align="right">174</td>
+<td align="right">10</td>
+<td align="right">0</td>
+<td align="right">164</td>
+</tr>
+<tr>
+<td>Human HypoMap</td>
+<td align="right">2,400</td>
+<td align="right">400</td>
+<td align="right">27</td>
+<td align="right">105</td>
+<td align="right">268</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Interpretation.</strong> These demo objects were intentionally sampled to retain GnRH-relevant cells. Counts and percentages describe only the bundled objects; they are not prevalence estimates for the complete source atlases. Detection and staging are GnRHcell outputs and require independent biological validation.</p>
+</blockquote>
+<div align="center">
+<p><img src="reference/figures/demo-umap-status.png" width="900" alt="UMAP comparison of GnRHcell detection in five demo datasets"></p>
+</div>
+<p>Detected cells occupy coherent transcriptional neighborhoods across the five demo objects, while their distribution varies with biological context and source study.</p>
+<div align="center">
+<p><img src="reference/figures/demo-stage-composition.png" width="850" alt="Developmental-stage composition among GnRH-detected cells"></p>
+</div>
+<p>Stage composition separates identity-rich differentiation and fetal-nose objects from the mature-cell-dominated hypothalamic references. The full table, figure-building code, and interpretation notes are available in the <a href="https://ymbouamboua.github.io/GnRHcell/articles/demo-results.html">demo results gallery</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="demo-datasets-and-primary-references">Demo datasets and primary references<a class="anchor" aria-label="anchor" href="#demo-datasets-and-primary-references"></a>
+</h2>
+<p>The repository includes five compact, preprocessed Seurat objects for examples, testing, and method demonstration. These objects are <strong>sampled derivatives</strong> of the source studies: their cell counts and cell-type proportions therefore differ from the complete published datasets and should not be used to reproduce the original study statistics.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr>
+<th>ID</th>
+<th>Demo object</th>
+<th align="right">Cells</th>
+<th>Source study</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>hpsc</code></td>
+<td>Human pluripotent stem cell-derived GnRH differentiation</td>
+<td align="right">2,400</td>
+<td>
+<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9806769/" class="external-link"><em>Deciphering the Transcriptional Landscape of Human Pluripotent Stem Cell-Derived GnRH Neurons</em></a> (<a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE212901" class="external-link">GEO: GSE212901</a>)</td>
+</tr>
+<tr>
+<td><code>hudeca_nose</code></td>
+<td>Human fetal nose, post-conception weeks 7–12</td>
+<td align="right">2,125</td>
+<td>
+<a href="https://doi.org/10.1038/s41467-026-71595-6" class="external-link"><em>A single-cell and spatial atlas of early human olfactory development</em></a> (<a href="https://ega-archive.org/datasets/EGAD50000001712" class="external-link">EGA: EGAD50000001712</a>)</td>
+</tr>
+<tr>
+<td><code>human_me</code></td>
+<td>Human median eminence/hypothalamic samples from control, Alzheimer’s disease, and frontotemporal dementia donors</td>
+<td align="right">2,161</td>
+<td>Sauve et al. (2026), <a href="https://doi.org/10.1016/j.cpblue.2026.100003" class="external-link"><em>Tanycytic degeneration impairs tau clearance and contributes to Alzheimer’s disease pathology</em></a>
+</td>
+</tr>
+<tr>
+<td><code>mouse_hypomap</code></td>
+<td>Integrated mouse hypothalamus atlas</td>
+<td align="right">2,174</td>
+<td>Steuernagel, Lam, Klemm et al. (2022), <a href="https://doi.org/10.1038/s42255-022-00657-y" class="external-link"><em>HypoMap—a unified single-cell gene expression atlas of the murine hypothalamus</em></a>
+</td>
+</tr>
+<tr>
+<td><code>human_hypomap</code></td>
+<td>Human hypothalamus atlas</td>
+<td align="right">2,400</td>
+<td>Tadross, Steuernagel, Dowsett et al. (2025), <a href="https://doi.org/10.1038/s41586-024-08504-8" class="external-link"><em>A comprehensive spatio-cellular map of the human hypothalamus</em></a>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Please cite both <strong>GnRHcell</strong> and the corresponding primary study when using a demo object. Consult the linked source repository or archive for the complete dataset, original processing details, access conditions, and reuse terms.</p>
+<p>Because these objects are stored as <code>.rds</code> files, load them with <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code> rather than <code><a href="https://rdrr.io/r/utils/data.html" class="external-link">data()</a></code>:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">load_gnrh_data</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">name</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">available</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"hpsc"</span>,</span>
+<span>    <span class="st">"hudeca_nose"</span>,</span>
+<span>    <span class="st">"human_me"</span>,</span>
+<span>    <span class="st">"mouse_hypomap"</span>,</span>
+<span>    <span class="st">"human_hypomap"</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="op">]</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span></span>
+<span>  <span class="va">name</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/match.arg.html" class="external-link">match.arg</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">available</span><span class="op">)</span></span>
+<span>  <span class="va">path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>    <span class="st">"extdata"</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">name</span>, <span class="st">".rds"</span><span class="op">)</span>,</span>
+<span>    package <span class="op">=</span> <span class="st">"GnRHcell"</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/nchar.html" class="external-link">nzchar</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span><span class="st">"Dataset not found in the installed GnRHcell package: "</span>, <span class="va">name</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">hpsc</span> <span class="op">&lt;-</span> <span class="fu">load_gnrh_data</span><span class="op">(</span><span class="st">"hpsc"</span><span class="op">)</span></span>
+<span><span class="va">hpsc</span></span></code></pre></div>
+<pre class="text"><code>An object of class Seurat
+33538 features across 2400 samples within 1 assay
+Active assay: RNA (33538 features, 2000 variable features)
+ 3 layers present: data, counts, scale.data
+ 3 dimensional reductions calculated: pca, harmony, umap</code></pre>
+<p>Load all reference datasets when sufficient memory is available:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"hpsc"</span>,</span>
+<span>  <span class="st">"hudeca_nose"</span>,</span>
+<span>  <span class="st">"human_me"</span>,</span>
+<span>  <span class="st">"mouse_hypomap"</span>,</span>
+<span>  <span class="st">"human_hypomap"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">reference_objects</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">dataset_ids</span>, <span class="va">load_gnrh_data</span><span class="op">)</span>,</span>
+<span>  <span class="va">dataset_ids</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For memory-constrained analyses, load and process one object at a time.</p>
 </div>
 <div class="section level2">
 <h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
 </h2>
 <div class="section level3">
-<h3 id="embedding">Embedding<a class="anchor" aria-label="anchor" href="#embedding"></a>
+<h3 id="embeddings">Embeddings<a class="anchor" aria-label="anchor" href="#embeddings"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_embedding.html">plot_gnrh_embedding</a></span><span class="op">(</span></span>
-<span>  <span class="va">obj</span>,</span>
-<span>  group.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"gnrh_status"</span>,</span>
-<span>    <span class="st">"gnrh_confident"</span>,</span>
-<span>    <span class="st">"gnrh_stage"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  reduction <span class="op">=</span> <span class="st">"umap"</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  group_by <span class="op">=</span> <span class="st">"gnrh_status"</span>,</span>
+<span>  reduction <span class="op">=</span> <span class="st">"umap"</span>,</span>
+<span>  style <span class="op">=</span> <span class="st">"classic"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/plot_gnrh_embedding.html">plot_gnrh_embedding</a></span><span class="op">(</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  group_by <span class="op">=</span> <span class="st">"gnrh_stage"</span>,</span>
+<span>  reduction <span class="op">=</span> <span class="st">"umap"</span>,</span>
+<span>  percentage <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  label <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  repel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  cols <span class="op">=</span> <span class="fu"><a href="reference/gnrh_colors.html">gnrh_colors</a></span><span class="op">(</span><span class="st">"stage"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>Result from the bundled <code>hpsc</code> object:</p>
+<div align="center">
+<p><img src="reference/figures/hpsc-embedding-results.png" width="900" alt="GnRH detection and developmental-stage embeddings in the hPSC demo object"></p>
+</div>
+<p>Large datasets are rasterized automatically when appropriate.</p>
 </div>
 <div class="section level3">
-<h3 id="feature-expression">Feature expression<a class="anchor" aria-label="anchor" href="#feature-expression"></a>
+<h3 id="feature-presets">Feature presets<a class="anchor" aria-label="anchor" href="#feature-presets"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p><code><a href="reference/plot_gnrh_feature.html">plot_gnrh_feature()</a></code> supports direct feature names and GnRHcell presets.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_feature.html">plot_gnrh_feature</a></span><span class="op">(</span></span>
-<span>  <span class="va">obj</span>,</span>
-<span>  feature_type <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  reduction <span class="op">=</span> <span class="st">"umap"</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  preset <span class="op">=</span> <span class="st">"core"</span>,</span>
+<span>  reduction <span class="op">=</span> <span class="st">"umap"</span>,</span>
+<span>  ncol <span class="op">=</span> <span class="fl">4</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/plot_gnrh_feature.html">plot_gnrh_feature</a></span><span class="op">(</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  preset <span class="op">=</span> <span class="st">"modules"</span>,</span>
+<span>  theme.cols <span class="op">=</span> <span class="st">"viridis"</span>,</span>
+<span>  reduction <span class="op">=</span> <span class="st">"umap"</span>,</span>
+<span>  ncol <span class="op">=</span> <span class="fl">4</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/plot_gnrh_feature.html">plot_gnrh_feature</a></span><span class="op">(</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  preset <span class="op">=</span> <span class="st">"staging"</span>,</span>
+<span>  theme.cols <span class="op">=</span> <span class="st">"gnrh"</span>,</span>
+<span>  reduction <span class="op">=</span> <span class="st">"umap"</span>,</span>
+<span>  ncol <span class="op">=</span> <span class="fl">3</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>Core-feature result:</p>
+<div align="center">
+<p><img src="reference/figures/hpsc-feature-core.png" width="850" alt="Core GnRH feature maps in the hPSC demo object"></p>
+</div>
+<p>Plot arbitrary genes or metadata fields:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_feature.html">plot_gnrh_feature</a></span><span class="op">(</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  features <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GNRH1"</span>, <span class="st">"FEZF1"</span>, <span class="st">"ISL1"</span>, <span class="st">"DCX"</span><span class="op">)</span>,</span>
+<span>  ncol <span class="op">=</span> <span class="fl">4</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div align="center">
+<p><img src="reference/figures/hpsc-genes.png" width="850" alt="Core GnRH feature maps in the hPSC demo object"></p>
+</div>
 </div>
 <div class="section level3">
-<h3 id="distribution-across-samples">Distribution across samples<a class="anchor" aria-label="anchor" href="#distribution-across-samples"></a>
+<h3 id="dot-plots">Dot plots<a class="anchor" aria-label="anchor" href="#dot-plots"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_dot.html">plot_gnrh_dot</a></span><span class="op">(</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  features <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"GNRH1"</span>, <span class="st">"FEZF1"</span>, <span class="st">"ISL1"</span>,</span>
+<span>    <span class="st">"ANOS1"</span>, <span class="st">"PROKR2"</span>, <span class="st">"DCX"</span>,</span>
+<span>    <span class="st">"CHGA"</span>, <span class="st">"PCSK2"</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  group.by <span class="op">=</span> <span class="st">"gnrh_stage"</span>,</span>
+<span>  dot.outline <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  th.cols <span class="op">=</span> <span class="st">"RdYlBu"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"GnRH developmental programs"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Result:</p>
+<div align="center">
+<p><img src="reference/figures/hpsc-program-dotplot.png" width="800" alt="GnRH developmental-program dot plot"></p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="distributions">Distributions<a class="anchor" aria-label="anchor" href="#distributions"></a>
+</h3>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_distribution.html">plot_gnrh_distribution</a></span><span class="op">(</span></span>
-<span>  <span class="va">obj</span>,</span>
+<span>  <span class="va">hpsc</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="st">"gnrh_stage"</span>,</span>
 <span>  split.by <span class="op">=</span> <span class="st">"orig.ident"</span>,</span>
 <span>  proportion <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  label <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cols <span class="op">=</span> <span class="fu"><a href="reference/gnrh_colors.html">gnrh_colors</a></span><span class="op">(</span><span class="st">"stage"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>Result:</p>
+<div align="center">
+<p><img src="reference/figures/hpsc-stage-distribution.png" width="800" alt="GnRH developmental-stage distribution by hPSC sample"></p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="diagnostic-report">Diagnostic report<a class="anchor" aria-label="anchor" href="#diagnostic-report"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/gnrh_report.html">gnrh_report</a></span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
-<p>The report summarizes detection signals, threshold performance, GnRH-module activity, classification confidence, and developmental-stage composition.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">report</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gnrh_report.html">gnrh_report</a></span><span class="op">(</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  roc_mode <span class="op">=</span> <span class="st">"internal"</span>,</span>
+<span>  style <span class="op">=</span> <span class="st">"bw"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">report</span></span></code></pre></div>
+<p>Compact internal diagnostic result:</p>
+<div align="center">
+<p><img src="reference/figures/hpsc-report.png" width="800" alt="Internal GnRHcell diagnostic summary"></p>
 </div>
+<p>Internal ROC curves describe score discrimination against classifications produced by the same scoring system. They are diagnostic and should not be interpreted as independent validation.</p>
+<p>When an independent manual or reference annotation is available:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">report</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gnrh_report.html">gnrh_report</a></span><span class="op">(</span></span>
+<span>  <span class="va">hpsc</span>,</span>
+<span>  truth <span class="op">=</span> <span class="st">"gnrh_class"</span>,</span>
+<span>  positive_truth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GnRH"</span>, <span class="st">"pos"</span>, <span class="st">"TRUE"</span><span class="op">)</span>,</span>
+<span>  roc_mode <span class="op">=</span> <span class="st">"external"</span>,</span>
+<span>  style <span class="op">=</span> <span class="st">"bw"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">report</span></span></code></pre></div>
+<div align="center">
+<p><img src="reference/figures/hpsc-report-class.png" width="800" alt="Internal GnRHcell diagnostic summary"></p>
 </div>
-<div class="section level2">
-<h2 id="gnrh-specific-gene-discovery">GnRH-specific gene discovery<a class="anchor" aria-label="anchor" href="#gnrh-specific-gene-discovery"></a>
-</h2>
-<p>Identify genes enriched in confident GnRH cells relative to a biologically relevant control population:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/find_gnrh_genes.html">find_gnrh_genes</a></span><span class="op">(</span></span>
-<span>  object <span class="op">=</span> <span class="va">obj</span>,</span>
-<span>  annotation_col <span class="op">=</span> <span class="st">"ann2"</span>,</span>
-<span>  status_col <span class="op">=</span> <span class="st">"gnrh_status"</span>,</span>
-<span>  control_ident <span class="op">=</span> <span class="st">"GLU"</span>,</span>
-<span>  donor_col <span class="op">=</span> <span class="st">"orig.ident"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">genes</span><span class="op">$</span><span class="va">candidates</span><span class="op">)</span></span></code></pre></div>
-<p>The returned results combine differential expression, <code>GNRH1</code> co-expression, specificity, and donor recurrence.</p>
-<p>Consult <code><a href="reference/find_gnrh_genes.html">?find_gnrh_genes</a></code> for available thresholds and returned tables.</p>
-<div class="section level3">
-<h3 id="co-expression-and-network-visualization">Co-expression and network visualization<a class="anchor" aria-label="anchor" href="#co-expression-and-network-visualization"></a>
-</h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">coexpressed</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span></span>
-<span>  <span class="va">genes</span><span class="op">$</span><span class="va">markers</span>,</span>
-<span>  <span class="va">coexpr_flag</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/plot_gnrh_coexpr.html">plot_gnrh_coexpr</a></span><span class="op">(</span></span>
-<span>  <span class="va">coexpressed</span>,</span>
-<span>  coexp_cutoff <span class="op">=</span> <span class="fl">0.3</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/plot_network.html">plot_network</a></span><span class="op">(</span></span>
-<span>  <span class="va">genes</span><span class="op">$</span><span class="va">markers</span>,</span>
-<span>  top_n <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">0.1</span></span>
+<p>Export a vector report:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span></span>
+<span>  <span class="st">"gnrh_diagnostic_report.pdf"</span>,</span>
+<span>  <span class="va">report</span>,</span>
+<span>  width <span class="op">=</span> <span class="fl">12</span>,</span>
+<span>  height <span class="op">=</span> <span class="fl">7.5</span>,</span>
+<span>  units <span class="op">=</span> <span class="st">"in"</span>,</span>
+<span>  device <span class="op">=</span> <span class="fu">grDevices</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/grDevices/cairo.html" class="external-link">cairo_pdf</a></span>,</span>
+<span>  bg <span class="op">=</span> <span class="st">"white"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
+<h2 id="gnrh-lineage-marker-discovery">GnRH-lineage marker discovery<a class="anchor" aria-label="anchor" href="#gnrh-lineage-marker-discovery"></a>
+</h2>
+<p><code><a href="reference/find_gnrh_genes.html">find_gnrh_genes()</a></code> identifies genes enriched in GnRH-positive cells relative to biologically matched controls and ranks them using differential expression, specificity, <code>GNRH1</code> co-detection, and donor recurrence.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/find_gnrh_genes.html">find_gnrh_genes</a></span><span class="op">(</span></span>
+<span>  object <span class="op">=</span> <span class="va">hpsc</span>,</span>
+<span>  annotation_col <span class="op">=</span> <span class="st">"ann2"</span>,</span>
+<span>  control_ident <span class="op">=</span> <span class="st">"GLU"</span>,</span>
+<span>  donor_col <span class="op">=</span> <span class="st">"orig.ident"</span>,</span>
+<span>  assay <span class="op">=</span> <span class="st">"RNA"</span>,</span>
+<span>  layer <span class="op">=</span> <span class="st">"data"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">genes</span><span class="op">$</span><span class="va">candidates</span>, <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">genes</span><span class="op">$</span><span class="va">donor_cells</span></span></code></pre></div>
+<p>Top results from the <code>hpsc</code> comparison (<code>gnrh_status == "pos"</code> versus <code>ann2 == "GLU"</code> controls):</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+</colgroup>
+<thead><tr>
+<th>Gene</th>
+<th align="right">log2 fold change</th>
+<th align="right">Target detection</th>
+<th align="right">Control detection</th>
+<th align="right">Specificity</th>
+<th align="right">GNRH1 co-expression</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>DLX5</code></td>
+<td align="right">6.40</td>
+<td align="right">38.7%</td>
+<td align="right">1.1%</td>
+<td align="right">0.376</td>
+<td align="right">0.529</td>
+</tr>
+<tr>
+<td><code>DLX1</code></td>
+<td align="right">6.90</td>
+<td align="right">33.6%</td>
+<td align="right">0.5%</td>
+<td align="right">0.331</td>
+<td align="right">0.486</td>
+</tr>
+<tr>
+<td><code>ARX</code></td>
+<td align="right">7.25</td>
+<td align="right">31.2%</td>
+<td align="right">0.4%</td>
+<td align="right">0.308</td>
+<td align="right">0.499</td>
+</tr>
+<tr>
+<td><code>DLX2</code></td>
+<td align="right">6.58</td>
+<td align="right">30.9%</td>
+<td align="right">0.5%</td>
+<td align="right">0.304</td>
+<td align="right">0.449</td>
+</tr>
+<tr>
+<td><code>RASD1</code></td>
+<td align="right">6.85</td>
+<td align="right">27.9%</td>
+<td align="right">0.5%</td>
+<td align="right">0.273</td>
+<td align="right">0.442</td>
+</tr>
+</tbody>
+</table>
+<p>The complete result is available in <a href="https://github.com/ymbouamboua/GnRHcell/blob/main/man/figures/hpsc-lineage-markers.csv" class="external-link"><code>hpsc-lineage-markers.csv</code></a>.</p>
+<p>Choose <code>annotation_col</code> and <code>control_ident</code> according to the metadata and biology of the dataset. The control population should represent a relevant non-GnRH neuronal comparison rather than all cells indiscriminately.</p>
+<div class="section level3">
+<h3 id="co-expression-and-gene-networks">Co-expression and gene networks<a class="anchor" aria-label="anchor" href="#co-expression-and-gene-networks"></a>
+</h3>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_coexpr.html">plot_gnrh_coexpr</a></span><span class="op">(</span></span>
+<span>  <span class="va">genes</span><span class="op">$</span><span class="va">markers</span>,</span>
+<span>  coexp_cutoff <span class="op">=</span> <span class="fl">0.30</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/plot_network.html">plot_network</a></span><span class="op">(</span></span>
+<span>  <span class="va">genes</span><span class="op">$</span><span class="va">markers</span>,</span>
+<span>  top_n <span class="op">=</span> <span class="fl">40</span>,</span>
+<span>  threshold <span class="op">=</span> <span class="fl">0.20</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Result:</p>
+<div align="center">
+<p><img src="reference/figures/hpsc-lineage-marker-results.png" width="900" alt="GnRH-lineage co-expression and marker network results"></p>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="stage-specific-marker-discovery">Stage-specific marker discovery<a class="anchor" aria-label="anchor" href="#stage-specific-marker-discovery"></a>
+</h2>
+<p><code><a href="reference/find_gnrh_stage_markers.html">find_gnrh_stage_markers()</a></code> compares each selected developmental stage with the other GnRH-positive stages. It does not require coexpression with <code>GNRH1</code>, avoiding enrichment for general GnRH-lineage markers.</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">stage_markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/find_gnrh_stage_markers.html">find_gnrh_stage_markers</a></span><span class="op">(</span></span>
+<span>  object <span class="op">=</span> <span class="va">hpsc</span>,</span>
+<span>  stage_col <span class="op">=</span> <span class="st">"gnrh_stage"</span>,</span>
+<span>  stages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"identity"</span>, <span class="st">"migrating"</span>, <span class="st">"mature"</span><span class="op">)</span>,</span>
+<span>  class_col <span class="op">=</span> <span class="st">"gnrh_class"</span>,</span>
+<span>  positive_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"direct"</span>, <span class="st">"supported"</span><span class="op">)</span>,</span>
+<span>  donor_col <span class="op">=</span> <span class="st">"orig.ident"</span>,</span>
+<span>  assay <span class="op">=</span> <span class="st">"RNA"</span>,</span>
+<span>  layer <span class="op">=</span> <span class="st">"data"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">stage_markers</span><span class="op">$</span><span class="va">stage_counts</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">stage_markers</span><span class="op">$</span><span class="va">candidates</span>, <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
+<p>Top stage-associated results in the <code>hpsc</code> demo:</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+</colgroup>
+<thead><tr>
+<th>Stage</th>
+<th>Gene</th>
+<th align="right">log2 fold change</th>
+<th align="right">Detected in target</th>
+<th align="right">Detected in reference</th>
+<th align="right">Adjusted P</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Identity</td>
+<td><code>DLX5</code></td>
+<td align="right">4.28</td>
+<td align="right">67.2%</td>
+<td align="right">7.9%</td>
+<td align="right">2.83e-51</td>
+</tr>
+<tr>
+<td>Identity</td>
+<td><code>DLX1</code></td>
+<td align="right">5.18</td>
+<td align="right">61.3%</td>
+<td align="right">3.8%</td>
+<td align="right">9.13e-50</td>
+</tr>
+<tr>
+<td>Identity</td>
+<td><code>SIX3</code></td>
+<td align="right">2.32</td>
+<td align="right">85.0%</td>
+<td align="right">52.2%</td>
+<td align="right">5.87e-45</td>
+</tr>
+<tr>
+<td>Migrating</td>
+<td><code>SLIT1</code></td>
+<td align="right">1.70</td>
+<td align="right">78.0%</td>
+<td align="right">32.3%</td>
+<td align="right">1.79e-21</td>
+</tr>
+<tr>
+<td>Migrating</td>
+<td><code>UBE2E3</code></td>
+<td align="right">0.54</td>
+<td align="right">97.5%</td>
+<td align="right">97.0%</td>
+<td align="right">9.69e-08</td>
+</tr>
+<tr>
+<td>Migrating</td>
+<td><code>TBR1</code></td>
+<td align="right">0.98</td>
+<td align="right">72.9%</td>
+<td align="right">45.8%</td>
+<td align="right">6.74e-06</td>
+</tr>
+<tr>
+<td>Mature</td>
+<td><code>SCG2</code></td>
+<td align="right">2.44</td>
+<td align="right">80.3%</td>
+<td align="right">25.7%</td>
+<td align="right">2.79e-40</td>
+</tr>
+<tr>
+<td>Mature</td>
+<td><code>EMX2</code></td>
+<td align="right">1.54</td>
+<td align="right">94.4%</td>
+<td align="right">44.7%</td>
+<td align="right">1.69e-35</td>
+</tr>
+<tr>
+<td>Mature</td>
+<td><code>LHX5-AS1</code></td>
+<td align="right">1.35</td>
+<td align="right">95.5%</td>
+<td align="right">50.5%</td>
+<td align="right">1.42e-29</td>
+</tr>
+</tbody>
+</table>
+<div align="center">
+<p><img src="reference/figures/hpsc-stage-marker-dotplot.png" width="820" alt="Top stage-associated markers in the hPSC demo object"></p>
+</div>
+<p>The complete result is available in <a href="https://github.com/ymbouamboua/GnRHcell/blob/main/man/figures/hpsc-stage-markers.csv" class="external-link"><code>hpsc-stage-markers.csv</code></a>.</p>
+<p>Retrieve the top markers per stage:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">top_stage_markers</span> <span class="op">&lt;-</span> <span class="va">stage_markers</span><span class="op">$</span><span class="va">candidates</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">.data</span><span class="op">$</span><span class="va">stage</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_max</a></span><span class="op">(</span></span>
+<span>    order_by <span class="op">=</span> <span class="va">.data</span><span class="op">$</span><span class="va">stage_score</span>,</span>
+<span>    n <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>    with_ties <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">top_stage_markers</span></span></code></pre></div>
+<p>Cell-level differential expression is intended for marker discovery. Replicate-aware pseudobulk testing is recommended before making formal population-level claims.</p>
+</div>
+<div class="section level2">
 <h2 id="multi-dataset-workflow">Multi-dataset workflow<a class="anchor" aria-label="anchor" href="#multi-dataset-workflow"></a>
 </h2>
-<p><code>GnRHcell</code> can process collections of independent Seurat datasets sequentially, allowing large studies to be analyzed without loading all objects into memory simultaneously.</p>
 <div class="section level3">
-<h3 id="id_1-define-the-dataset-configuration">1. Define the dataset configuration<a class="anchor" aria-label="anchor" href="#id_1-define-the-dataset-configuration"></a>
+<h3 id="configure-datasets">Configure datasets<a class="anchor" aria-label="anchor" href="#configure-datasets"></a>
 </h3>
-<p>Each row describes one dataset.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>Each row defines an independent Seurat dataset:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"human_hpsc"</span>,</span>
-<span>    <span class="st">"human_nose"</span>,</span>
-<span>    <span class="st">"mouse_hypomap"</span></span>
+<span>    <span class="st">"hpsc"</span>,</span>
+<span>    <span class="st">"hudeca_nose"</span>,</span>
+<span>    <span class="st">"human_me"</span>,</span>
+<span>    <span class="st">"mouse_hypomap"</span>,</span>
+<span>    <span class="st">"human_hypomap"</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"hPSC GnRH (Wang 2022)"</span>,</span>
-<span>    <span class="st">"Human fetal nose"</span>,</span>
-<span>    <span class="st">"Mouse HypoMap"</span></span>
+<span>    <span class="st">"Human hPSC"</span>,</span>
+<span>    <span class="st">"HuDeCa nose"</span>,</span>
+<span>    <span class="st">"Human medial eminence"</span>,</span>
+<span>    <span class="st">"Mouse HypoMap"</span>,</span>
+<span>    <span class="st">"Human HypoMap"</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  species <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Human"</span>,</span>
 <span>    <span class="st">"Human"</span>,</span>
-<span>    <span class="st">"Mouse"</span></span>
+<span>    <span class="st">"Human"</span>,</span>
+<span>    <span class="st">"Mouse"</span>,</span>
+<span>    <span class="st">"Human"</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"data/human_hpsc.rds"</span>,</span>
-<span>    <span class="st">"data/human_nose.rds"</span>,</span>
-<span>    <span class="st">"data/mouse_hypomap.rds"</span></span>
+<span>  file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
+<span>    <span class="st">"inst/extdata"</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>        <span class="st">"hpsc"</span>,</span>
+<span>        <span class="st">"hudeca_nose"</span>,</span>
+<span>        <span class="st">"human_me"</span>,</span>
+<span>        <span class="st">"mouse_hypomap"</span>,</span>
+<span>        <span class="st">"human_hypomap"</span></span>
+<span>      <span class="op">)</span>,</span>
+<span>      <span class="st">".rds"</span></span>
+<span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  split_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"orig.ident"</span>,</span>
-<span>    <span class="st">"status"</span>,</span>
+<span>    <span class="st">"orig.ident"</span>,</span>
+<span>    <span class="st">"orig.ident"</span>,</span>
+<span>    <span class="st">"orig.ident"</span>,</span>
 <span>    <span class="st">"orig.ident"</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  reduction <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"umap"</span>,</span>
 <span>    <span class="st">"umap"</span>,</span>
-<span>    <span class="st">"umap_scvi"</span></span>
+<span>    <span class="st">"umap"</span>,</span>
+<span>    <span class="st">"umap"</span>,</span>
+<span>    <span class="st">"umap"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>For installed package data, replace the paths with calls to <code><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file()</a></code>.</p>
 </div>
 <div class="section level3">
-<h3 id="id_2-validate-the-configuration">2. Validate the configuration<a class="anchor" aria-label="anchor" href="#id_2-validate-the-configuration"></a>
+<h3 id="validate-the-configuration">Validate the configuration<a class="anchor" aria-label="anchor" href="#validate-the-configuration"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/prepare_gnrh_datasets.html">prepare_gnrh_datasets</a></span><span class="op">(</span></span>
 <span>  <span class="va">datasets</span>,</span>
 <span>  check_files <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -339,63 +866,243 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">datasets</span></span></code></pre></div>
-<p><code><a href="reference/prepare_gnrh_datasets.html">prepare_gnrh_datasets()</a></code> standardizes dataset metadata, expands file paths, checks file availability, detects duplicated IDs, and validates species labels.</p>
+<p>Validation result for the bundled configuration:</p>
+<table class="table">
+<colgroup>
+<col width="21%">
+<col width="11%">
+<col width="43%">
+<col width="13%">
+<col width="10%">
+</colgroup>
+<thead><tr>
+<th>ID</th>
+<th>Species</th>
+<th>File</th>
+<th>Reduction</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>hpsc</code></td>
+<td>Human</td>
+<td><code>inst/extdata/hpsc.rds</code></td>
+<td>UMAP</td>
+<td>Ready</td>
+</tr>
+<tr>
+<td><code>hudeca_nose</code></td>
+<td>Human</td>
+<td><code>inst/extdata/hudeca_nose.rds</code></td>
+<td>UMAP</td>
+<td>Ready</td>
+</tr>
+<tr>
+<td><code>human_me</code></td>
+<td>Human</td>
+<td><code>inst/extdata/human_me.rds</code></td>
+<td>UMAP</td>
+<td>Ready</td>
+</tr>
+<tr>
+<td><code>mouse_hypomap</code></td>
+<td>Mouse</td>
+<td><code>inst/extdata/mouse_hypomap.rds</code></td>
+<td>UMAP</td>
+<td>Ready</td>
+</tr>
+<tr>
+<td><code>human_hypomap</code></td>
+<td>Human</td>
+<td><code>inst/extdata/human_hypomap.rds</code></td>
+<td>UMAP</td>
+<td>Ready</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level3">
-<h3 id="id_3-run-gnrhcell-across-all-datasets">3. Run GnRHcell across all datasets<a class="anchor" aria-label="anchor" href="#id_3-run-gnrhcell-across-all-datasets"></a>
+<h3 id="run-the-collection">Run the collection<a class="anchor" aria-label="anchor" href="#run-the-collection"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_collection.html">run_gnrh_collection</a></span><span class="op">(</span></span>
 <span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
 <span>  run_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  run_comparisons <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  run_programs <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  clean_objects <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  clean_objects <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  save_objects <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The workflow:</p>
-<ul>
-<li>loads datasets sequentially;</li>
-<li>runs <code><a href="reference/run_gnrh.html">run_gnrh()</a></code> on each object;</li>
-<li>generates dataset-level diagnostics and figures;</li>
-<li>identifies GnRH-associated markers;</li>
-<li>writes run-information and marker tables;</li>
-<li>compares datasets;</li>
-<li>optionally identifies conserved marker programs.</li>
-</ul>
-<p>The returned object has class <code>"gnrh_collection"</code>.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">collection</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">collection</span><span class="op">$</span><span class="va">results</span><span class="op">)</span></span>
-<span><span class="va">collection</span><span class="op">$</span><span class="va">datasets</span></span>
-<span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">collection</span><span class="op">$</span><span class="va">results</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">$</span><span class="va">runtime_plot</span></span>
+<span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">$</span><span class="va">detected_plot</span></span>
+<span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">$</span><span class="va">programs</span><span class="op">$</span><span class="va">summary</span></span></code></pre></div>
+<p>The workflow loads datasets sequentially, runs GnRHcell, creates dataset-level outputs, compares markers, and optionally identifies conserved programs.</p>
+<p>For lower memory use:</p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_collection.html">run_gnrh_collection</a></span><span class="op">(</span></span>
+<span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
+<span>  clean_objects <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  save_objects <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="running-a-single-dataset-through-the-collection-workflow">Running a single dataset through the collection workflow<a class="anchor" aria-label="anchor" href="#running-a-single-dataset-through-the-collection-workflow"></a>
+<h3 id="validate-a-collection">Validate a collection<a class="anchor" aria-label="anchor" href="#validate-a-collection"></a>
 </h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<p>Processed objects must remain available in the collection when running validation directly:</p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">validation</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/validate_gnrh_collection.html">validate_gnrh_collection</a></span><span class="op">(</span></span>
+<span>  <span class="va">collection</span>,</span>
+<span>  positive_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"direct"</span>, <span class="st">"supported"</span><span class="op">)</span>,</span>
+<span>  assay <span class="op">=</span> <span class="st">"RNA"</span>,</span>
+<span>  layer <span class="op">=</span> <span class="st">"data"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<pre class="text"><code>==== GNRH COLLECTION VALIDATION START ====
+Summarizing datasets
+Validating GnRH detection
+Summarizing GNRH1-negative transcriptomic candidates
+Checking status/class consistency
+Summarizing GnRH evidence scores
+Validating developmental stages
+Summarizing biological marker expression
+Validated 5 datasets; 11,260 cells; 1,517 GnRH-positive cells.
+GNRH1-negative transcriptomic candidates: 14 (diagnostic only; not counted as GnRH-positive).
+Developmental-stage refinements: 66 cells.
+Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
+==== GNRH COLLECTION VALIDATION DONE ====</code></pre>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">detection</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">status_class</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">scores</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">stages</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">stage_class</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">stage_refinement</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">stage_reassignment</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">migration_core</span></span>
+<span><span class="va">validation</span><span class="op">$</span><span class="va">biological_markers</span></span></code></pre></div>
+<p>Cross-dataset result:</p>
+<table class="table">
+<colgroup>
+<col width="31%">
+<col width="9%">
+<col width="20%">
+<col width="13%">
+<col width="14%">
+<col width="10%">
+</colgroup>
+<thead><tr>
+<th>Dataset</th>
+<th align="right">Cells</th>
+<th align="right">GnRH detected</th>
+<th align="right">Identity</th>
+<th align="right">Migrating</th>
+<th align="right">Mature</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>hPSC-derived GnRH</td>
+<td align="right">2,400</td>
+<td align="right">657</td>
+<td align="right">341</td>
+<td align="right">118</td>
+<td align="right">198</td>
+</tr>
+<tr>
+<td>Human fetal nose</td>
+<td align="right">2,125</td>
+<td align="right">125</td>
+<td align="right">57</td>
+<td align="right">58</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td>Human median eminence</td>
+<td align="right">2,161</td>
+<td align="right">161</td>
+<td align="right">42</td>
+<td align="right">25</td>
+<td align="right">94</td>
+</tr>
+<tr>
+<td>Mouse HypoMap</td>
+<td align="right">2,174</td>
+<td align="right">174</td>
+<td align="right">10</td>
+<td align="right">0</td>
+<td align="right">164</td>
+</tr>
+<tr>
+<td>Human HypoMap</td>
+<td align="right">2,400</td>
+<td align="right">400</td>
+<td align="right">27</td>
+<td align="right">105</td>
+<td align="right">268</td>
+</tr>
+</tbody>
+</table>
+<div align="center">
+<p><img src="reference/figures/demo-stage-composition.png" width="800" alt="Cross-dataset GnRH stage composition"></p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="run-one-dataset">Run one dataset<a class="anchor" aria-label="anchor" href="#run-one-dataset"></a>
+</h3>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_dataset.html">run_gnrh_dataset</a></span><span class="op">(</span></span>
-<span>  object <span class="op">=</span> <span class="va">obj</span>,</span>
-<span>  dataset_id <span class="op">=</span> <span class="st">"human_hpsc"</span>,</span>
-<span>  dataset_label <span class="op">=</span> <span class="st">"hPSC GnRH (Wang 2022)"</span>,</span>
+<span>  object <span class="op">=</span> <span class="va">hpsc</span>,</span>
+<span>  dataset_id <span class="op">=</span> <span class="st">"hpsc"</span>,</span>
+<span>  dataset_label <span class="op">=</span> <span class="st">"Human hPSC"</span>,</span>
 <span>  split_by <span class="op">=</span> <span class="st">"orig.ident"</span>,</span>
 <span>  reduction <span class="op">=</span> <span class="st">"umap"</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
-<span>  run_markers <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  output_dir <span class="op">=</span> <span class="st">"hpsc_gnrh_results"</span>,</span>
+<span>  run_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  clean_object <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">result</span><span class="op">$</span><span class="va">run_info</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">markers</span><span class="op">)</span></span></code></pre></div>
-<p>If the requested dimensional reduction is unavailable, <code><a href="reference/run_gnrh_dataset.html">run_gnrh_dataset()</a></code> automatically falls back to <code>"umap"</code> when possible.</p>
-<p>If the requested splitting variable is absent, commonly used alternatives such as <code>"orig.ident"</code>, <code>"sample"</code>, and <code>"library_id"</code> are considered.</p>
+<pre class="text"><code>Running GnRHcell: Human hPSC
+[GNRH] ==== STARTING GnRHcell PIPELINE ====
+[STEP] [1/3] Detecting GnRH cells
+[INFO] Using assay: RNA
+[INFO] Matrix loaded: 33538 genes by 2400 cells
+[INFO] Using GnRH gene: GNRH1
+[DONE] Detection complete. Duration: 0.4s
+[STEP] [2/3] Assigning developmental stages
+[DONE] Staging complete. Duration: 0.1s
+[STEP] [3/3] Running diagnostics
+[DONE] Diagnostics complete. Duration: 0.0s
+[INFO] PIPELINE SUMMARY
+[INFO] Status:
+[INFO]   neg: 1743
+[INFO]   pos: 657
+[INFO] Stage:
+[INFO]   identity: 341
+[INFO]   migrating: 118
+[INFO]   mature: 198
+[INFO]   non-gnrh: 1743
+[INFO] Secretory:
+[INFO]   limited: 118
+[INFO]   supported: 539
+[INFO]   non-gnrh: 1743
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s
+[INFO] Generating publication-ready GnRH QC report
+[GNRH] GnRH marker discovery
+[STEP] Running DE method: wilcox
+[DONE] Markers detected: 105 Duration: 3.1s
+[INFO] Top marker: GNRH1</code></pre>
 </div>
 </div>
 <div class="section level2">
-<h2 id="cross-dataset-comparison">Cross-dataset comparison<a class="anchor" aria-label="anchor" href="#cross-dataset-comparison"></a>
+<h2 id="cross-dataset-comparisons">Cross-dataset comparisons<a class="anchor" aria-label="anchor" href="#cross-dataset-comparisons"></a>
 </h2>
-<p>Cross-dataset comparisons can be run automatically by <code><a href="reference/run_gnrh_collection.html">run_gnrh_collection()</a></code> or independently with <code><a href="reference/compare_gnrh_datasets.html">compare_gnrh_datasets()</a></code>.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compare_gnrh_datasets.html">compare_gnrh_datasets</a></span><span class="op">(</span></span>
 <span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
@@ -406,220 +1113,107 @@
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">detected_plot</span></span>
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">overlap</span></span>
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">programs</span></span></code></pre></div>
-<p>The comparison workflow can generate:</p>
-<ul>
-<li>runtime comparisons;</li>
-<li>numbers of detected GnRH cells;</li>
-<li>marker-overlap analyses;</li>
-<li>conserved cross-dataset marker programs.</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="cross-dataset-validation">Cross-dataset validation<a class="anchor" aria-label="anchor" href="#cross-dataset-validation"></a>
-</h2>
-<p><code><a href="reference/validate_gnrh_collection.html">validate_gnrh_collection()</a></code> provides an additional validation layer for evaluating GnRH detection and developmental staging across datasets.</p>
-<p>Because validation uses the processed Seurat objects, retain them in the collection by setting <code>clean_objects = FALSE</code>.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_collection.html">run_gnrh_collection</a></span><span class="op">(</span></span>
-<span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
-<span>  run_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  run_comparisons <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  run_programs <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  clean_objects <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">validation</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/validate_gnrh_collection.html">validate_gnrh_collection</a></span><span class="op">(</span></span>
-<span>  <span class="va">collection</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>The returned object has class <code>"gnrh_validation"</code> and contains complementary validation tables.</p>
-<div class="section level3">
-<h3 id="detection-rates">Detection rates<a class="anchor" aria-label="anchor" href="#detection-rates"></a>
-</h3>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">detection</span></span></code></pre></div>
-<p>This table reports total cell number, direct detections, supported detections, dropout-rescued detections, total GnRH-positive cells, detection percentages, and the contribution of each detection class.</p>
-</div>
-<div class="section level3">
-<h3 id="status-and-class-consistency">Status and class consistency<a class="anchor" aria-label="anchor" href="#status-and-class-consistency"></a>
-</h3>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">status_class</span></span></code></pre></div>
-<p>This summary evaluates correspondence between <code>gnrh_status</code> and <code>gnrh_class</code>.</p>
-</div>
-<div class="section level3">
-<h3 id="evidence-score-validation">Evidence-score validation<a class="anchor" aria-label="anchor" href="#evidence-score-validation"></a>
-</h3>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">scores</span></span></code></pre></div>
-<p>Available GnRH evidence variables are summarized by detection class using medians and interquartile ranges.</p>
-</div>
-<div class="section level3">
-<h3 id="developmental-stage-composition">Developmental-stage composition<a class="anchor" aria-label="anchor" href="#developmental-stage-composition"></a>
-</h3>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">stages</span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">stage_class</span></span></code></pre></div>
-<p>These tables summarize developmental stages across all positive GnRH cells and separately within direct, supported, and dropout-rescued detection classes.</p>
-</div>
-<div class="section level3">
-<h3 id="stage-refinement-validation">Stage-refinement validation<a class="anchor" aria-label="anchor" href="#stage-refinement-validation"></a>
-</h3>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">stage_refinement</span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">stage_reassignment</span></span></code></pre></div>
-<p>When stage-refinement metadata are available, these outputs report raw-to-final stage transitions, reassignment frequencies, and reasons for stage refinement.</p>
-</div>
-<div class="section level3">
-<h3 id="migration-core-validation">Migration-core validation<a class="anchor" aria-label="anchor" href="#migration-core-validation"></a>
-</h3>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">migration_core</span></span></code></pre></div>
-<p>Migration-core evidence is summarized by raw developmental stage using median and interquartile-range marker hits together with the percentage of cells having at least 1, 2, or 3 migration-core hits.</p>
-</div>
-<div class="section level3">
-<h3 id="independent-biological-marker-validation">Independent biological marker validation<a class="anchor" aria-label="anchor" href="#independent-biological-marker-validation"></a>
-</h3>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">biological_markers</span></span></code></pre></div>
-<p>By default, expression is evaluated for a curated panel spanning GnRH identity, specification, migration, guidance, and neuroendocrine maturation:</p>
-<pre class="text"><code>GNRH1, GNRHR,
-FEZF1, ISL1, OTX2, SIX3, SIX6,
-CHGA, CHGB, SCG2, PCSK1, PCSK2, CPE, VGF, SYP,
-ANOS1, PROKR2, PROK2, NRP1, NRP2, ROBO1, ROBO2, DCX</code></pre>
-<p>For each detection class, <code><a href="reference/validate_gnrh_collection.html">validate_gnrh_collection()</a></code> reports average expression and the percentage of cells expressing each available marker.</p>
-<p>A custom panel can also be supplied:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">validation</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/validate_gnrh_collection.html">validate_gnrh_collection</a></span><span class="op">(</span></span>
-<span>  <span class="va">collection</span>,</span>
-<span>  validation_markers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="st">"GNRH1"</span>,</span>
-<span>    <span class="st">"FEZF1"</span>,</span>
-<span>    <span class="st">"ISL1"</span>,</span>
-<span>    <span class="st">"ANOS1"</span>,</span>
-<span>    <span class="st">"PROKR2"</span>,</span>
-<span>    <span class="st">"DCX"</span>,</span>
-<span>    <span class="st">"CHGA"</span>,</span>
-<span>    <span class="st">"PCSK2"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Validation tables are written by default to:</p>
-<pre class="text"><code>gnrh_results/
-└── validation/
-    ├── input_summary.csv
-    ├── detection.csv
-    ├── status_class.csv
-    ├── scores.csv
-    ├── stages.csv
-    ├── stage_class.csv
-    ├── stage_refinement.csv
-    ├── stage_reassignment.csv
-    ├── migration_core.csv
-    └── biological_markers.csv</code></pre>
-</div>
-</div>
-<div class="section level2">
-<h2 id="cross-dataset-marker-programs">Cross-dataset marker programs<a class="anchor" aria-label="anchor" href="#cross-dataset-marker-programs"></a>
-</h2>
-<p>Marker-program analysis can also be performed manually from previously generated marker files.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<p>Marker programs can also be generated from existing result tables:</p>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  <span class="st">"HuDeCa Nose"</span> <span class="op">=</span> <span class="st">"gnrh_human_nose_markers.tsv"</span>,</span>
-<span>  <span class="st">"HPSC Wang 2022"</span> <span class="op">=</span> <span class="st">"gnrh_human_hpsc_markers.tsv"</span>,</span>
-<span>  <span class="st">"Human HypoMap"</span> <span class="op">=</span> <span class="st">"gnrh_human_hypomap_markers.tsv"</span></span>
+<span>  <span class="st">"HuDeCa nose"</span> <span class="op">=</span> <span class="st">"gnrh_hudeca_nose_markers.tsv"</span>,</span>
+<span>  <span class="st">"Human hPSC"</span> <span class="op">=</span> <span class="st">"gnrh_hpsc_markers.tsv"</span>,</span>
+<span>  <span class="st">"Human medial eminence"</span> <span class="op">=</span> <span class="st">"gnrh_human_me_markers.tsv"</span>,</span>
+<span>  <span class="st">"Human HypoMap"</span> <span class="op">=</span> <span class="st">"gnrh_human_hypomap_markers.tsv"</span>,</span>
+<span>  <span class="st">"Mouse HypoMap"</span> <span class="op">=</span> <span class="st">"gnrh_mouse_hypomap_markers.tsv"</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">marker_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">outdir</span>, <span class="st">"markers"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">gene_sets</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/build_gene_sets.html">build_gene_sets</a></span><span class="op">(</span></span>
 <span>  files <span class="op">=</span> <span class="va">files</span>,</span>
-<span>  dir <span class="op">=</span> <span class="va">marker_dir</span></span>
+<span>  dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"gnrh_results"</span>, <span class="st">"markers"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">overlap</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gene_upset.html">gene_upset</a></span><span class="op">(</span></span>
+<span><span class="va">overlap</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gnrh_gene_upset.html">gnrh_gene_upset</a></span><span class="op">(</span></span>
 <span>  gene_sets <span class="op">=</span> <span class="va">gene_sets</span>,</span>
-<span>  outdir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
-<span>    <span class="va">outdir</span>,</span>
-<span>    <span class="st">"comparisons"</span>,</span>
-<span>    <span class="st">"marker_overlap"</span></span>
-<span>  <span class="op">)</span></span>
+<span>  outdir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"gnrh_results"</span>, <span class="st">"comparisons"</span>, <span class="st">"marker_overlap"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">overlap</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
+<div align="center">
+<p><img src="reference/figures/gene_overlap_plot.png" width="800" alt="Cross-dataset GnRH stage composition"></p>
+</div>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">marker_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"gnrh_results"</span>, <span class="st">"markers"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Human hPSC"</span> <span class="op">=</span> <span class="st">"gnrh_hpsc_markers.tsv"</span>,</span>
+<span>  <span class="st">"HuDeCa nose"</span> <span class="op">=</span> <span class="st">"gnrh_hudeca_nose_markers.tsv"</span>,</span>
+<span>  <span class="st">"Human medial eminence"</span> <span class="op">=</span> <span class="st">"gnrh_human_me_markers.tsv"</span>,</span>
+<span>  <span class="st">"Human HypoMap"</span> <span class="op">=</span> <span class="st">"gnrh_human_hypomap_markers.tsv"</span>,</span>
+<span>  <span class="st">"Mouse HypoMap"</span> <span class="op">=</span> <span class="st">"gnrh_mouse_hypomap_markers.tsv"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">marker_dir</span>, <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">files</span></span>
 <span></span>
 <span><span class="va">programs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gnrh_marker_programs.html">gnrh_marker_programs</a></span><span class="op">(</span></span>
 <span>  files <span class="op">=</span> <span class="va">files</span>,</span>
 <span>  results <span class="op">=</span> <span class="va">overlap</span>,</span>
-<span>  outdir <span class="op">=</span> <span class="va">outdir</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">programs</span><span class="op">$</span><span class="va">candidate_table</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">programs</span><span class="op">$</span><span class="va">high_confidence</span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="marker-program-visualization">Marker-program visualization<a class="anchor" aria-label="anchor" href="#marker-program-visualization"></a>
-</h3>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_marker_programs.html">plot_gnrh_marker_programs</a></span><span class="op">(</span></span>
-<span>  <span class="va">programs</span>,</span>
-<span>  table <span class="op">=</span> <span class="st">"summary"</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"bar"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/plot_gnrh_marker_programs.html">plot_gnrh_marker_programs</a></span><span class="op">(</span></span>
-<span>  <span class="va">programs</span>,</span>
-<span>  table <span class="op">=</span> <span class="st">"summary"</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"tile"</span></span>
+<span>  outdir <span class="op">=</span> <span class="st">"gnrh_results"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>Visualize the results:</p>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">p</span> <span class="op">=</span> <span class="fu"><a href="reference/plot_gnrh_marker_programs.html">plot_gnrh_marker_programs</a></span><span class="op">(</span></span>
+<span>  <span class="va">programs</span>,</span>
+<span>  table <span class="op">=</span> <span class="st">"high_confidence"</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"bar"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div align="center">
+<p><img src="reference/figures/marker-program-plots.png" width="800" alt="Cross-dataset GnRH stage composition"></p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="output-structure">Output structure<a class="anchor" aria-label="anchor" href="#output-structure"></a>
-</h2>
-<p>A typical multi-dataset run produces:</p>
-<pre class="text"><code>gnrh_results/
-├── figures/
-│   ├── human_hpsc/
-│   │   ├── human_hpsc_gnrh_report.pdf
-│   │   ├── human_hpsc_gnrh_embedding.pdf
-│   │   ├── human_hpsc_gnrh_features.pdf
-│   │   ├── human_hpsc_status_distribution.pdf
-│   │   ├── human_hpsc_stage_distribution.pdf
-│   │   ├── human_hpsc_coexpression.pdf
-│   │   └── human_hpsc_network.pdf
-│   └── ...
-├── tables/
-│   ├── human_hpsc_gnrh_run_info.tsv
-│   └── ...
-├── markers/
-│   ├── gnrh_human_hpsc_markers.tsv
-│   └── ...
-├── comparisons/
-│   ├── marker_overlap/
-│   └── marker_programs/
-├── validation/
-│   ├── input_summary.csv
-│   ├── detection.csv
-│   ├── status_class.csv
-│   ├── scores.csv
-│   ├── stages.csv
-│   ├── stage_class.csv
-│   ├── stage_refinement.csv
-│   ├── stage_reassignment.csv
-│   ├── migration_core.csv
-│   └── biological_markers.csv
-└── objects/
-    └── human_hpsc_gnrh.rds</code></pre>
-<p>The <code>objects/</code> directory is populated only when <code>save_objects = TRUE</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="main-functions">Main functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
 </h2>
 <div class="section level3">
-<h3 id="core-detection-and-staging">Core detection and staging<a class="anchor" aria-label="anchor" href="#core-detection-and-staging"></a>
+<h3 id="detection-staging-and-diagnostics">Detection, staging, and diagnostics<a class="anchor" aria-label="anchor" href="#detection-staging-and-diagnostics"></a>
 </h3>
 <ul>
 <li><code><a href="reference/run_gnrh.html">run_gnrh()</a></code></li>
 <li><code><a href="reference/detect_gnrh.html">detect_gnrh()</a></code></li>
 <li><code><a href="reference/stage_gnrh.html">stage_gnrh()</a></code></li>
 <li><code><a href="reference/gnrh_diagnostics.html">gnrh_diagnostics()</a></code></li>
+<li><code><a href="reference/gnrh_report.html">gnrh_report()</a></code></li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="marker-discovery">Marker discovery<a class="anchor" aria-label="anchor" href="#marker-discovery"></a>
+</h3>
+<ul>
+<li><code><a href="reference/gnrh_markers.html">gnrh_markers()</a></code></li>
+<li><code><a href="reference/find_gnrh_genes.html">find_gnrh_genes()</a></code></li>
+<li><code><a href="reference/find_gnrh_stage_markers.html">find_gnrh_stage_markers()</a></code></li>
+<li><code><a href="reference/build_gene_sets.html">build_gene_sets()</a></code></li>
+<li><code>gene_upset()</code></li>
+<li><code><a href="reference/gnrh_marker_programs.html">gnrh_marker_programs()</a></code></li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="visualization-1">Visualization<a class="anchor" aria-label="anchor" href="#visualization-1"></a>
+</h3>
+<ul>
+<li><code><a href="reference/plot_gnrh_embedding.html">plot_gnrh_embedding()</a></code></li>
+<li><code><a href="reference/plot_gnrh_feature.html">plot_gnrh_feature()</a></code></li>
+<li><code><a href="reference/plot_gnrh_dot.html">plot_gnrh_dot()</a></code></li>
+<li><code><a href="reference/plot_gnrh_distribution.html">plot_gnrh_distribution()</a></code></li>
+<li><code><a href="reference/plot_gnrh_hits.html">plot_gnrh_hits()</a></code></li>
+<li><code><a href="reference/plot_gnrh_coexpr.html">plot_gnrh_coexpr()</a></code></li>
+<li><code><a href="reference/plot_gnrh_specificity.html">plot_gnrh_specificity()</a></code></li>
+<li><code><a href="reference/plot_class_counts.html">plot_class_counts()</a></code></li>
+<li><code><a href="reference/plot_network.html">plot_network()</a></code></li>
+<li><code><a href="reference/plot_gnrh_marker_programs.html">plot_gnrh_marker_programs()</a></code></li>
+<li><code><a href="reference/plot_gnrh_runtime_curve.html">plot_gnrh_runtime_curve()</a></code></li>
+<li><code><a href="reference/plot_gnrh_detected.html">plot_gnrh_detected()</a></code></li>
 </ul>
 </div>
 <div class="section level3">
@@ -634,94 +1228,51 @@ ANOS1, PROKR2, PROK2, NRP1, NRP2, ROBO1, ROBO2, DCX</code></pre>
 </ul>
 </div>
 <div class="section level3">
-<h3 id="marker-analysis">Marker analysis<a class="anchor" aria-label="anchor" href="#marker-analysis"></a>
-</h3>
-<ul>
-<li><code><a href="reference/find_gnrh_genes.html">find_gnrh_genes()</a></code></li>
-<li><code><a href="reference/gnrh_markers.html">gnrh_markers()</a></code></li>
-<li><code><a href="reference/build_gene_sets.html">build_gene_sets()</a></code></li>
-<li><code><a href="reference/gene_upset.html">gene_upset()</a></code></li>
-<li><code><a href="reference/gnrh_marker_programs.html">gnrh_marker_programs()</a></code></li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="visualization-and-reporting">Visualization and reporting<a class="anchor" aria-label="anchor" href="#visualization-and-reporting"></a>
-</h3>
-<ul>
-<li><code><a href="reference/plot_gnrh_embedding.html">plot_gnrh_embedding()</a></code></li>
-<li><code><a href="reference/plot_gnrh_feature.html">plot_gnrh_feature()</a></code></li>
-<li><code><a href="reference/plot_gnrh_distribution.html">plot_gnrh_distribution()</a></code></li>
-<li><code><a href="reference/plot_gnrh_coexpr.html">plot_gnrh_coexpr()</a></code></li>
-<li><code><a href="reference/plot_network.html">plot_network()</a></code></li>
-<li><code><a href="reference/plot_gnrh_marker_programs.html">plot_gnrh_marker_programs()</a></code></li>
-<li><code><a href="reference/plot_gnrh_runtime_curve.html">plot_gnrh_runtime_curve()</a></code></li>
-<li><code><a href="reference/plot_gnrh_detected.html">plot_gnrh_detected()</a></code></li>
-<li><code><a href="reference/gnrh_report.html">gnrh_report()</a></code></li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="utilities">Utilities<a class="anchor" aria-label="anchor" href="#utilities"></a>
+<h3 id="palettes-and-reference-modules">Palettes and reference modules<a class="anchor" aria-label="anchor" href="#palettes-and-reference-modules"></a>
 </h3>
 <ul>
 <li><code><a href="reference/gnrh_colors.html">gnrh_colors()</a></code></li>
-<li><code><a href="reference/cellpal.html">cellpal()</a></code></li>
-<li><code><a href="reference/plot_theme.html">plot_theme()</a></code></li>
+<li><code><a href="reference/gnrh_stage_modules.html">gnrh_stage_modules()</a></code></li>
+<li><code><a href="reference/gnrh_stage_gene_references.html">gnrh_stage_gene_references()</a></code></li>
 </ul>
 <p>See the <a href="https://ymbouamboua.github.io/GnRHcell/reference/">function reference</a> for the complete API.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="recommended-multi-dataset-analysis">Recommended multi-dataset analysis<a class="anchor" aria-label="anchor" href="#recommended-multi-dataset-analysis"></a>
+<h2 id="typical-output-structure">Typical output structure<a class="anchor" aria-label="anchor" href="#typical-output-structure"></a>
 </h2>
-<p>For a complete cross-dataset analysis with validation:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ymbouamboua.github.io/GnRHcell/">GnRHcell</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/prepare_gnrh_datasets.html">prepare_gnrh_datasets</a></span><span class="op">(</span></span>
-<span>  <span class="va">datasets</span>,</span>
-<span>  check_files <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_collection.html">run_gnrh_collection</a></span><span class="op">(</span></span>
-<span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
-<span>  run_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  run_comparisons <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  run_programs <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  clean_objects <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  save_objects <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">validation</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/validate_gnrh_collection.html">validate_gnrh_collection</a></span><span class="op">(</span></span>
-<span>  <span class="va">collection</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">detection</span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">scores</span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">stages</span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">stage_refinement</span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">migration_core</span></span>
-<span><span class="va">validation</span><span class="op">$</span><span class="va">biological_markers</span></span></code></pre></div>
-<p>If memory usage is a concern, processed objects can instead be saved during the main analysis:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_collection.html">run_gnrh_collection</a></span><span class="op">(</span></span>
-<span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
-<span>  clean_objects <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  save_objects <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>This mode minimizes memory usage during large multi-dataset studies.</p>
+<pre class="text"><code>gnrh_results/
+├── figures/
+├── tables/
+├── markers/
+├── comparisons/
+│   ├── marker_overlap/
+│   └── marker_programs/
+├── validation/
+└── objects/</code></pre>
+<p>Objects are written to <code>objects/</code> only when <code>save_objects = TRUE</code>.</p>
+</div>
+<div class="section level2">
+<h2 id="reproducibility-and-interpretation">Reproducibility and interpretation<a class="anchor" aria-label="anchor" href="#reproducibility-and-interpretation"></a>
+</h2>
+<ul>
+<li>Join split Seurat v5 assay layers with <code>Seurat::JoinLayers()</code> when required before marker analysis.</li>
+<li>Use biological donors or samples as replicates for formal differential-expression inference.</li>
+<li>Treat internal ROC curves as score-separation diagnostics, not external validation.</li>
+<li>Confirm stage-specific candidates in independent datasets or with pseudobulk analyses.</li>
+<li>Report the GnRHcell version and principal thresholds used in an analysis.</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">document</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">check</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">pkgdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">build_site</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Rebuild <code>README.md</code> after editing this source file:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">build_readme</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -729,7 +1280,7 @@ ANOS1, PROKR2, PROK2, NRP1, NRP2, ROBO1, ROBO2, DCX</code></pre>
 </h2>
 <p>If you use <code>GnRHcell</code>, please cite:</p>
 <blockquote>
-<p>Mbouamboua Y. <em>GnRHcell: high-confidence GnRH neuron detection, developmental staging, and cross-dataset validation from single-cell RNA-seq data.</em></p>
+<p>Mbouamboua Y. <em>GnRHcell: detection, developmental staging, and marker discovery for gonadotropin-releasing hormone neurons from single-cell RNA-seq data.</em></p>
 </blockquote>
 </div>
 <div class="section level2">

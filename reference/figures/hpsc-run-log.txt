@@ -1,0 +1,24 @@
+[GNRH] ==== STARTING GnRHcell PIPELINE ====
+[STEP] [1/3] Detecting GnRH cells
+[INFO] Using assay: RNA
+[INFO] Matrix loaded: 33538 genes by 2400 cells
+[INFO] Using GnRH gene: GNRH1
+[DONE] Detection complete. Duration: 0.5s
+[STEP] [2/3] Assigning developmental stages
+[DONE] Staging complete. Duration: 0.2s
+[STEP] [3/3] Running diagnostics
+[DONE] Diagnostics complete. Duration: 0.0s
+[INFO] PIPELINE SUMMARY
+[INFO] Status:
+[INFO]   neg: 1743
+[INFO]   pos: 657
+[INFO] Stage:
+[INFO]   identity: 341
+[INFO]   migrating: 118
+[INFO]   mature: 198
+[INFO]   non-gnrh: 1743
+[INFO] Secretory:
+[INFO]   limited: 118
+[INFO]   supported: 539
+[INFO]   non-gnrh: 1743
+[DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.8s

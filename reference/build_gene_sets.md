@@ -1,8 +1,8 @@
 # Build gene sets from marker tables
 
 Reads marker tables from multiple datasets and extracts unique gene
-symbols into a named list suitable for overlap analysis, UpSet plots,
-Venn diagrams, or marker comparison workflows.
+symbols into a named list suitable for overlap analysis, UpSet plots, or
+marker comparison workflows.
 
 ## Usage
 
@@ -54,7 +54,7 @@ originating from different species or annotation conventions.
 
 ## See also
 
-[`gene_upset`](https://ymbouamboua.github.io/GnRHcell/reference/gene_upset.md),
+[`gnrh_gene_upset`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_gene_upset.md),
 [`gnrh_marker_programs`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_marker_programs.md)
 
 ## Examples

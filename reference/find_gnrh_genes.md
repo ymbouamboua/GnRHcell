@@ -234,6 +234,9 @@ function.
 [`gnrh_marker_programs`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_marker_programs.md),
 [`gnrh_stage_modules`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_stage_modules.md)
 
+Other marker discovery:
+[`find_gnrh_stage_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_stage_markers.md)
+
 ## Examples
 
 ``` r

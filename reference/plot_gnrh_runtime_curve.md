@@ -1,8 +1,6 @@
 # Plot GnRHcell runtime across datasets
 
-Plots runtime across datasets as a line plot. The x-axis displays each
-dataset together with the number of detected GnRH-positive cells over
-the total number of cells.
+Plot GnRHcell runtime across datasets
 
 ## Usage
 
@@ -12,7 +10,6 @@ plot_gnrh_runtime_curve(
   dir = file.path("results", "tables"),
   pattern = "_gnrh_run_info\\.tsv$",
   metric = "total_sec",
-  style = "classic",
   x.ang = 45,
   txtsize = 10,
   show_points = TRUE
@@ -23,24 +20,19 @@ plot_gnrh_runtime_curve(
 
 - files:
 
-  Optional character vector of GnRH run-info TSV files.
+  Optional named vector of run-information files.
 
 - dir:
 
-  Directory containing run-info tables.
+  Directory searched when `files` is `NULL`.
 
 - pattern:
 
-  Regex pattern used to find run-info files.
+  File-selection regular expression.
 
 - metric:
 
-  Runtime column to plot, e.g. `"total_sec"`.
-
-- style:
-
-  Plot theme style passed to
-  [`plot_theme()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_theme.md).
+  Runtime column to summarize.
 
 - x.ang:
 
@@ -52,8 +44,8 @@ plot_gnrh_runtime_curve(
 
 - show_points:
 
-  Logical; show points on the curve.
+  Show dataset points.
 
 ## Value
 
-A `ggplot2` object.
+A ggplot object.

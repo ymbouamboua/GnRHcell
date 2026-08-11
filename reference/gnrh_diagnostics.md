@@ -19,7 +19,7 @@ gnrh_diagnostics(object, verbose = TRUE)
 
 - verbose:
 
-  Logical; print progress messages. Default is `TRUE`.
+  Logical. Whether to print progress messages. Default is `TRUE`.
 
 ## Value
 
@@ -40,7 +40,7 @@ Stored diagnostics include:
 - `diagnostics`:
 
   Per-cell diagnostic table containing expression, scores, marker hits,
-  and classification labels.
+  detection status, and confidence labels.
 
 - `threshold_curve`:
 
@@ -58,7 +58,7 @@ Required metadata columns:
 
 - `gnrh_score`
 
-- `gnrh_class`
+- `gnrh_status`
 
 - `gnrh_core_hits`
 
@@ -68,10 +68,14 @@ Required metadata columns:
 
 - `gnrh_confident`
 
-If fewer than two confident classes are present, threshold performance
+The `gnrh_confident` column is treated as a logical high-confidence
+reference label. Performance metrics compare score-based predictions
+against this reference across evenly spaced score thresholds.
+
+If fewer than two confidence classes are present, threshold performance
 metrics are skipped and a warning is issued.
 
-Performance metrics are computed across evenly spaced thresholds:
+Performance metrics include:
 
 - sensitivity
 

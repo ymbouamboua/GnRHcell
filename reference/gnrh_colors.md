@@ -1,19 +1,19 @@
 # GnRHcell color palettes
 
-Returns named color palettes for GnRHcell metadata variables.
+GnRHcell color palettes
 
 ## Usage
 
 ``` r
-gnrh_colors(type = c("status", "confident", "stage"))
+gnrh_colors(type = c("status", "confident", "class", "stage", "secretory"))
 ```
 
 ## Arguments
 
 - type:
 
-  Palette type. One of `"status"`, `"confident"`, or `"stage"`.
+  Palette type.
 
 ## Value
 
-Named character vector of colors.
+Named character vector.

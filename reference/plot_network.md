@@ -1,7 +1,6 @@
 # GnRH gene similarity network
 
-Constructs a similarity network based on coexpression structure among
-top-ranked genes.
+GnRH gene similarity network
 
 ## Usage
 
@@ -13,15 +12,15 @@ plot_network(df, top_n = 25, threshold = 0.4)
 
 - df:
 
-  Data frame containing gene-level scores and coexpression.
+  Marker table containing `gene`, `coexpr`, and `score`.
 
 - top_n:
 
-  Number of genes to include.
+  Maximum number of ranked genes included.
 
 - threshold:
 
-  Minimum edge weight to retain.
+  Minimum co-expression edge weight.
 
 ## Value
 

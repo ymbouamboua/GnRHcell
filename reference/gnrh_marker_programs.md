@@ -26,13 +26,13 @@ gnrh_marker_programs(
 - files:
 
   Named character vector. Names correspond to dataset names and values
-  correspond to marker table file names located in
+  correspond to existing marker-table paths or to file names located in
   `file.path(outdir, "tables")`.
 
 - results:
 
   A list returned by
-  [`gene_upset()`](https://ymbouamboua.github.io/GnRHcell/reference/gene_upset.md),
+  [`gnrh_gene_upset()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_gene_upset.md),
   containing at least `results$unique`, a named list of dataset-specific
   unique genes.
 
@@ -91,7 +91,7 @@ A named list with four elements:
 
   :   Logical value indicating whether the gene is unique to one dataset
       according to
-      [`gene_upset`](https://ymbouamboua.github.io/GnRHcell/reference/gene_upset.md).
+      [`gnrh_gene_upset`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_gene_upset.md).
 
   `known_status`
 
@@ -169,7 +169,7 @@ membership, and marker specificity score.
 ## See also
 
 [`gnrh_stage_modules`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_stage_modules.md),
-[`gene_upset`](https://ymbouamboua.github.io/GnRHcell/reference/gene_upset.md),
+[`gnrh_gene_upset`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_gene_upset.md),
 [`gnrh_markers`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_markers.md)
 
 ## Examples

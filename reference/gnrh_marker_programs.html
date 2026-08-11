@@ -27,6 +27,7 @@ migration, maturation, or secretion."></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Vignettes</h6></li>
+    <li><a class="dropdown-item" href="../articles/demo-results.html">Demo results and visualization gallery</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -72,12 +73,12 @@ migration, maturation, or secretion.</p>
 
 <dl><dt id="arg-files">files<a class="anchor" aria-label="anchor" href="#arg-files"></a></dt>
 <dd><p>Named character vector. Names correspond to dataset names and
-values correspond to marker table file names located in
-<code>file.path(outdir, "tables")</code>.</p></dd>
+values correspond to existing marker-table paths or to file names located
+in <code>file.path(outdir, "tables")</code>.</p></dd>
 
 
 <dt id="arg-results">results<a class="anchor" aria-label="anchor" href="#arg-results"></a></dt>
-<dd><p>A list returned by <code><a href="gene_upset.html">gene_upset()</a></code>, containing at least
+<dd><p>A list returned by <code><a href="gnrh_gene_upset.html">gnrh_gene_upset()</a></code>, containing at least
 <code>results$unique</code>, a named list of dataset-specific unique genes.</p></dd>
 
 
@@ -127,7 +128,7 @@ high confidence. Default is <code>1</code>.</p></dd>
 
 <dt><code>is_unique</code></dt>
 <dd><p>Logical value indicating whether the gene is unique to one dataset
-according to <code><a href="gene_upset.html">gene_upset</a></code>.</p></dd>
+according to <code><a href="gnrh_gene_upset.html">gnrh_gene_upset</a></code>.</p></dd>
 
 <dt><code>known_status</code></dt>
 <dd><p>Biological annotation of the gene. Values include
@@ -197,7 +198,7 @@ and marker specificity score.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="gnrh_stage_modules.html">gnrh_stage_modules</a></code>, <code><a href="gene_upset.html">gene_upset</a></code>,
+    <div class="dont-index"><p><code><a href="gnrh_stage_modules.html">gnrh_stage_modules</a></code>, <code><a href="gnrh_gene_upset.html">gnrh_gene_upset</a></code>,
 <code><a href="gnrh_markers.html">gnrh_markers</a></code></p></div>
     </div>
 
