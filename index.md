@@ -840,8 +840,6 @@ overlap <- gnrh_gene_upset(
   gene_sets = gene_sets,
   outdir = file.path("gnrh_results", "comparisons", "marker_overlap")
 )
-
-overlap$plot
 ```
 
 ![Cross-dataset GnRH stage
@@ -878,7 +876,7 @@ Visualize the results:
 
 ``` r
 
-p = plot_gnrh_marker_programs(
+plot_gnrh_marker_programs(
   programs,
   table = "high_confidence",
   type = "bar"
