@@ -4,7 +4,7 @@
 \alias{plot_gnrh_coexpr}
 \title{Plot GnRH coexpression markers}
 \usage{
-plot_gnrh_coexpr(df, coexp_cutoff = 0.25, txtsize = 10)
+plot_gnrh_coexpr(df, coexp_cutoff = 0.25, txtsize = 10, style = "bw")
 }
 \description{
 Plot GnRH coexpression markers

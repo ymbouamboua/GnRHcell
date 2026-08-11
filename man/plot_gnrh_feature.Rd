@@ -2,23 +2,23 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_feature}
 \alias{plot_gnrh_feature}
-\title{Plot GnRH features on an embedding}
+\title{Cell Feature Plot for Seurat Objects}
 \usage{
 plot_gnrh_feature(
   object,
-  features,
+  features = NULL,
+  preset = NULL,
   cols = NULL,
-  palette = "gnrh",
+  theme.cols = "gnrh",
   rev.cols = FALSE,
-  na.col = "grey90",
+  na.col = "lightgray",
   order = FALSE,
   pt.size = NULL,
+  txtsize = 10,
   reduction = NULL,
-  dims = c(1, 2),
-  min.cutoff = NULL,
-  max.cutoff = NULL,
+  na.cutoff = 1e-09,
   raster = NULL,
-  raster.dpi = c(2048, 2048),
+  raster.dpi = c(512, 512),
   split.by = NULL,
   ncol = NULL,
   layer = "data",
@@ -27,17 +27,72 @@ plot_gnrh_feature(
   combine = TRUE,
   blend = FALSE,
   merge.leg = FALSE,
-  legend = TRUE,
-  plot.ttl = NULL,
-  leg.ttl = NULL,
-  leg.pos = "right",
-  leg.size = 9,
-  txtsize = 10,
-  dark = FALSE,
   style = "classic",
   ...
 )
 }
+\arguments{
+\item{object}{A \code{Seurat} object.}
+
+\item{features}{Character vector of features (genes or metadata columns) to plot.}
+
+\item{cols}{Optional character vector of colors for plotting.}
+
+\item{theme.cols}{Character. Predefined theme color palette (default: \code{"Reds"}). Options include \code{"Reds"}, \code{"Blues"}, etc., or custom list palettes \code{"hotspot"},\code{"rainbow"}, etc.}
+
+\item{rev.cols}{Logical. Reverse the color palette (default: \code{FALSE}).}
+
+\item{na.col}{Color for NA or below-cutoff expression values (default: \code{"lightgray"}).}
+
+\item{order}{Logical. If TRUE, plot high-expression cells on top (default: \code{FALSE}).}
+
+\item{pt.size}{Numeric. Point size. If NULL, automatically calculated based on number of cells.}
+
+\item{txtsize}{Numeric. Base font size for plot titles and axis labels (default: 10).}
+
+\item{reduction}{Character. Dimensional reduction to use (default: first available in Seurat object).}
+
+\item{na.cutoff}{Numeric. Minimum expression value for coloring; below this will be NA if palette requires (default: 1e-9).}
+
+\item{raster}{Logical. If TRUE, rasterize points for faster plotting of large datasets.}
+
+\item{raster.dpi}{Numeric vector of length 2. DPI for rasterization (default: c(512,512)).}
+
+\item{split.by}{Character. Metadata column to split the plot.}
+
+\item{ncol}{Numeric. Number of columns when combining multiple plots.}
+
+\item{layer}{Character. Seurat assay slot to fetch data from (default: \code{"data"}).}
+
+\item{label}{Logical. Whether to label clusters (default: FALSE).}
+
+\item{axes}{Logical. Whether to show axes (default: TRUE).}
+
+\item{combine}{Logical. Whether to return a single combined plot (default: TRUE).}
+
+\item{blend}{Logical. Whether to blend exactly two features (default: FALSE).}
+
+\item{merge.leg}{Logical. Whether to merge multiple legends into one (default: FALSE).}
+
+\item{style}{Character. ggplot2 theme to apply (default: \code{"classic"}).}
+
+\item{...}{Additional arguments passed to \code{Seurat::FeaturePlot}.}
+}
+\value{
+A \code{ggplot} object (or \code{patchwork} object if multiple features).
+}
 \description{
-Plot GnRH features on an embedding
+A flexible wrapper around Seurat's \code{FeaturePlot} to visualize gene expression or metadata
+features in a Seurat object. Supports custom color palettes, viridis, and hotspot/rainbow palettes.
+}
+\examples{
+# Single feature with default Reds palette
+plot_gnrh_feature(seurat_obj, features = "POMC")
+
+# Multiple features with viridis palette and merged legend
+plot_gnrh_feature(seurat_obj, features = c("POMC", "NPY"), viridis = TRUE, merge.leg = TRUE)
+
+# Blend two features
+plot_gnrh_feature(seurat_obj, features = c("POMC", "NPY"), blend = TRUE)
+
 }

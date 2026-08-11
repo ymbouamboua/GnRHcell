@@ -351,6 +351,9 @@ gnrh_markers <- function(
 }
 
 
+
+
+
 #' Identify specific and reproducible GnRH-expressed genes
 #'
 #' Identifies genes enriched in GnRH-positive cells relative to matched
@@ -776,3 +779,311 @@ find_gnrh_genes <- function(
     )
   )
 }
+
+
+
+
+#' Identify stage-specific markers in GnRH-lineage cells
+#'
+#' Finds genes enriched in each GnRH developmental stage relative to the other
+#' GnRH-positive stages. Unlike `gnrh_markers()`, this function does not require
+#' correlation or co-detection with `GNRH1`, because those filters favor general
+#' GnRH-lineage genes rather than stage-specific programs.
+#'
+#' @param object A Seurat object processed with `run_gnrh()`.
+#' @param stage_col Metadata column containing developmental stages.
+#' @param stages Stages to test. By default, `identity`, `migrating`, and
+#'   `mature` are tested when present.
+#' @param class_col Metadata column defining GnRH detection classes. Set to
+#'   `NULL` to select cells using `stage_col` alone.
+#' @param positive_classes Detection classes considered GnRH-lineage positive.
+#' @param exclude_stages Stage values excluded from all comparisons.
+#' @param assay Assay used for differential expression.
+#' @param layer Normalized-expression layer used for donor concordance.
+#' @param test_use Differential-expression test passed to
+#'   `Seurat::FindMarkers()`.
+#' @param min_cells Minimum number of cells required in both the target stage
+#'   and its reference group.
+#' @param min_pct Minimum expression fraction passed to `FindMarkers()`.
+#' @param min_log2fc Minimum positive average log2 fold change.
+#' @param max_padj Maximum adjusted p-value.
+#' @param min_specificity Minimum `pct.1 - pct.2` detection difference.
+#' @param donor_col Optional biological replicate column. When supplied, the
+#'   direction of the stage effect is evaluated independently within donors.
+#' @param min_cells_donor Minimum cells required in both comparison groups for
+#'   a donor to be evaluable for a stage.
+#' @param min_donor_support Minimum fraction of evaluable donors in which the
+#'   mean normalized expression effect is positive.
+#' @param min_donors Minimum number of evaluable donors required before donor
+#'   support is used as a candidate filter.
+#' @param max_cells_per_ident Optional maximum cells sampled from each identity
+#'   by `FindMarkers()`. Useful for very large atlases.
+#' @param exclude_pattern Optional regular expression for genes to exclude from
+#'   the candidate table, for example mitochondrial or ribosomal genes.
+#' @param seed Random seed used by differential-expression subsampling.
+#' @param verbose Display progress messages.
+#' @param ... Additional arguments passed to `Seurat::FindMarkers()`.
+#'
+#' @return A named list containing:
+#' \describe{
+#'   \item{candidates}{Filtered and ranked stage-specific markers.}
+#'   \item{markers}{Complete positive marker results for all tested stages.}
+#'   \item{donor_effects}{Long table of within-donor mean-expression effects.}
+#'   \item{stage_counts}{Numbers of selected cells per stage.}
+#'   \item{cells}{Cell barcodes used in the analysis.}
+#'   \item{parameters}{Principal analysis parameters.}
+#' }
+#'
+#' @details
+#' Each stage is tested against the union of the other selected GnRH stages
+#' (one-versus-rest). The reported `specificity` is `pct.1 - pct.2`. The ranking
+#' score combines positive fold change, detection specificity, statistical
+#' significance, and—when available—donor concordance.
+#'
+#' Cell-level differential expression is useful for marker discovery but does
+#' not replace a replicate-aware pseudobulk analysis for formal inference.
+#' `donor_support` should therefore be used to prioritize reproducible markers,
+#' while final publication claims should be confirmed with pseudobulk counts.
+#'
+#' @examples
+#' \dontrun{
+#' stage_markers <- find_gnrh_stage_markers(
+#'   object = wang,
+#'   stage_col = "gnrh_stage",
+#'   donor_col = "orig.ident",
+#'   stages = c("identity", "migrating", "mature")
+#' )
+#'
+#' head(stage_markers$candidates)
+#' subset(stage_markers$candidates, stage == "migrating")
+#'
+#' # Faster discovery in a very large atlas
+#' stage_markers <- find_gnrh_stage_markers(
+#'   object = human_hypomap,
+#'   donor_col = "orig.ident",
+#'   max_cells_per_ident = 5000
+#' )
+#' }
+#'
+#' @seealso `gnrh_markers()`, `find_gnrh_genes()`
+#' @family marker discovery
+#' @export
+find_gnrh_stage_markers <- function(
+    object,
+    stage_col = "gnrh_stage",
+    stages = c("identity", "migrating", "mature"),
+    class_col = "gnrh_class",
+    positive_classes = c("direct", "supported"),
+    exclude_stages = c("non-gnrh", "secreting"),
+    assay = NULL,
+    layer = "data",
+    test_use = "wilcox",
+    min_cells = 10L,
+    min_pct = 0.10,
+    min_log2fc = 0.25,
+    max_padj = 0.05,
+    min_specificity = 0.05,
+    donor_col = NULL,
+    min_cells_donor = 3L,
+    min_donor_support = 0.60,
+    min_donors = 2L,
+    max_cells_per_ident = Inf,
+    exclude_pattern = NULL,
+    seed = 1234L,
+    verbose = TRUE,
+    ...) {
+
+  if (!inherits(object, "Seurat")) {
+    stop("`object` must be a Seurat object.", call. = FALSE)
+  }
+
+  metadata <- object[[]]
+  required <- c(stage_col, class_col, donor_col)
+  required <- required[!vapply(required, is.null, logical(1))]
+  missing <- setdiff(required, names(metadata))
+  if (length(missing)) {
+    stop("Missing metadata column(s): ", paste(missing, collapse = ", "), call. = FALSE)
+  }
+
+  if (is.null(assay)) assay <- Seurat::DefaultAssay(object)
+  if (!assay %in% SeuratObject::Assays(object)) {
+    stop("Assay `", assay, "` was not found.", call. = FALSE)
+  }
+
+  stage_values <- as.character(metadata[[stage_col]])
+  keep <- !is.na(stage_values) & nzchar(stage_values) &
+    !stage_values %in% exclude_stages
+  if (!is.null(class_col)) {
+    keep <- keep & !is.na(metadata[[class_col]]) &
+      metadata[[class_col]] %in% positive_classes
+  }
+
+  cells <- rownames(metadata)[keep]
+  observed <- unique(stage_values[keep])
+  stages <- intersect(stages, observed)
+  if (length(stages) < 2L) {
+    stop(
+      "At least two requested stages must be present among selected GnRH cells. Present: ",
+      paste(observed, collapse = ", "), call. = FALSE
+    )
+  }
+
+  # Restrict the reference pool to the explicitly selected stages so that each
+  # comparison is target stage versus the other biologically ordered stages.
+  cells <- cells[stage_values[match(cells, rownames(metadata))] %in% stages]
+  stage_factor <- factor(as.character(metadata[cells, stage_col, drop = TRUE]), levels = stages)
+  stage_counts <- table(stage_factor)
+  too_small <- names(stage_counts)[stage_counts < min_cells]
+  if (length(too_small)) {
+    stop(
+      "Stage(s) below `min_cells = ", min_cells, "`: ",
+      paste(paste0(too_small, " (n=", stage_counts[too_small], ")"), collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  analysis_object <- subset(object, cells = cells)
+  analysis_object[[".gnrh_stage_test"]] <- stage_factor
+  SeuratObject::Idents(analysis_object) <- ".gnrh_stage_test"
+  set.seed(seed)
+
+  run_stage <- function(stage) {
+    if (verbose) message("Testing stage `", stage, "` versus other GnRH stages...")
+
+    reference <- setdiff(stages, stage)
+    result <- Seurat::FindMarkers(
+      object = analysis_object,
+      ident.1 = stage,
+      ident.2 = reference,
+      assay = assay,
+      test.use = test_use,
+      only.pos = TRUE,
+      min.pct = min_pct,
+      logfc.threshold = min_log2fc,
+      max.cells.per.ident = max_cells_per_ident,
+      random.seed = seed,
+      verbose = FALSE,
+      ...
+    )
+
+    if (!nrow(result)) return(NULL)
+    result$gene <- rownames(result)
+    result$stage <- stage
+    result$reference <- paste(reference, collapse = "+")
+
+    fc_col <- intersect(c("avg_log2FC", "avg_logFC"), names(result))
+    if (!length(fc_col)) stop("FindMarkers result has no average log-fold-change column.", call. = FALSE)
+    result$avg_log2FC <- result[[fc_col[[1L]]]]
+    result
+  }
+
+  marker_list <- lapply(stages, run_stage)
+  marker_list <- marker_list[!vapply(marker_list, is.null, logical(1))]
+  if (!length(marker_list)) stop("No stage markers were detected.", call. = FALSE)
+  markers <- dplyr::bind_rows(marker_list)
+  markers$specificity <- markers$`pct.1` - markers$`pct.2`
+
+  donor_effects <- data.frame()
+  donor_summary <- data.frame()
+
+  if (!is.null(donor_col)) {
+    expression <- SeuratObject::LayerData(
+      analysis_object,
+      assay = assay,
+      layer = layer
+    )
+    genes <- intersect(unique(markers$gene), rownames(expression))
+    expression <- expression[genes, cells, drop = FALSE]
+    donor <- as.character(metadata[cells, donor_col, drop = TRUE])
+    stage_by_cell <- as.character(metadata[cells, stage_col, drop = TRUE])
+
+    donor_rows <- lapply(stages, function(stage) {
+      evaluable <- unique(donor[!is.na(donor)])
+      evaluable <- evaluable[vapply(evaluable, function(id) {
+        idx <- donor == id
+        sum(idx & stage_by_cell == stage) >= min_cells_donor &&
+          sum(idx & stage_by_cell %in% setdiff(stages, stage)) >= min_cells_donor
+      }, logical(1))]
+
+      if (!length(evaluable)) return(NULL)
+      stage_genes <- intersect(markers$gene[markers$stage == stage], genes)
+
+      dplyr::bind_rows(lapply(evaluable, function(id) {
+        target <- donor == id & stage_by_cell == stage
+        reference <- donor == id & stage_by_cell %in% setdiff(stages, stage)
+        effect <- Matrix::rowMeans(expression[stage_genes, target, drop = FALSE]) -
+          Matrix::rowMeans(expression[stage_genes, reference, drop = FALSE])
+        data.frame(
+          stage = stage, gene = stage_genes, donor = id,
+          mean_difference = unname(effect),
+          n_target = sum(target), n_reference = sum(reference)
+        )
+      }))
+    })
+
+    donor_effects <- dplyr::bind_rows(donor_rows)
+    if (nrow(donor_effects)) {
+      donor_summary <- donor_effects |>
+        dplyr::group_by(.data$stage, .data$gene) |>
+        dplyr::summarise(
+          n_donors = dplyr::n(),
+          donors_positive = sum(.data$mean_difference > 0),
+          donor_support = mean(.data$mean_difference > 0),
+          median_donor_effect = stats::median(.data$mean_difference),
+          .groups = "drop"
+        )
+      markers <- dplyr::left_join(markers, donor_summary, by = c("stage", "gene"))
+    }
+  }
+
+  for (column in c("n_donors", "donors_positive", "donor_support", "median_donor_effect")) {
+    if (!column %in% names(markers)) markers[[column]] <- NA_real_
+  }
+
+  candidates <- markers |>
+    dplyr::filter(
+      .data$avg_log2FC >= min_log2fc,
+      .data$p_val_adj <= max_padj,
+      .data$specificity >= min_specificity
+    )
+
+  if (!is.null(exclude_pattern) && nzchar(exclude_pattern)) {
+    candidates <- candidates[!grepl(exclude_pattern, candidates$gene, ignore.case = TRUE), , drop = FALSE]
+  }
+
+  # Apply donor filtering only when enough donors were evaluable. Markers with
+  # insufficient donor information are retained but clearly flagged.
+  candidates$donor_evaluable <- !is.na(candidates$n_donors) & candidates$n_donors >= min_donors
+  candidates$donor_reproducible <- candidates$donor_evaluable &
+    candidates$donor_support >= min_donor_support
+  if (!is.null(donor_col)) {
+    candidates <- candidates[!candidates$donor_evaluable | candidates$donor_reproducible, , drop = FALSE]
+  }
+
+  significance <- pmin(-log10(pmax(candidates$p_val_adj, .Machine$double.xmin)), 50)
+  donor_weight <- ifelse(
+    is.na(candidates$donor_support), 1,
+    0.5 + candidates$donor_support
+  )
+  candidates$stage_score <- candidates$avg_log2FC *
+    pmax(candidates$specificity, 0) * significance * donor_weight
+  candidates <- candidates |>
+    dplyr::arrange(.data$stage, dplyr::desc(.data$stage_score), .data$p_val_adj)
+
+  list(
+    candidates = candidates,
+    markers = markers,
+    donor_effects = donor_effects,
+    stage_counts = data.frame(stage = names(stage_counts), n_cells = as.integer(stage_counts)),
+    cells = cells,
+    parameters = list(
+      stages = stages, positive_classes = positive_classes,
+      assay = assay, layer = layer, test_use = test_use,
+      min_cells = min_cells, min_pct = min_pct,
+      min_log2fc = min_log2fc, max_padj = max_padj,
+      min_specificity = min_specificity,
+      donor_col = donor_col, min_donor_support = min_donor_support
+    )
+  )
+}
+

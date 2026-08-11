@@ -208,5 +208,8 @@ result <- find_gnrh_genes(
 \code{\link{gnrh_markers}},
 \code{\link{gnrh_marker_programs}},
 \code{\link{gnrh_stage_modules}}
+
+Other marker discovery: 
+\code{\link{find_gnrh_stage_markers}()}
 }
 \concept{marker discovery}

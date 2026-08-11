@@ -2,22 +2,80 @@
 % Please edit documentation in R/visualization.R
 \name{gnrh_report}
 \alias{gnrh_report}
-\title{Generate a compact GnRH diagnostic report}
+\title{Generate a publication-ready GnRHcell diagnostic report}
 \usage{
-gnrh_report(object, style = "test", truth = NULL, verbose = TRUE)
+gnrh_report(
+  object,
+  style = c("test", "classic", "minimal", "bw"),
+  mode = c("light", "dark"),
+  truth = NULL,
+  roc_mode = c("auto", "external", "internal", "none"),
+  positive_truth = c("1", "TRUE", "true", "positive", "Positive", "pos", "Pos"),
+  txtsize = 10,
+  max_points = 100000L,
+  seed = 1234L,
+  show_class_panel = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{object}{Seurat object processed with GnRHcell.}
+\item{object}{A Seurat object processed with \code{run_gnrh()} and
+\code{gnrh_diagnostics()}.}
 
-\item{style}{Plot theme style.}
+\item{style}{Theme style: \code{"classic"}, \code{"minimal"}, \code{"bw"}, or \code{"test"}.}
 
-\item{truth}{Optional metadata column containing independent binary truth.}
+\item{mode}{Display mode: \code{"light"} or \code{"dark"}.}
+
+\item{truth}{Optional metadata column containing an independent binary
+reference classification for external ROC analysis.}
+
+\item{roc_mode}{ROC behavior: \code{"auto"} uses external truth when supplied and
+otherwise restores internal status/stage discrimination curves;
+\code{"external"}, \code{"internal"}, and \code{"none"} force a specific behavior.}
+
+\item{positive_truth}{Values in \code{truth} interpreted as positive.}
+
+\item{txtsize}{Base text size.}
+
+\item{max_points}{Maximum cells displayed in each scatter panel. All rare
+GnRH-positive cells are retained before negative cells are sampled.}
+
+\item{seed}{Random seed used for display-only subsampling.}
+
+\item{show_class_panel}{Show detection-class composition when ROC analysis is
+disabled or unavailable.}
 
 \item{verbose}{Print progress messages.}
 }
 \value{
-A patchwork diagnostic dashboard.
+A patchwork object.
 }
 \description{
-Generate a compact GnRH diagnostic report
+Creates a six-panel quality-control dashboard summarizing detection,
+developmental staging, score separation, threshold behavior, detection
+classes or ROC discrimination, and marker-program support.
+}
+\examples{
+\dontrun{
+report <- gnrh_report(wang, style = "bw")
+report
+
+# External ROC using an independent manual/reference annotation
+report <- gnrh_report(
+  wang,
+  truth = "manual_gnrh",
+  roc_mode = "external",
+  positive_truth = c("GnRH", "pos", "TRUE"),
+  style = "minimal"
+)
+
+# Explicit internal score-discrimination curves
+report <- gnrh_report(wang, roc_mode = "internal", style = "bw")
+
+ggplot2::ggsave(
+  "gnrh_report.pdf", report,
+  width = 12, height = 7.5, units = "in",
+  device = grDevices::cairo_pdf
+)
+}
 }
