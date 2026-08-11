@@ -27,7 +27,9 @@ utils::globalVariables(
     "dataset", "pos", "runtime",
     "value", "fill", "lab",
     "module",
-    "count"
+    "count", "group", ".alpha",
+    "n_raw_migrating", "n_retained", "n_reassigned",
+    "n_to_identity", "n_to_mature", "n_to_secreting"
   )
 )
 

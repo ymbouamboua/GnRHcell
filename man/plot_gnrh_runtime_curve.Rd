@@ -14,6 +14,24 @@ plot_gnrh_runtime_curve(
   show_points = TRUE
 )
 }
+\arguments{
+\item{files}{Optional named vector of run-information files.}
+
+\item{dir}{Directory searched when \code{files} is \code{NULL}.}
+
+\item{pattern}{File-selection regular expression.}
+
+\item{metric}{Runtime column to summarize.}
+
+\item{x.ang}{X-axis label angle.}
+
+\item{txtsize}{Base text size.}
+
+\item{show_points}{Show dataset points.}
+}
+\value{
+A ggplot object.
+}
 \description{
 Plot GnRHcell runtime across datasets
 }

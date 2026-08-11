@@ -40,6 +40,56 @@ plot_gnrh_embedding(
   ...
 )
 }
+\arguments{
+\item{object}{A Seurat object.}
+
+\item{group_by}{Metadata column used to colour cells.}
+
+\item{reduction}{Dimensional reduction; an available reduction is selected when \code{NULL}.}
+
+\item{dims}{Two reduction dimensions to display.}
+
+\item{shuffle}{Randomize plotting order.}
+
+\item{raster}{Use rasterized points; selected automatically when \code{NULL}.}
+
+\item{raster.dpi}{Raster resolution passed to the raster geom.}
+
+\item{alpha, background_alpha}{Opacity for highlighted and background cells.}
+
+\item{n.cells, percentage}{Add cell counts or percentages to legend labels.}
+
+\item{label, repel, label.size, label.face}{Cluster-label controls.}
+
+\item{cols}{Optional named colour vector.}
+
+\item{axes}{Show embedding axes.}
+
+\item{plot.ttl}{Optional plot title.}
+
+\item{legend}{Show the legend.}
+
+\item{leg.ttl, leg.ttl.size}{Legend title and title size.}
+
+\item{item.size, item.border}{Legend-key controls.}
+
+\item{leg.pos, leg.dir, leg.size, leg.ncol}{Legend layout controls.}
+
+\item{txtsize}{Base text size.}
+
+\item{pt.size}{Point size; selected automatically when \code{NULL}.}
+
+\item{dark}{Use dark display mode.}
+
+\item{total.cells}{Include total-cell counts in the legend.}
+
+\item{style}{Theme style.}
+
+\item{...}{Additional graphical arguments.}
+}
+\value{
+A ggplot object.
+}
 \description{
 Plot GnRH embedding
 }

@@ -190,8 +190,8 @@ gnrh_stage_gene_references <- function() {
 #' membership.
 #'
 #' @param files Named character vector. Names correspond to dataset names and
-#'   values correspond to marker table file names located in
-#'   \code{file.path(outdir, "tables")}.
+#'   values correspond to existing marker-table paths or to file names located
+#'   in \code{file.path(outdir, "tables")}.
 #' @param results A list returned by \code{gene_upset()}, containing at least
 #'   \code{results$unique}, a named list of dataset-specific unique genes.
 #' @param outdir Character. Output directory containing a \code{tables/}
@@ -460,7 +460,10 @@ gnrh_marker_programs <- function(
   }
 
   build_one <- function(dataset) {
-    marker_file <- file.path(outdir, "tables", files[[dataset]])
+    marker_file <- files[[dataset]]
+    if (!file.exists(marker_file)) {
+      marker_file <- file.path(outdir, "tables", marker_file)
+    }
 
     if (!file.exists(marker_file)) {
       warning("Missing file: ", marker_file, call. = FALSE)

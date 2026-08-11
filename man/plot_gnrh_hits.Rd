@@ -14,6 +14,24 @@ plot_gnrh_hits(
   txtsize = 10
 )
 }
+\arguments{
+\item{data}{Data frame containing plotting columns.}
+
+\item{x}{Column mapped to the x axis.}
+
+\item{fill}{Column mapped to fill colour.}
+
+\item{palette}{Optional named colour vector.}
+
+\item{type}{Display counts or fractions.}
+
+\item{title}{Optional plot title.}
+
+\item{txtsize}{Base text size.}
+}
+\value{
+A ggplot object.
+}
 \description{
 Plot GnRH module hit distributions
 }

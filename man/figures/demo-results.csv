@@ -1,0 +1,6 @@
+"dataset","species","cells","gnrh_detected","detected_in_demo","identity","migrating","mature","secreting"
+"hPSC-derived GnRH","Human",2400,657,27.375,341,118,198,0
+"Human fetal nose","Human",2125,125,5.88235294117647,57,58,10,0
+"Human median eminence","Human",2161,161,7.45025451180009,42,25,94,0
+"Mouse HypoMap","Mouse",2174,174,8.00367985280589,10,0,164,0
+"Human HypoMap","Human",2400,400,16.6666666666667,27,105,268,0

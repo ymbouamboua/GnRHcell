@@ -13,6 +13,22 @@ plot_gnrh_detected(
   debug = FALSE
 )
 }
+\arguments{
+\item{files}{Optional named vector of run-information files.}
+
+\item{dir}{Directory searched when \code{files} is \code{NULL}.}
+
+\item{pattern}{File-selection regular expression.}
+
+\item{x.ang}{X-axis label angle.}
+
+\item{txtsize}{Base text size.}
+
+\item{debug}{Print the imported summary columns.}
+}
+\value{
+A ggplot object.
+}
 \description{
 Plot detected GnRH-positive cells across datasets
 }

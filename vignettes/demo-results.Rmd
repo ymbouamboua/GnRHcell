@@ -1,0 +1,117 @@
+---
+title: "Demo results and visualization gallery"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Demo results and visualization gallery}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE,
+  fig.align = "center"
+)
+```
+
+## Scope
+
+This gallery summarizes GnRHcell outputs stored in the five bundled Seurat demo
+objects. The objects cover hPSC-derived GnRH differentiation, the developing
+human nose, the human median eminence, and integrated mouse and human
+hypothalamic references.
+
+The objects are compact, preprocessed, and intentionally retain GnRH-relevant
+cells. Consequently, detection fractions in this gallery are **not estimates of
+GnRH-cell prevalence** in the source tissues or complete atlases.
+
+## Detection across demo objects
+
+```{r, echo=FALSE, out.width="100%", eval=TRUE}
+knitr::include_graphics("../man/figures/demo-umap-status.png")
+```
+
+Red points are cells classified as `gnrh_status == "pos"`; grey points are all
+other cells. GnRH-detected cells occupy localized or connected transcriptional
+neighborhoods in each demo embedding. The figure is descriptive of the bundled
+objects and does not establish sensitivity or specificity against an external
+reference annotation.
+
+## Numerical summary
+
+| Demo dataset | Species | Cells | GnRH detected | Identity | Migrating | Mature | Secreting |
+|---|---|---:|---:|---:|---:|---:|---:|
+| hPSC-derived GnRH | Human | 2,400 | 657 | 341 | 118 | 198 | 0 |
+| Human fetal nose | Human | 2,125 | 125 | 57 | 58 | 10 | 0 |
+| Human median eminence | Human | 2,161 | 161 | 42 | 25 | 94 | 0 |
+| Mouse HypoMap | Mouse | 2,174 | 174 | 10 | 0 | 164 | 0 |
+| Human HypoMap | Human | 2,400 | 400 | 27 | 105 | 268 | 0 |
+
+The machine-readable table is available as
+[`demo-results.csv`](https://github.com/ymbouamboua/GnRHcell/blob/main/man/figures/demo-results.csv).
+Values are derived directly from `gnrh_status` and `gnrh_stage` in the bundled
+objects.
+
+## Developmental-stage composition
+
+```{r, echo=FALSE, out.width="95%", eval=TRUE}
+knitr::include_graphics("../man/figures/demo-stage-composition.png")
+```
+
+The hPSC-derived and fetal-nose objects retain substantial identity and
+migrating populations. The hypothalamic references are dominated by cells
+classified as mature, consistent with their tissue context. These assignments
+represent model-based hypotheses for downstream marker analysis and experimental
+validation.
+
+## Reproduce the summary
+
+```{r reproduce-summary}
+library(GnRHcell)
+
+ids <- c(
+  "hpsc", "hudeca_nose", "human_me",
+  "mouse_hypomap", "human_hypomap"
+)
+
+objects <- setNames(
+  lapply(ids, function(id) {
+    readRDS(system.file("extdata", paste0(id, ".rds"), package = "GnRHcell"))
+  }),
+  ids
+)
+
+summarise_demo <- function(object) {
+  md <- object[[]]
+  positive <- md$gnrh_status == "pos"
+
+  data.frame(
+    cells = nrow(md),
+    gnrh_detected = sum(positive, na.rm = TRUE),
+    identity = sum(md$gnrh_stage == "identity", na.rm = TRUE),
+    migrating = sum(md$gnrh_stage == "migrating", na.rm = TRUE),
+    mature = sum(md$gnrh_stage == "mature", na.rm = TRUE),
+    secreting = sum(md$gnrh_stage == "secreting", na.rm = TRUE)
+  )
+}
+
+do.call(rbind, lapply(objects, summarise_demo))
+```
+
+The static assets used by the README and this page can be regenerated from the
+package root with:
+
+```sh
+Rscript data-raw/build-demo-gallery.R
+```
+
+## Interpretation checklist
+
+- Treat the demo objects as examples of package behavior, not population-level
+  sampling frames.
+- Use an independent truth annotation for external ROC analysis.
+- Confirm stage assignments with marker expression, donor consistency, and
+  biological context.
+- Cite both GnRHcell and the primary study associated with each source dataset.

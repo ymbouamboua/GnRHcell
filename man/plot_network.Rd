@@ -6,6 +6,16 @@
 \usage{
 plot_network(df, top_n = 25, threshold = 0.4)
 }
+\arguments{
+\item{df}{Marker table containing \code{gene}, \code{coexpr}, and \code{score}.}
+
+\item{top_n}{Maximum number of ranked genes included.}
+
+\item{threshold}{Minimum co-expression edge weight.}
+}
+\value{
+A ggraph object.
+}
 \description{
 GnRH gene similarity network
 }

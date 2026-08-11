@@ -22,8 +22,8 @@ gene symbols for a dataset.
 }
 \description{
 Reads marker tables from multiple datasets and extracts unique gene
-symbols into a named list suitable for overlap analysis, UpSet plots,
-Venn diagrams, or marker comparison workflows.
+symbols into a named list suitable for overlap analysis, UpSet plots, or
+marker comparison workflows.
 }
 \details{
 Gene names are automatically standardized to uppercase to ensure

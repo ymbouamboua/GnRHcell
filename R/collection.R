@@ -235,14 +235,19 @@ run_gnrh_dataset <- function(
   # --------------------------------------------------------------------------- # # #
   # Embeddings
   # --------------------------------------------------------------------------- # # #
-  embedding_plot <- GnRHcell::plot_gnrh_embedding(
-    object,
-    group.by = c(
-      "gnrh_status",
-      "gnrh_confident",
-      "gnrh_stage"
+  embedding_plot <- patchwork::wrap_plots(
+    lapply(
+      c("gnrh_status", "gnrh_confident", "gnrh_stage"),
+      function(column) {
+        GnRHcell::plot_gnrh_embedding(
+          object,
+          group_by = column,
+          reduction = reduction,
+          plot.ttl = column
+        )
+      }
     ),
-    reduction = reduction
+    nrow = 1
   )
   save_plot(
     plot = embedding_plot,
@@ -258,8 +263,9 @@ run_gnrh_dataset <- function(
   )
   feature_plot <- GnRHcell::plot_gnrh_feature(
     object,
-    feature_type = "all",
-    reduction = reduction
+    preset = "all",
+    reduction = reduction,
+    ncol = 4
   )
   save_plot(
     plot = feature_plot,
@@ -338,52 +344,59 @@ run_gnrh_dataset <- function(
         )
       )
     )
-    if (
-      "coexpr_flag" %in% colnames(markers) &&
-      any(
-        markers$coexpr_flag %in% TRUE,
-        na.rm = TRUE
-      )
-    ) {
+    if ("coexpr_flag" %in% colnames(markers)) {
       coexpr <- markers[
         !is.na(markers$coexpr_flag) &
-          markers$coexpr_flag,
+          markers$coexpr_flag &
+          is.finite(markers$coexpr) &
+          markers$coexpr >= 0.3 &
+          toupper(as.character(markers$gene)) != "GNRH1",
         ,
         drop = FALSE
       ]
-      coexpr_plot <- GnRHcell::plot_gnrh_coexpr(
-        coexpr,
-        coexp_cutoff = 0.3
-      )
-      save_plot(
-        plot = coexpr_plot,
-        filename = file.path(
-          dataset_dir,
-          paste0(
-            dataset_id,
-            "_coexpression"
-          )
+
+      if (nrow(coexpr)) {
+        coexpr_plot <- GnRHcell::plot_gnrh_coexpr(
+          coexpr,
+          coexp_cutoff = 0.3
+        )
+        save_plot(
+          plot = coexpr_plot,
+          filename = file.path(
+            dataset_dir,
+            paste0(dataset_id, "_coexpression")
+          ),
+          width = 5,
+          height = 6
+        )
+      }
+
+      network_plot <- tryCatch(
+        GnRHcell::plot_network(
+          markers,
+          top_n = 50,
+          threshold = 0.1
         ),
-        width = 5,
-        height = 6
-      )
-      network_plot <- GnRHcell::plot_network(
-        markers,
-        top_n = 50,
-        threshold = 0.1
-      )
-      save_plot(
-        plot = network_plot,
-        filename = file.path(
-          dataset_dir,
-          paste0(
-            dataset_id,
-            "_network"
+        error = function(error) {
+          message(
+            "Skipping marker network for ", dataset_label,
+            ": ", conditionMessage(error)
           )
-        ),
-        width = 10,
-        height = 10
+          NULL
+        }
       )
+
+      if (!is.null(network_plot)) {
+        save_plot(
+          plot = network_plot,
+          filename = file.path(
+            dataset_dir,
+            paste0(dataset_id, "_network")
+          ),
+          width = 10,
+          height = 10
+        )
+      }
     }
   }
   if (isTRUE(clean_object)) {
@@ -737,7 +750,7 @@ compare_gnrh_datasets <- function(
       dir = marker_dir
     )
 
-    overlap <- gene_upset(
+    overlap <- gnrh_gene_upset(
       gene_sets = gene_sets,
       venn_title = "Overlap of GnRH co-expressed markers",
       outdir = file.path(
@@ -752,8 +765,11 @@ compare_gnrh_datasets <- function(
     !is.null(overlap) &&
     length(marker_files) >= 2L
   ) {
+    program_files <- file.path(marker_dir, marker_files)
+    names(program_files) <- names(marker_files)
+
     programs <- gnrh_marker_programs(
-      files = marker_files,
+      files = program_files,
       results = overlap,
       outdir = file.path(
         comparison_dir,

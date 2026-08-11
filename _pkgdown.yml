@@ -6,20 +6,15 @@ template:
 
 home:
   title: GnRHcell
-  description: |
-    Detection, characterization, developmental staging, visualization, validation, and reporting of gonadotropin-releasing hormone neurons in single-cell RNA-sequencing datasets.
+  description: >
+    Detection, characterization, developmental staging, visualization,
+    validation, and reporting of gonadotropin-releasing hormone neurons
+    in single-cell RNA-sequencing datasets.
 
 navbar:
   structure:
-    left:
-      - intro
-      - reference
-      - articles
-      - news
-    right:
-      - search
-      - github
-
+    left: [intro, reference, articles, news]
+    right: [search, github]
   components:
     github:
       icon: fab fa-github
@@ -27,97 +22,81 @@ navbar:
       href: https://github.com/ymbouamboua/GnRHcell
 
 reference:
-
   - title: Main workflow
-    desc: |
+    desc: >
       High-level functions for running the complete GnRH-neuron detection,
       staging, diagnostic, and reporting workflow.
     contents:
       - run_gnrh
       - gnrh_report
 
+  - title: GnRH-neuron detection and staging
+    desc: >
+      Input validation, detection, classification, and developmental-stage
+      assignment.
+    contents:
+      - validate_input
+      - detect_gnrh
+      - stage_gnrh
+      - gnrh_diagnostics
+
+  - title: Marker discovery and biological programs
+    desc: >
+      GnRH-lineage and stage-specific marker discovery, developmental
+      programs, co-expression, and cross-dataset overlap.
+    contents:
+      - gnrh_markers
+      - find_gnrh_genes
+      - find_gnrh_stage_markers
+      - gnrh_stage_modules
+      - gnrh_stage_gene_references
+      - build_gene_sets
+      - gene_upset
+      - gnrh_marker_programs
+
   - title: Multi-dataset workflows
-    desc: |
-      Functions for preparing, processing, comparing, and validating
-      collections of single-cell datasets with GnRHcell.
+    desc: >
+      Preparation, processing, comparison, and validation of single-cell
+      dataset collections.
     contents:
       - prepare_gnrh_datasets
       - run_gnrh_dataset
       - run_gnrh_collection
       - compare_gnrh_datasets
       - validate_gnrh_collection
-
-  - title: GnRH-neuron detection and staging
-    desc: |
-      Detection, classification, input validation, and developmental-stage
-      assignment.
-    contents:
-      - detect_gnrh
-      - stage_gnrh
-      - validate_input
-
-  - title: Marker discovery and programs
-    desc: |
-      Identification of GnRH-specific genes, marker programs,
-      co-expression patterns, and cross-dataset overlap.
-    contents:
-      - find_gnrh_genes
-      - gene_upset
-      - gnrh_stage_gene_references
-      - matches("marker")
-      - matches("gene_set")
-      - matches("module")
-
-  - title: Diagnostics and quality control
-    desc: |
-      Diagnostic summaries and quality-control functions.
-    contents:
-      - gnrh_diagnostics
-
-  - title: Scores and classification
-    desc: |
-      Functions for computing detection scores, classification confidence,
-      and developmental-stage scores.
-    contents:
-      - matches("score")
-      - matches("classif")
-
-  - title: Data extraction and summaries
-    desc: |
-      Extraction and summarization of GnRHcell results.
-    contents:
-      - starts_with("extract_")
-      - starts_with("get_")
-      - matches("summary")
+      - extract_gnrh_run_info
 
   - title: Visualization
-    desc: |
-      Visualization of cellular embeddings, expression, stages,
-      co-expression patterns, distributions, and cross-dataset summaries.
+    desc: >
+      Publication-ready cellular embeddings, expression plots, diagnostic
+      summaries, distributions, networks, and cross-dataset figures.
     contents:
-      - celldot
-      - cellfeature
-      - cellmap
-      - cellviolin
-      - dark_theme
-      - matches("^plot_")
-      - matches("^gnrh_plot")
+      - plot_gnrh_embedding
+      - plot_gnrh_feature
+      - plot_gnrh_dot
+      - plot_gnrh_distribution
+      - plot_gnrh_hits
+      - plot_gnrh_coexpr
+      - plot_gnrh_specificity
+      - plot_class_counts
+      - plot_network
+      - plot_gnrh_marker_programs
+      - plot_gnrh_runtime_curve
+      - plot_gnrh_detected
 
-  - title: Colors and themes
-    desc: |
-      Color palettes and graphical helpers.
+  - title: Colors
+    desc: Stable color palettes for GnRHcell classifications and stages.
     contents:
-      - cellpal
       - gnrh_colors
 
   - title: Example data
-    desc: |
-      Example datasets distributed with GnRHcell.
+    desc: Sampled Seurat objects and reference data for examples and testing.
     contents:
-      - hpsc_gnrh
+      - hpsc
 
 articles:
   - title: Vignettes
     navbar: Vignettes
     contents:
       - GnRHcell
+      - demo-results

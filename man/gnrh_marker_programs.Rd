@@ -18,8 +18,8 @@ gnrh_marker_programs(
 }
 \arguments{
 \item{files}{Named character vector. Names correspond to dataset names and
-values correspond to marker table file names located in
-\code{file.path(outdir, "tables")}.}
+values correspond to existing marker-table paths or to file names located
+in \code{file.path(outdir, "tables")}.}
 
 \item{results}{A list returned by \code{gene_upset()}, containing at least
 \code{results$unique}, a named list of dataset-specific unique genes.}

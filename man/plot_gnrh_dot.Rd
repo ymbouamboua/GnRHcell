@@ -56,7 +56,7 @@ Default is \code{TRUE}.}
 \item{flip}{Logical; flip x and y axes using \code{ggplot2::coord_flip()}.
 Default is \code{FALSE}.}
 
-\item{txtsize}{Base text size passed to \code{\link{plot_theme}}.
+\item{txtsize}{Base text size.
 Default is \code{12}.}
 
 \item{title}{Optional plot title.}
@@ -76,7 +76,7 @@ Default is \code{FALSE}.}
 
 \item{x.axis.pos}{Position of the x-axis. Default is \code{"bottom"}.}
 
-\item{style}{Theme style passed to \code{\link{plot_theme}}.
+\item{style}{Theme style.
 Default is \code{"classic"}.}
 
 \item{x.face, y.face}{Logical; italicize x- or y-axis labels.
@@ -89,7 +89,7 @@ Default is \code{FALSE}.}
 Default is \code{FALSE}.}
 
 \item{...}{Additional arguments passed to \code{Seurat::DotPlot()} and
-\code{\link{plot_theme}}.}
+the internal GnRHcell theme.}
 }
 \value{
 A \code{ggplot2} object.

@@ -6,6 +6,18 @@
 \usage{
 plot_gnrh_coexpr(df, coexp_cutoff = 0.25, txtsize = 10, style = "bw")
 }
+\arguments{
+\item{df}{Marker table containing \code{gene}, \code{coexpr}, \code{score}, and \code{p_val_adj}.}
+
+\item{coexp_cutoff}{Minimum GNRH1 co-expression value.}
+
+\item{txtsize}{Base text size.}
+
+\item{style}{Theme style.}
+}
+\value{
+A ggplot object.
+}
 \description{
 Plot GnRH coexpression markers
 }

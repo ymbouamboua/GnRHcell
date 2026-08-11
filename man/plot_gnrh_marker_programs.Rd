@@ -11,8 +11,29 @@ plot_gnrh_marker_programs(
   min_genes = 1,
   mode = "light",
   txtsize = 12,
-  x.ang = 45
+  x.ang = 45,
+  style = c("bw", "test", "classic", "minimal")
 )
+}
+\arguments{
+\item{programs}{Result returned by \code{gnrh_marker_programs()}.}
+
+\item{table}{Result table to visualize.}
+
+\item{type}{Plot type: bar, dot, or tile.}
+
+\item{min_genes}{Minimum genes retained for summary plots.}
+
+\item{mode}{Light or dark display mode.}
+
+\item{txtsize}{Base text size.}
+
+\item{x.ang}{X-axis label angle.}
+
+\item{style}{Theme style: \code{"classic"}, \code{"minimal"}, \code{"bw"}, or \code{"test"}.}
+}
+\value{
+A ggplot object.
 }
 \description{
 Plot GnRH marker program results

@@ -6,6 +6,14 @@
 \usage{
 plot_class_counts(object, txtsize = 9)
 }
+\arguments{
+\item{object}{A Seurat object processed by \code{run_gnrh()}.}
+
+\item{txtsize}{Base text size.}
+}
+\value{
+A ggplot object.
+}
 \description{
 Plot GnRH classification counts
 }

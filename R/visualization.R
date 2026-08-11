@@ -22,6 +22,9 @@
   invisible(TRUE)
 }
 
+# Backward-compatible internal alias used by older plotting wrappers.
+.check_seurat <- .validate_seurat
+
 
 #' Automatically determine rasterization
 #' @keywords internal
@@ -136,6 +139,24 @@
         ggplot2::element_line(linewidth = 0.2, colour = if (mode == "dark") "grey30" else "grey90")
       else ggplot2::element_blank()
     )
+}
+
+# Backward-compatible internal wrapper used by feature and dot plots. Legacy
+# arguments are accepted through `...`; visual labels remain controlled by the
+# calling plot.
+plot_theme <- function(
+    style = "classic",
+    txtsize = 10,
+    x.ang = 0,
+    leg.pos = "right",
+    ...
+) {
+  .gnrh_theme(
+    txtsize = txtsize,
+    x.ang = x.ang,
+    leg.pos = leg.pos,
+    style = style
+  )
 }
 
 
@@ -370,6 +391,30 @@ resolve_reduction <- function(
 
 #' Plot GnRH embedding
 #'
+#' @param object A Seurat object.
+#' @param group_by Metadata column used to colour cells.
+#' @param reduction Dimensional reduction; an available reduction is selected when `NULL`.
+#' @param dims Two reduction dimensions to display.
+#' @param shuffle Randomize plotting order.
+#' @param raster Use rasterized points; selected automatically when `NULL`.
+#' @param raster.dpi Raster resolution passed to the raster geom.
+#' @param alpha,background_alpha Opacity for highlighted and background cells.
+#' @param n.cells,percentage Add cell counts or percentages to legend labels.
+#' @param label,repel,label.size,label.face Cluster-label controls.
+#' @param cols Optional named colour vector.
+#' @param axes Show embedding axes.
+#' @param plot.ttl Optional plot title.
+#' @param legend Show the legend.
+#' @param leg.ttl,leg.ttl.size Legend title and title size.
+#' @param item.size,item.border Legend-key controls.
+#' @param leg.pos,leg.dir,leg.size,leg.ncol Legend layout controls.
+#' @param txtsize Base text size.
+#' @param pt.size Point size; selected automatically when `NULL`.
+#' @param dark Use dark display mode.
+#' @param total.cells Include total-cell counts in the legend.
+#' @param style Theme style.
+#' @param ... Additional graphical arguments.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_embedding <- function(
     object,
@@ -593,7 +638,7 @@ plot_gnrh_embedding <- function(
       "gnrh_raw",
       "gnrh_expr",
       "gnrh_score",
-      "gnrh_support_score"
+      "gnrh_knn"
     ),
 
     modules = c(
@@ -626,6 +671,8 @@ plot_gnrh_embedding <- function(
 #'
 #' @param object A `Seurat` object.
 #' @param features Character vector of features (genes or metadata columns) to plot.
+#' @param preset Optional GnRHcell feature preset: `"core"`, `"modules"`,
+#'   `"staging"`, or `"all"`.
 #' @param cols Optional character vector of colors for plotting.
 #' @param theme.cols Character. Predefined theme color palette (default: `"Reds"`). Options include `"Reds"`, `"Blues"`, etc., or custom list palettes `"hotspot"`,`"rainbow"`, etc.
 #' @param rev.cols Logical. Reverse the color palette (default: `FALSE`).
@@ -652,14 +699,12 @@ plot_gnrh_embedding <- function(
 #' @export
 #'
 #' @examples
-#' # Single feature with default Reds palette
-#' plot_gnrh_feature(seurat_obj, features = "POMC")
-#'
-#' # Multiple features with viridis palette and merged legend
-#' plot_gnrh_feature(seurat_obj, features = c("POMC", "NPY"), viridis = TRUE, merge.leg = TRUE)
-#'
-#' # Blend two features
-#' plot_gnrh_feature(seurat_obj, features = c("POMC", "NPY"), blend = TRUE)
+#' \dontrun{
+#' path <- system.file("extdata", "hpsc.rds", package = "GnRHcell")
+#' object <- readRDS(path)
+#' plot_gnrh_feature(object, features = "GNRH1")
+#' plot_gnrh_feature(object, preset = "core", ncol = 2)
+#' }
 #'
 plot_gnrh_feature <- function(
     object,
@@ -892,7 +937,7 @@ plot_gnrh_feature <- function(
 #' @param vjust.x,hjust.x Vertical and horizontal justification for x-axis labels.
 #' @param flip Logical; flip x and y axes using \code{ggplot2::coord_flip()}.
 #' Default is \code{FALSE}.
-#' @param txtsize Base text size passed to \code{\link{plot_theme}}.
+#' @param txtsize Base text size.
 #' Default is \code{12}.
 #' @param title Optional plot title.
 #' @param leg.size Legend text size. Default is \code{10}.
@@ -904,7 +949,7 @@ plot_gnrh_feature <- function(
 #' @param leg.hjust Logical; reserved for legend layout customization.
 #' Default is \code{FALSE}.
 #' @param x.axis.pos Position of the x-axis. Default is \code{"bottom"}.
-#' @param style Theme style passed to \code{\link{plot_theme}}.
+#' @param style Theme style.
 #' Default is \code{"classic"}.
 #' @param x.face,y.face Logical; italicize x- or y-axis labels.
 #' Default is \code{FALSE}.
@@ -913,7 +958,7 @@ plot_gnrh_feature <- function(
 #' @param dot.outline Logical; draw outlines around dots.
 #' Default is \code{FALSE}.
 #' @param ... Additional arguments passed to \code{Seurat::DotPlot()} and
-#' \code{\link{plot_theme}}.
+#' the internal GnRHcell theme.
 #'
 #' @return A \code{ggplot2} object.
 #'
@@ -1169,6 +1214,20 @@ plot_gnrh_dot <- function(
 # ============================================================================= #
 
 #' Plot GnRHcell metadata distributions
+#'
+#' @param object A Seurat object.
+#' @param group.by Metadata column defining categories.
+#' @param split.by Optional metadata column defining bars.
+#' @param cols Optional named colour vector.
+#' @param proportion Display within-split proportions instead of counts.
+#' @param position Bar position, such as `"stack"` or `"dodge"`.
+#' @param label Add value labels.
+#' @param label.size Label text size.
+#' @param plot.ttl Optional plot title.
+#' @param txtsize Base text size.
+#' @param x.ang X-axis label angle.
+#' @param flip Flip coordinates.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_distribution <- function(
     object,
@@ -1272,6 +1331,15 @@ plot_gnrh_distribution <- function(
 # ============================================================================= #
 
 #' Plot GnRH module hit distributions
+#'
+#' @param data Data frame containing plotting columns.
+#' @param x Column mapped to the x axis.
+#' @param fill Column mapped to fill colour.
+#' @param palette Optional named colour vector.
+#' @param type Display counts or fractions.
+#' @param title Optional plot title.
+#' @param txtsize Base text size.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_hits <- function(
     data,
@@ -1548,7 +1616,7 @@ gnrh_report <- function(
   status_levels <- intersect(names(status_colors), unique(as.character(diagnostics$status)))
   status_labels <- legend_labels(diagnostics$status, status_levels)
 
-  # A — Detection landscape ---------------------------------------------------
+  # A — Detection landscape
   p1 <- ggplot2::ggplot(
     plot_data,
     ggplot2::aes(.data$expr, .data$score, colour = .data$status)
@@ -1569,7 +1637,7 @@ gnrh_report <- function(
     report_theme() +
     compact_point_guide()
 
-  # B — Developmental stages -------------------------------------------------
+  # B — Developmental stages
   if ("gnrh_stage" %in% names(diagnostics)) {
     stage_colors <- gnrh_colors("stage")
     stage_levels <- intersect(names(stage_colors), unique(as.character(diagnostics$gnrh_stage)))
@@ -1598,7 +1666,7 @@ gnrh_report <- function(
     p2 <- empty_panel("Developmental stages unavailable")
   }
 
-  # C — Score separation ------------------------------------------------------
+  # C — Score separation
   density_data <- diagnostics[is.finite(diagnostics$score), , drop = FALSE]
   p3 <- ggplot2::ggplot(
     density_data,
@@ -1614,7 +1682,7 @@ gnrh_report <- function(
     ) +
     report_theme()
 
-  # D — Threshold performance ------------------------------------------------
+  # D — Threshold performance
   curve_columns <- c("threshold", "sensitivity", "specificity", "F1")
   if (!is.null(threshold_curve) && all(curve_columns %in% names(threshold_curve))) {
     curve_data <- as.data.frame(threshold_curve)
@@ -1653,7 +1721,7 @@ gnrh_report <- function(
     p4 <- empty_panel("Threshold curve unavailable")
   }
 
-  # E — Restored ROC analysis or detection classes ----------------------------
+  # E — Restored ROC analysis or detection classes
   p5 <- NULL
 
   roc_add <- function(reference, predictor, label) {
@@ -1812,7 +1880,7 @@ gnrh_report <- function(
   }
   if (is.null(p5)) p5 <- empty_panel("Detection-class panel unavailable")
 
-  # F — Marker-program support ------------------------------------------------
+  # F — Marker-program support
   module_data <- data.frame(
     status = rep(diagnostics$status, 3L),
     module = rep(c("Core", "Migration", "Neuroendocrine"), each = nrow(diagnostics)),
@@ -1846,7 +1914,7 @@ gnrh_report <- function(
     ) +
     report_theme(x.ang = 25)
 
-  # Assemble ------------------------------------------------------------------
+  # Assemble
   n_positive <- sum(as.character(diagnostics$status) == "pos", na.rm = TRUE)
   n_confident <- if ("gnrh_confident" %in% names(diagnostics)) {
     sum(as.character(diagnostics$gnrh_confident) %in% c("TRUE", "true", "1", "pos"), na.rm = TRUE)
@@ -1891,6 +1959,11 @@ gnrh_report <- function(
 # ============================================================================= #
 
 #' GnRH gene similarity network
+#'
+#' @param df Marker table containing `gene`, `coexpr`, and `score`.
+#' @param top_n Maximum number of ranked genes included.
+#' @param threshold Minimum co-expression edge weight.
+#' @return A ggraph object.
 #' @export
 plot_network <- function(df, top_n = 25, threshold = 0.4) {
   req <- c("gene", "coexpr", "score")
@@ -1979,6 +2052,12 @@ plot_network <- function(df, top_n = 25, threshold = 0.4) {
 # ============================================================================= #
 
 #' Plot GnRH coexpression markers
+#'
+#' @param df Marker table containing `gene`, `coexpr`, `score`, and `p_val_adj`.
+#' @param coexp_cutoff Minimum GNRH1 co-expression value.
+#' @param txtsize Base text size.
+#' @param style Theme style.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_coexpr <- function(
     df,
@@ -2039,6 +2118,15 @@ plot_gnrh_coexpr <- function(
 # ============================================================================= #
 
 #' Plot GnRHcell runtime across datasets
+#'
+#' @param files Optional named vector of run-information files.
+#' @param dir Directory searched when `files` is `NULL`.
+#' @param pattern File-selection regular expression.
+#' @param metric Runtime column to summarize.
+#' @param x.ang X-axis label angle.
+#' @param txtsize Base text size.
+#' @param show_points Show dataset points.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_runtime_curve <- function(
     files = NULL,
@@ -2118,6 +2206,14 @@ plot_gnrh_runtime_curve <- function(
 
 
 #' Plot detected GnRH-positive cells across datasets
+#'
+#' @param files Optional named vector of run-information files.
+#' @param dir Directory searched when `files` is `NULL`.
+#' @param pattern File-selection regular expression.
+#' @param x.ang X-axis label angle.
+#' @param txtsize Base text size.
+#' @param debug Print the imported summary columns.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_detected <- function(
     files = NULL,
@@ -2186,6 +2282,16 @@ plot_gnrh_detected <- function(
 # ============================================================================= #
 
 #' Plot GnRH marker program results
+#'
+#' @param programs Result returned by `gnrh_marker_programs()`.
+#' @param table Result table to visualize.
+#' @param type Plot type: bar, dot, or tile.
+#' @param min_genes Minimum genes retained for summary plots.
+#' @param mode Light or dark display mode.
+#' @param txtsize Base text size.
+#' @param x.ang X-axis label angle.
+#' @param style Theme style: `"classic"`, `"minimal"`, `"bw"`, or `"test"`.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_marker_programs <- function(
     programs,
@@ -2194,10 +2300,12 @@ plot_gnrh_marker_programs <- function(
     min_genes = 1,
     mode = "light",
     txtsize = 12,
-    x.ang = 45
+    x.ang = 45,
+    style = c("bw","test", "classic", "minimal")
 ) {
   table <- match.arg(table)
   type <- match.arg(type)
+  style <- match.arg(style)
 
   df <- programs[[table]]
 
@@ -2232,7 +2340,8 @@ plot_gnrh_marker_programs <- function(
           .gnrh_theme(
             mode = mode,
             txtsize = txtsize,
-            x.ang = x.ang
+            x.ang = x.ang,
+            style = style
           )
       )
     }
@@ -2259,7 +2368,8 @@ plot_gnrh_marker_programs <- function(
           .gnrh_theme(
             mode = mode,
             txtsize = txtsize,
-            x.ang = x.ang
+            x.ang = x.ang,
+            style = style
           )
       )
     }
@@ -2294,7 +2404,8 @@ plot_gnrh_marker_programs <- function(
         .gnrh_theme(
           mode = mode,
           txtsize = txtsize,
-          x.ang = x.ang
+          x.ang = x.ang,
+          style = style
         )
     )
   }
@@ -2334,7 +2445,8 @@ plot_gnrh_marker_programs <- function(
     .gnrh_theme(
       mode = mode,
       txtsize = txtsize,
-      x.ang = x.ang
+      x.ang = x.ang,
+      style = style
     )
 }
 
@@ -2344,6 +2456,10 @@ plot_gnrh_marker_programs <- function(
 # ============================================================================= #
 
 #' Plot GnRH classification counts
+#'
+#' @param object A Seurat object processed by `run_gnrh()`.
+#' @param txtsize Base text size.
+#' @return A ggplot object.
 #' @export
 plot_class_counts <- function(object, txtsize = 9) {
   .validate_seurat(object)
@@ -2388,6 +2504,10 @@ plot_class_counts <- function(object, txtsize = 9) {
 
 
 #' Plot GnRH specificity landscape
+#'
+#' @param object A Seurat object processed by `run_gnrh()`.
+#' @param txtsize Base text size.
+#' @return A ggplot object.
 #' @export
 plot_gnrh_specificity <- function(object, txtsize = 9) {
   .validate_seurat(object)
@@ -2431,4 +2551,3 @@ plot_gnrh_specificity <- function(object, txtsize = 9) {
     ) +
     .gnrh_theme(txtsize = txtsize)
 }
-

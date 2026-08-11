@@ -13,7 +13,6 @@ Description: Provides tools to detect, score, and stage GnRH-like cells in
     ambient RNA correction, and Seurat-compatible workflows.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Depends:
     R (>= 4.1.0)
 Imports:
@@ -26,14 +25,8 @@ Imports:
     FNN,
     pROC,
     RColorBrewer,
-    colorspace,
-    viridisLite,
-    ggVennDiagram,
     ComplexUpset,
-    cowplot,
     dplyr,
-    ggpubr,
-    plotly,
     scales,
     ggrepel,
     ggraph,
@@ -46,14 +39,13 @@ Imports:
     stringr,
     tibble,
     purrr,
-    readr,
-    rlang
+    readr
 Suggests:
+    ggrastr,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
     covr
-LazyDataCompression: xz
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3

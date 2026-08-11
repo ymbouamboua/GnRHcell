@@ -36,6 +36,9 @@ plot_gnrh_feature(
 
 \item{features}{Character vector of features (genes or metadata columns) to plot.}
 
+\item{preset}{Optional GnRHcell feature preset: \code{"core"}, \code{"modules"},
+\code{"staging"}, or \code{"all"}.}
+
 \item{cols}{Optional character vector of colors for plotting.}
 
 \item{theme.cols}{Character. Predefined theme color palette (default: \code{"Reds"}). Options include \code{"Reds"}, \code{"Blues"}, etc., or custom list palettes \code{"hotspot"},\code{"rainbow"}, etc.}
@@ -86,13 +89,11 @@ A flexible wrapper around Seurat's \code{FeaturePlot} to visualize gene expressi
 features in a Seurat object. Supports custom color palettes, viridis, and hotspot/rainbow palettes.
 }
 \examples{
-# Single feature with default Reds palette
-plot_gnrh_feature(seurat_obj, features = "POMC")
-
-# Multiple features with viridis palette and merged legend
-plot_gnrh_feature(seurat_obj, features = c("POMC", "NPY"), viridis = TRUE, merge.leg = TRUE)
-
-# Blend two features
-plot_gnrh_feature(seurat_obj, features = c("POMC", "NPY"), blend = TRUE)
+\dontrun{
+path <- system.file("extdata", "hpsc.rds", package = "GnRHcell")
+object <- readRDS(path)
+plot_gnrh_feature(object, features = "GNRH1")
+plot_gnrh_feature(object, preset = "core", ncol = 2)
+}
 
 }

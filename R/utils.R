@@ -647,14 +647,15 @@ extract_gnrh_run_info <- function(object,
 #' Gene Set Overlap Analysis and Visualization
 #'
 #' Perform overlap analysis between multiple gene sets, export overlap
-#' tables, compute unique/common genes, and generate publication-quality
-#' Venn or UpSet plots depending on the number of gene sets.
+#' tables, compute unique/common genes, and always generate a
+#' publication-quality UpSet plot.
 #'
 #' @param gene_sets A named list of gene vectors. Each element should contain
 #'   a character vector of gene symbols.
 #' @param min_size Integer. Minimum intersection size to display in the UpSet
 #'   plot. Default is \code{1}.
-#' @param venn_title Character string specifying the plot title.
+#' @param venn_title Character string specifying the UpSet plot title. The
+#'   argument name is retained for backward compatibility.
 #'   Default is \code{"Overlap of Gene Sets"}.
 #' @param outdir Output directory where CSV tables and figures will be saved.
 #'   Default is current working directory.
@@ -667,7 +668,7 @@ extract_gnrh_run_info <- function(object,
 #' @param dpi Numeric resolution for PNG export. Default is \code{600}.
 #'
 #' @return A list containing cleaned gene sets, overlap tables, unique genes,
-#'   common genes, and the generated plot.
+#'   common genes, the membership table, and the generated UpSet plot.
 #'
 #' @details
 #' Prior to overlap analysis, gene symbols are standardized by:
@@ -695,11 +696,11 @@ extract_gnrh_run_info <- function(object,
 #'   outdir = "results/gene_overlap"
 #' )
 #'
-#' results$venn_plot
+#' results$upset_plot
 #' }
 #'
 #' @export
-gene_upset <- function(
+gnrh_gene_upset <- function(
     gene_sets,
     min_size = 1,
     venn_title = "Overlap of Gene Sets",
@@ -712,10 +713,6 @@ gene_upset <- function(
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.", call. = FALSE)
-  }
-
-  if (!requireNamespace("ggVennDiagram", quietly = TRUE)) {
-    stop("Package 'ggVennDiagram' is required.", call. = FALSE)
   }
 
   if (!requireNamespace("ComplexUpset", quietly = TRUE)) {
@@ -858,86 +855,49 @@ gene_upset <- function(
     row.names = FALSE
   )
 
-  old_theme <- ggplot2::theme_set(
-    ggplot2::theme_bw(base_size = 14)
+  all_genes <- sort(unique(unlist(gene_sets, use.names = FALSE)))
+
+  membership <- data.frame(
+    gene = all_genes,
+    stringsAsFactors = FALSE,
+    check.names = FALSE
   )
 
-  on.exit(
-    ggplot2::theme_set(old_theme),
-    add = TRUE
-  )
-
-  if (length(gene_sets) <= 5) {
-
-    plot <- ggVennDiagram::ggVennDiagram(
-      gene_sets,
-      label_alpha = 0,
-      edge_size = 0.5,
-      label = "count"
-    ) +
-      ggplot2::scale_fill_gradient(
-        low = "white",
-        high = "#0072B2"
-      ) +
-      ggplot2::labs(
-        title = venn_title,
-        fill = "Genes"
-      ) +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(
-          hjust = 0.5,
-          face = "bold",
-          size = 16
-        ),
-        text = ggplot2::element_text(),
-        legend.position = "right"
-      )
-
-  } else {
-
-    all_genes <- unique(unlist(gene_sets, use.names = FALSE))
-
-    df_upset <- data.frame(
-      gene = all_genes,
-      stringsAsFactors = FALSE,
-      check.names = FALSE
-    )
-
-    for (lbl in labels) {
-      df_upset[[lbl]] <- all_genes %in% gene_sets[[lbl]]
-    }
-
-    plot <- ComplexUpset::upset(
-      df_upset,
-      intersect = labels,
-      min_size = min_size,
-      width_ratio = 0.15,
-      base_annotations = list(
-        "Intersection size" =
-          ComplexUpset::intersection_size(
-            counts = TRUE,
-            text = list(size = 4)
-          )
-      ),
-      set_sizes = ComplexUpset::upset_set_size(),
-      sort_sets = "descending",
-      sort_intersections_by = "cardinality"
-    ) +
-      ggplot2::labs(
-        title = venn_title,
-        x = "Intersecting gene sets",
-        y = "Number of genes"
-      ) +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(
-          hjust = 0.5,
-          face = "bold",
-          size = 16
-        ),
-        axis.title = ggplot2::element_text(face = "bold"),
-        text = ggplot2::element_text(size = 12)
-      )
+  for (lbl in labels) {
+    membership[[lbl]] <- all_genes %in% gene_sets[[lbl]]
   }
+
+  utils::write.csv(
+    membership,
+    file.path(outdir, "gene_set_membership.csv"),
+    row.names = FALSE
+  )
+
+  plot <- ComplexUpset::upset(
+    data = membership,
+    intersect = labels,
+    min_size = min_size,
+    width_ratio = 0.18,
+    base_annotations = list(
+      "Intersection size" = ComplexUpset::intersection_size(
+        counts = TRUE,
+        text = list(size = 3.5)
+      )
+    ),
+    set_sizes = ComplexUpset::upset_set_size(),
+    sort_sets = "descending",
+    sort_intersections_by = "cardinality"
+  ) +
+    patchwork::plot_annotation(
+      title = venn_title,
+      theme = ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          hjust = 0.5,
+          face = "bold",
+          size = 16
+        )
+      )
+    )
 
   if (save_plot) {
 
@@ -968,7 +928,10 @@ gene_upset <- function(
     common_all = common_all,
     unique = unique_results,
     unique_summary = unique_summary,
-    venn_plot = plot
+    membership = membership,
+    plot = plot,
+    upset_plot = plot,
+    plot_type = "upset"
   )
 }
 
@@ -976,8 +939,8 @@ gene_upset <- function(
 #' Build gene sets from marker tables
 #'
 #' Reads marker tables from multiple datasets and extracts unique gene
-#' symbols into a named list suitable for overlap analysis, UpSet plots,
-#' Venn diagrams, or marker comparison workflows.
+#' symbols into a named list suitable for overlap analysis, UpSet plots, or
+#' marker comparison workflows.
 #'
 #' Gene names are automatically standardized to uppercase to ensure
 #' consistent comparisons across species and datasets.

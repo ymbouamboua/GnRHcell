@@ -19,6 +19,34 @@ plot_gnrh_distribution(
   flip = FALSE
 )
 }
+\arguments{
+\item{object}{A Seurat object.}
+
+\item{group.by}{Metadata column defining categories.}
+
+\item{split.by}{Optional metadata column defining bars.}
+
+\item{cols}{Optional named colour vector.}
+
+\item{proportion}{Display within-split proportions instead of counts.}
+
+\item{position}{Bar position, such as \code{"stack"} or \code{"dodge"}.}
+
+\item{label}{Add value labels.}
+
+\item{label.size}{Label text size.}
+
+\item{plot.ttl}{Optional plot title.}
+
+\item{txtsize}{Base text size.}
+
+\item{x.ang}{X-axis label angle.}
+
+\item{flip}{Flip coordinates.}
+}
+\value{
+A ggplot object.
+}
 \description{
 Plot GnRHcell metadata distributions
 }
