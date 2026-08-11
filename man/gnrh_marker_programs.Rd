@@ -21,7 +21,7 @@ gnrh_marker_programs(
 values correspond to existing marker-table paths or to file names located
 in \code{file.path(outdir, "tables")}.}
 
-\item{results}{A list returned by \code{gene_upset()}, containing at least
+\item{results}{A list returned by \code{gnrh_gene_upset()}, containing at least
 \code{results$unique}, a named list of dataset-specific unique genes.}
 
 \item{outdir}{Character. Output directory containing a \code{tables/}
@@ -59,7 +59,7 @@ Candidate marker gene symbol, standardized to uppercase.
 }
 \item{\code{is_unique}}{
 Logical value indicating whether the gene is unique to one dataset
-according to \code{\link{gene_upset}}.
+according to \code{\link{gnrh_gene_upset}}.
 }
 \item{\code{known_status}}{
 Biological annotation of the gene. Values include
@@ -165,6 +165,6 @@ marker_programs$split_by_dataset_program
 
 }
 \seealso{
-\code{\link{gnrh_stage_modules}}, \code{\link{gene_upset}},
+\code{\link{gnrh_stage_modules}}, \code{\link{gnrh_gene_upset}},
 \code{\link{gnrh_markers}}
 }

@@ -63,6 +63,6 @@ lengths(gene_sets)
 
 }
 \seealso{
-\code{\link{gene_upset}},
+\code{\link{gnrh_gene_upset}},
 \code{\link{gnrh_marker_programs}}
 }

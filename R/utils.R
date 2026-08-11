@@ -690,7 +690,7 @@ extract_gnrh_run_info <- function(object,
 #'   Dataset_C = c("GNRH1", "DLX1", "DLX2")
 #' )
 #'
-#' results <- gene_upset(
+#' results <- gnrh_gene_upset(
 #'   gene_sets = gene_sets,
 #'   venn_title = "GnRH Marker Overlap",
 #'   outdir = "results/gene_overlap"
@@ -990,7 +990,7 @@ gnrh_gene_upset <- function(
 #' }
 #'
 #' @seealso
-#' \code{\link{gene_upset}},
+#' \code{\link{gnrh_gene_upset}},
 #' \code{\link{gnrh_marker_programs}}
 #'
 #' @export

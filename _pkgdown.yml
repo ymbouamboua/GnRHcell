@@ -51,7 +51,7 @@ reference:
       - gnrh_stage_modules
       - gnrh_stage_gene_references
       - build_gene_sets
-      - gene_upset
+      - gnrh_gene_upset
       - gnrh_marker_programs
 
   - title: Multi-dataset workflows

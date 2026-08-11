@@ -192,7 +192,7 @@ gnrh_stage_gene_references <- function() {
 #' @param files Named character vector. Names correspond to dataset names and
 #'   values correspond to existing marker-table paths or to file names located
 #'   in \code{file.path(outdir, "tables")}.
-#' @param results A list returned by \code{gene_upset()}, containing at least
+#' @param results A list returned by \code{gnrh_gene_upset()}, containing at least
 #'   \code{results$unique}, a named list of dataset-specific unique genes.
 #' @param outdir Character. Output directory containing a \code{tables/}
 #'   subdirectory with marker tables.
@@ -222,7 +222,7 @@ gnrh_stage_gene_references <- function() {
 #'       }
 #'       \item{\code{is_unique}}{
 #'         Logical value indicating whether the gene is unique to one dataset
-#'         according to \code{\link{gene_upset}}.
+#'         according to \code{\link{gnrh_gene_upset}}.
 #'       }
 #'       \item{\code{known_status}}{
 #'         Biological annotation of the gene. Values include
@@ -314,7 +314,7 @@ gnrh_stage_gene_references <- function() {
 #' }
 #'
 #' @seealso
-#' \code{\link{gnrh_stage_modules}}, \code{\link{gene_upset}},
+#' \code{\link{gnrh_stage_modules}}, \code{\link{gnrh_gene_upset}},
 #' \code{\link{gnrh_markers}}
 #'
 #' @export

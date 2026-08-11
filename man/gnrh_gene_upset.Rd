@@ -69,7 +69,7 @@ gene_sets <- list(
   Dataset_C = c("GNRH1", "DLX1", "DLX2")
 )
 
-results <- gene_upset(
+results <- gnrh_gene_upset(
   gene_sets = gene_sets,
   venn_title = "GnRH Marker Overlap",
   outdir = "results/gene_overlap"
