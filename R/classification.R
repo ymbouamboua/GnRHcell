@@ -7,7 +7,7 @@
 #' Classification uses two positive routes:
 #' \itemize{
 #'   \item \strong{Direct}: raw \code{GNRH1} expression greater than or equal
-#'   to \code{min_umi}; and
+#'   to \code{min_umi}, together with independent GnRH identity evidence; and
 #'   \item \strong{Supported}: detectable but sub-threshold \code{GNRH1}
 #'   expression together with independent GnRH identity and transcriptomic
 #'   support.
@@ -17,9 +17,9 @@
 #' However, cells with strong GnRH-like transcriptomic evidence can be flagged
 #' separately as \code{dropout_candidate} for diagnostic purposes.
 #'
-#' Direct cells are additionally divided into \code{direct_supported} and
-#' \code{direct_isolated}, according to whether independent GnRH identity
-#' evidence is present.
+#' Cells with direct \code{GNRH1} signal but no independent GnRH identity
+#' evidence are retained as \code{direct_isolated} diagnostic signals but are
+#' not classified as GnRH-positive.
 #'
 #' @param raw Numeric vector containing raw \code{GNRH1} UMI counts.
 #' @param norm Numeric vector containing normalized \code{GNRH1} expression.
@@ -329,24 +329,29 @@
   # Route 1: direct GNRH1 detection
   # --------------------------------------------------------------------------- #
 
-  direct <-
+  direct_signal <-
     lib_ok &
     umi_ok
 
   direct_supported <-
-    direct &
+    direct_signal &
     identity_moderate
 
   direct_isolated <-
-    direct &
+    direct_signal &
     !identity_moderate
+
+  # A positive direct call requires both GNRH1 signal and orthogonal identity
+  # evidence. This prevents ambient/off-target GNRH1 signal in non-neural
+  # tissues from being interpreted as a GnRH neuron.
+  direct <- direct_supported
 
   # --------------------------------------------------------------------------- #
   # Reference transcriptomic support
   # --------------------------------------------------------------------------- #
 
   reference_support <- support_score[
-    direct &
+    direct_signal &
       support_score_ok
   ]
 
@@ -504,6 +509,7 @@
     support_supported = support_supported,
 
     direct = direct,
+    direct_signal = direct_signal,
     direct_supported = direct_supported,
     direct_isolated = direct_isolated,
 
@@ -535,6 +541,7 @@
     class = cls,
     keep = keep,
 
+    direct_signal = direct_signal,
     direct_supported = direct_supported,
     direct_isolated = direct_isolated,
 

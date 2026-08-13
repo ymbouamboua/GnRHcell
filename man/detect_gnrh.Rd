@@ -84,15 +84,18 @@ Detection integrates:
 }
 
 Classification uses two GnRH-positive routes: \code{direct} and
-\code{supported}. Both routes require detectable \code{GNRH1} expression.
+\code{supported}. Both routes require detectable \code{GNRH1} expression
+together with independent GnRH identity evidence.
 
 Cells without detected \code{GNRH1} are never classified as GnRH-positive.
 However, cells showing strong GnRH-like transcriptomic evidence can be
 flagged separately as \code{gnrh_dropout_candidate} for diagnostic
 purposes.
 
-Direct candidates require at least \code{min_umi} raw \code{GNRH1}
-counts.
+Direct candidates require at least \code{min_umi} raw \code{GNRH1} counts
+and moderate independent GnRH identity evidence. Cells meeting the UMI rule
+without identity evidence are retained as \code{gnrh_direct_isolated} and
+\code{gnrh_direct_signal}, but remain GnRH-negative.
 
 Supported candidates contain detectable but sub-threshold \code{GNRH1}
 and additionally require independent GnRH identity and transcriptomic

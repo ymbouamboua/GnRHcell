@@ -18,7 +18,8 @@
 #' }
 #'
 #' Classification uses two GnRH-positive routes: \code{direct} and
-#' \code{supported}. Both routes require detectable \code{GNRH1} expression.
+#' \code{supported}. Both routes require detectable \code{GNRH1} expression
+#' together with independent GnRH identity evidence.
 #'
 #' Cells without detected \code{GNRH1} are never classified as GnRH-positive.
 #' However, cells showing strong GnRH-like transcriptomic evidence can be
@@ -54,8 +55,10 @@
 #'   diagnostics, and detection parameters.
 #'
 #' @details
-#' Direct candidates require at least \code{min_umi} raw \code{GNRH1}
-#' counts.
+#' Direct candidates require at least \code{min_umi} raw \code{GNRH1} counts
+#' and moderate independent GnRH identity evidence. Cells meeting the UMI rule
+#' without identity evidence are retained as \code{gnrh_direct_isolated} and
+#' \code{gnrh_direct_signal}, but remain GnRH-negative.
 #'
 #' Supported candidates contain detectable but sub-threshold \code{GNRH1}
 #' and additionally require independent GnRH identity and transcriptomic
@@ -559,48 +562,20 @@ detect_gnrh <- function(
   object$gnrh_direct_isolated <-
     cls$direct_isolated
 
-  # --------------------------------------------------------------------------- #
-  # Metadata: classification
-  # --------------------------------------------------------------------------- #
+  object$gnrh_direct_signal <-
+    cls$direct_signal
 
-  object$gnrh_status <- factor(
-    cls$status,
-    levels = c(
-      "neg",
-      "pos"
-    )
+  # Sensitive screening output. This records direct GNRH1 signal separately
+  # from the identity-supported biological call in `gnrh_status`.
+  object$gnrh_signal_status <- factor(
+    ifelse(cls$direct_signal, "signal", "no_signal"),
+    levels = c("no_signal", "signal")
   )
-
-  object$gnrh_class <- factor(
-    cls$class,
-    levels = c(
-      "neg",
-      "supported",
-      "direct"
-    )
-  )
-
-  # Direct-cell diagnostic subclasses.
-  object$gnrh_direct_supported <-
-    cls$direct_supported
-
-  object$gnrh_direct_isolated <-
-    cls$direct_isolated
 
   # GNRH1-negative transcriptomic candidate.
   # Diagnostic only: these cells remain gnrh_status == "neg".
   object$gnrh_dropout_candidate <-
     cls$dropout_candidate
-
-  # --------------------------------------------------------------------------- #
-  # Metadata: scores
-  # --------------------------------------------------------------------------- #
-
-  object$gnrh_score <-
-    score
-
-  object$gnrh_support_score <-
-    support_score
 
   # --------------------------------------------------------------------------- #
   # Metadata: scores

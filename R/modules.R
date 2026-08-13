@@ -18,7 +18,8 @@
       primary = c(
         "FEZF1",
         "ISL1",
-        "SIX6"
+        "SIX6",
+        "ECEL1"
       ),
       supportive = c(
         "OTX2",
@@ -27,7 +28,14 @@
         "DLX2",
         "DLX5",
         "DLX6",
-        "PBX3"
+        "PBX3",
+        "ARX",
+        "FOXG1"
+      ),
+      contextual = c(
+        "GAD2",
+        "HESX1",
+        "FGFR1"
       )
     ),
     migration = list(

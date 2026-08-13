@@ -53,5 +53,12 @@ test_that("marker heatmap clustering tolerates missing markers", {
   )
   expect_true(all(is.finite(result$clustering_matrix)))
   expect_s4_class(result$heatmap, "Heatmap")
+
+  plot_file <- tempfile(fileext = ".pdf")
+  grDevices::pdf(plot_file)
+  on.exit({
+    grDevices::dev.off()
+    unlink(plot_file)
+  }, add = TRUE)
   expect_silent(ComplexHeatmap::draw(result$heatmap))
 })

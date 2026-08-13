@@ -207,6 +207,23 @@ run_gnrh <- function(
     }
   }
 
+  if (all(c("gnrh_direct_signal", "gnrh_direct_supported",
+            "gnrh_direct_isolated") %in% colnames(md))) {
+    log("Detection evidence:")
+    log(sprintf(
+      "  GNRH1 direct signal: %d",
+      sum(md$gnrh_direct_signal, na.rm = TRUE)
+    ))
+    log(sprintf(
+      "  identity-supported direct: %d",
+      sum(md$gnrh_direct_supported, na.rm = TRUE)
+    ))
+    log(sprintf(
+      "  isolated GNRH1 signal: %d",
+      sum(md$gnrh_direct_isolated, na.rm = TRUE)
+    ))
+  }
+
   if (
     "gnrh_stage" %in%
     colnames(md)
