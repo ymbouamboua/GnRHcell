@@ -1,2 +1,0 @@
-dataset	n_genes	n_cells	neg	pos	detect_sec	stage_sec	diagnostics_sec	total_sec	detect_time	stage_time	diagnostics_time	total_time
-HuDeCa nose	50928	2125	2000	125	0.476048946380615	0.177218914031982	0.0239689350128174	0.679922103881836	0s	0s	0s	1s

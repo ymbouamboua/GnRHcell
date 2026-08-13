@@ -1,6 +1,0 @@
-id,label,species,n_cells,n_features
-hpsc,Human hPSC,Human,2400,33538
-hudeca_nose,HuDeCa nose,Human,2125,50928
-human_me,Human ME,Human,2161,36602
-mouse_hypomap,Mouse HypoMap,Mouse,2174,57362
-human_hypomap,Human HypoMap,Human,2400,60333

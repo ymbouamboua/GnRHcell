@@ -1,6 +1,0 @@
-id,label,species,n_positive,n_reassigned,pct_reassigned,n_migration_filtered
-hpsc,Human hPSC,Human,657,20,3.0441400304414,20
-hudeca_nose,HuDeCa nose,Human,125,20,16,20
-human_me,Human ME,Human,161,6,3.7267080745341614,6
-mouse_hypomap,Mouse HypoMap,Mouse,174,3,1.7241379310344827,3
-human_hypomap,Human HypoMap,Human,400,8,2,8
