@@ -12,3 +12,5 @@
 ^docs$
 ^pkgdown$
 ^data-raw$
+^gnrh_results$
+^Rplots\.pdf$

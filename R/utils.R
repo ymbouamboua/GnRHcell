@@ -661,10 +661,13 @@ extract_gnrh_run_info <- function(object,
 #'   Default is current working directory.
 #' @param save_plot Logical indicating whether plots should be exported.
 #'   Default is \code{TRUE}.
-#' @param plot_width Numeric width of exported figures in inches.
-#'   Default is \code{10}.
-#' @param plot_height Numeric height of exported figures in inches.
-#'   Default is \code{8}.
+#' @param max_intersections Maximum number of intersections displayed. The
+#'   largest intersections are retained. Default is \code{30}; use
+#'   \code{Inf} to display every intersection.
+#' @param plot_width Numeric width of exported figures in inches, or
+#'   \code{NULL} to calculate it from the number of displayed intersections.
+#' @param plot_height Numeric height of exported figures in inches, or
+#'   \code{NULL} to calculate it from the number of gene sets.
 #' @param dpi Numeric resolution for PNG export. Default is \code{600}.
 #'
 #' @return A list containing cleaned gene sets, overlap tables, unique genes,
@@ -706,8 +709,9 @@ gnrh_gene_upset <- function(
     venn_title = "Overlap of Gene Sets",
     outdir = ".",
     save_plot = TRUE,
-    plot_width = 10,
-    plot_height = 8,
+    max_intersections = 30,
+    plot_width = NULL,
+    plot_height = NULL,
     dpi = 600
 ) {
 
@@ -734,6 +738,11 @@ gnrh_gene_upset <- function(
   min_size <- as.integer(min_size)
   if (is.na(min_size) || min_size < 1) {
     min_size <- 1L
+  }
+
+  if (length(max_intersections) != 1L || is.na(max_intersections) ||
+      max_intersections < 1) {
+    stop("'max_intersections' must be a positive number.", call. = FALSE)
   }
 
   if (!dir.exists(outdir)) {
@@ -867,6 +876,40 @@ gnrh_gene_upset <- function(
     membership[[lbl]] <- all_genes %in% gene_sets[[lbl]]
   }
 
+  signatures <- apply(
+    membership[, labels, drop = FALSE],
+    1L,
+    function(x) paste(as.integer(x), collapse = "")
+  )
+  intersection_sizes <- sort(table(signatures), decreasing = TRUE)
+  intersection_sizes <- intersection_sizes[intersection_sizes >= min_size]
+  n_available <- length(intersection_sizes)
+  n_displayed <- min(n_available, max_intersections)
+
+  if (n_displayed == 0L) {
+    stop(
+      "No intersections satisfy 'min_size = ", min_size, "'.",
+      call. = FALSE
+    )
+  }
+
+  if (is.null(plot_width)) {
+    plot_width <- min(20, max(9, 5.5 + 0.30 * n_displayed))
+  }
+  if (is.null(plot_height)) {
+    plot_height <- max(6.5, 4.8 + 0.52 * length(labels))
+  }
+
+  longest_label <- max(nchar(labels), 1L)
+  set_width_ratio <- min(0.34, max(0.18, 0.16 + longest_label / 220))
+  count_text_size <- if (n_displayed <= 15L) {
+    3.8
+  } else if (n_displayed <= 25L) {
+    3.3
+  } else {
+    2.9
+  }
+
   utils::write.csv(
     membership,
     file.path(outdir, "gene_set_membership.csv"),
@@ -877,14 +920,18 @@ gnrh_gene_upset <- function(
     data = membership,
     intersect = labels,
     min_size = min_size,
-    width_ratio = 0.18,
+    n_intersections = max_intersections,
+    width_ratio = set_width_ratio,
     base_annotations = list(
       "Intersection size" = ComplexUpset::intersection_size(
         counts = TRUE,
-        text = list(size = 3.5)
+        bar_number_threshold = 0.82,
+        text = list(size = count_text_size, fontface = "bold")
       )
     ),
-    set_sizes = ComplexUpset::upset_set_size(),
+    set_sizes = ComplexUpset::upset_set_size(
+      geom = ggplot2::geom_bar(width = 0.68, fill = "#4D4D4D")
+    ),
     sort_sets = "descending",
     sort_intersections_by = "cardinality"
   ) +
@@ -894,7 +941,8 @@ gnrh_gene_upset <- function(
         plot.title = ggplot2::element_text(
           hjust = 0.5,
           face = "bold",
-          size = 16
+          size = 17,
+          margin = ggplot2::margin(b = 8)
         )
       )
     )
@@ -929,6 +977,10 @@ gnrh_gene_upset <- function(
     unique = unique_results,
     unique_summary = unique_summary,
     membership = membership,
+    intersections_available = n_available,
+    intersections_displayed = n_displayed,
+    plot_width = plot_width,
+    plot_height = plot_height,
     plot = plot,
     upset_plot = plot,
     plot_type = "upset"

@@ -278,7 +278,8 @@
         "DLX6",
         "PBX3",
         "RASD1",
-        "RMST"
+        "RMST",
+        "ECEL1"
       ),
       genes
     ),
@@ -306,7 +307,6 @@
         "DOC2B",
         "PTPRN",
         "BAIAP3",
-        "ECEL1",
         "SCG2",
         "SCG5",
         "HCN1",

@@ -990,8 +990,8 @@ plot_gnrh_dot <- function(
     group.by = "seurat_clusters",
     th.cols = "RdYlBu",
     rev.th.cols = TRUE,
-    dot.scale = 4,
-    x.ang = 90,
+    dot.scale = 6,
+    x.ang = 45,
     vjust.x = NULL,
     hjust.x = NULL,
     flip = FALSE,
@@ -1050,7 +1050,7 @@ plot_gnrh_dot <- function(
   }
 
   outline_col <- if (dot.outline) "gray60" else NA
-  outline_stroke <- if (dot.outline) 0.5 else 0
+  outline_stroke <- if (dot.outline) 0.1 else 0
 
   # --------------------------------------------------- # # #
   # Plot

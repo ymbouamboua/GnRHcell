@@ -625,10 +625,16 @@ run_gnrh_collection <- function(
   comparison_results <- NULL
 
   if (isTRUE(run_comparisons)) {
+    comparison_objects <- lapply(dataset_results, `[[`, "object")
+    if (any(vapply(comparison_objects, is.null, logical(1)))) {
+      comparison_objects <- NULL
+    }
     comparison_results <- compare_gnrh_datasets(
       datasets = datasets,
       output_dir = output_dir,
-      run_programs = run_programs
+      run_programs = run_programs,
+      run_gallery = !isTRUE(clean_objects) || isTRUE(save_objects),
+      objects = comparison_objects
     )
   }
 
@@ -660,6 +666,10 @@ run_gnrh_collection <- function(
 #' @param output_dir Character scalar giving the GnRHcell output directory.
 #' @param run_programs Logical. Whether to compute conserved marker programs.
 #'   Default is `TRUE`.
+#' @param run_gallery Logical. Whether to build cross-dataset detection and
+#'   developmental-stage gallery assets. Default is `FALSE`.
+#' @param objects Optional named list of processed Seurat objects. When `NULL`,
+#'   gallery generation looks for saved objects in `output_dir/objects`.
 #'
 #' @return A named list containing:
 #' \describe{
@@ -671,6 +681,8 @@ run_gnrh_collection <- function(
 #'   available.}
 #'   \item{programs}{Conserved marker program results, if requested and
 #'   available.}
+#'   \item{gallery}{Detection summary, UMAP gallery, and stage-composition
+#'   gallery, if requested and processed objects are available.}
 #' }
 #'
 #' @seealso
@@ -680,7 +692,9 @@ run_gnrh_collection <- function(
 compare_gnrh_datasets <- function(
     datasets,
     output_dir,
-    run_programs = TRUE
+    run_programs = TRUE,
+    run_gallery = FALSE,
+    objects = NULL
 ) {
   table_dir <- file.path(
     output_dir,
@@ -733,10 +747,30 @@ compare_gnrh_datasets <- function(
     )
   ]
 
+  if (length(run_info_files) == 0L) {
+    warning(
+      "No run-information files were found in `", table_dir,
+      "`. Check that `output_dir` is the same directory used by ",
+      "`run_gnrh_collection()`.",
+      call. = FALSE
+    )
+  }
+
+  if (length(marker_files) < 2L) {
+    warning(
+      "Fewer than two marker files were found in `", marker_dir,
+      "`; marker overlap and conserved programs cannot be computed. ",
+      "Run the collection with `run_markers = TRUE` and reuse the same ",
+      "`output_dir`.",
+      call. = FALSE
+    )
+  }
+
   runtime_plot <- NULL
   detected_plot <- NULL
   overlap <- NULL
   programs <- NULL
+  gallery <- NULL
 
   if (length(run_info_files) > 0L) {
     runtime_plot <- plot_gnrh_runtime_curve(
@@ -790,13 +824,33 @@ compare_gnrh_datasets <- function(
     )
   }
 
+  if (isTRUE(run_gallery)) {
+    if (is.null(objects)) {
+      objects <- .load_collection_gallery_objects(datasets, output_dir)
+    }
+    if (is.null(objects)) {
+      warning(
+        "Gallery generation requires processed objects. Supply `objects` or ",
+        "save collection objects in `output_dir/objects`.",
+        call. = FALSE
+      )
+    } else {
+      gallery <- .build_collection_gallery(
+        objects = objects,
+        datasets = datasets,
+        output_dir = file.path(comparison_dir, "gallery")
+      )
+    }
+  }
+
   list(
     run_info_files = run_info_files,
     marker_files = marker_files,
     runtime_plot = runtime_plot,
     detected_plot = detected_plot,
     overlap = overlap,
-    programs = programs
+    programs = programs,
+    gallery = gallery
   )
 }
 
@@ -852,9 +906,9 @@ prepare_gnrh_datasets <- function(
     datasets
   )
 
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
   # Standardize columns
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
 
   datasets$id <- as.character(
     datasets$id
@@ -888,9 +942,9 @@ prepare_gnrh_datasets <- function(
     datasets$file
   )
 
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
   # Validate IDs
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
 
   duplicated_ids <- unique(
     datasets$id[
@@ -911,9 +965,9 @@ prepare_gnrh_datasets <- function(
     )
   }
 
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
   # Validate species
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
 
   invalid_species <- setdiff(
     unique(
@@ -936,9 +990,9 @@ prepare_gnrh_datasets <- function(
     )
   }
 
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
   # Check dataset files
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
 
   if (
     isTRUE(check_files) &&
@@ -956,9 +1010,9 @@ prepare_gnrh_datasets <- function(
     )
   }
 
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
   # Optionally remove missing datasets
-  # --------------------------------------------------------------------------- # #
+  # --------------------------------------------------------------------------- #
 
   if (isTRUE(remove_missing)) {
     datasets <- datasets[

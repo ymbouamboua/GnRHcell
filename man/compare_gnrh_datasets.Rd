@@ -4,7 +4,13 @@
 \alias{compare_gnrh_datasets}
 \title{Compare GnRHcell results across datasets}
 \usage{
-compare_gnrh_datasets(datasets, output_dir, run_programs = TRUE)
+compare_gnrh_datasets(
+  datasets,
+  output_dir,
+  run_programs = TRUE,
+  run_gallery = FALSE,
+  objects = NULL
+)
 }
 \arguments{
 \item{datasets}{A dataset configuration data frame containing at least
@@ -14,6 +20,12 @@ compare_gnrh_datasets(datasets, output_dir, run_programs = TRUE)
 
 \item{run_programs}{Logical. Whether to compute conserved marker programs.
 Default is \code{TRUE}.}
+
+\item{run_gallery}{Logical. Whether to build cross-dataset detection and
+developmental-stage gallery assets. Default is \code{FALSE}.}
+
+\item{objects}{Optional named list of processed Seurat objects. When \code{NULL},
+gallery generation looks for saved objects in \code{output_dir/objects}.}
 }
 \value{
 A named list containing:
@@ -26,6 +38,8 @@ A named list containing:
 available.}
 \item{programs}{Conserved marker program results, if requested and
 available.}
+\item{gallery}{Detection summary, UMAP gallery, and stage-composition
+gallery, if requested and processed objects are available.}
 }
 }
 \description{
