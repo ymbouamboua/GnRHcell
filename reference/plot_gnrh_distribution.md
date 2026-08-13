@@ -16,8 +16,13 @@ plot_gnrh_distribution(
   label.size = 3,
   plot.ttl = NULL,
   txtsize = 10,
-  x.ang = 45,
-  flip = FALSE
+  x.ang = NULL,
+  style = "classic",
+  flip = FALSE,
+  adaptive = TRUE,
+  bar.width = NULL,
+  bar.gap = NULL,
+  legend.position = "auto"
 )
 ```
 
@@ -65,11 +70,37 @@ plot_gnrh_distribution(
 
 - x.ang:
 
-  X-axis label angle.
+  X-axis label angle. When `NULL`, the angle is selected from
+
+- style:
+
+  Theme style: `"classic"`, `"minimal"`, `"bw"`, or `"test"`. the number
+  and length of sample labels.
 
 - flip:
 
   Flip coordinates.
+
+- adaptive:
+
+  Automatically use compact spacing, an economical legend layout, and
+  recommended export dimensions based on the number of samples.
+
+- bar.width:
+
+  Bar width. When `NULL`, it is selected automatically.
+
+- bar.gap:
+
+  Gap between adjacent bar edges, in x-axis units. It is independent of
+  `bar.width`; for example, `bar.width = 0.3` and `bar.gap = 0.2`
+  produce centres 0.5 units apart. When `NULL`, an adaptive value is
+  used.
+
+- legend.position:
+
+  Legend position. Use `"auto"` to place it according to the number of
+  samples, or a standard ggplot2 legend position.
 
 ## Value
 

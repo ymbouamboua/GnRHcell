@@ -45,6 +45,12 @@ programs, co-expression, and cross-dataset overlap.
   : Gene Set Overlap Analysis and Visualization
 - [`gnrh_marker_programs()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_marker_programs.md)
   : Classify GnRH marker candidates into developmental programs
+- [`merge_gnrh_marker_scores()`](https://ymbouamboua.github.io/GnRHcell/reference/merge_gnrh_marker_scores.md)
+  : Merge GnRH marker scores across datasets
+- [`plot_gnrh_conserved_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_conserved_markers.md)
+  : Plot conserved GnRH markers across datasets
+- [`plot_gnrh_dataset_specific_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/plot_gnrh_dataset_specific_markers.md)
+  : Plot dataset-specific GnRH markers
 
 ## Multi-dataset workflows
 

@@ -436,8 +436,6 @@ Active assay: RNA (33538 features, 2000 variable features)
 <span>  group_by <span class="op">=</span> <span class="st">"gnrh_stage"</span>,</span>
 <span>  reduction <span class="op">=</span> <span class="st">"umap"</span>,</span>
 <span>  percentage <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  label <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  repel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  cols <span class="op">=</span> <span class="fu"><a href="reference/gnrh_colors.html">gnrh_colors</a></span><span class="op">(</span><span class="st">"stage"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Result from the bundled <code>hpsc</code> object:</p>
@@ -517,8 +515,12 @@ Active assay: RNA (33538 features, 2000 variable features)
 <span>  group.by <span class="op">=</span> <span class="st">"gnrh_stage"</span>,</span>
 <span>  split.by <span class="op">=</span> <span class="st">"orig.ident"</span>,</span>
 <span>  proportion <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  label <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cols <span class="op">=</span> <span class="fu"><a href="reference/gnrh_colors.html">gnrh_colors</a></span><span class="op">(</span><span class="st">"stage"</span><span class="op">)</span></span>
+<span>  adaptive <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cols <span class="op">=</span> <span class="fu"><a href="reference/gnrh_colors.html">gnrh_colors</a></span><span class="op">(</span><span class="st">"stage"</span><span class="op">)</span>,</span>
+<span>  bar.width <span class="op">=</span> <span class="fl">0.3</span>,</span>
+<span>  bar.gap <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  x.ang <span class="op">=</span> <span class="fl">45</span>,</span>
+<span>  legend.position <span class="op">=</span> <span class="st">"right"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Result:</p>
 <div align="center">
@@ -529,7 +531,9 @@ Active assay: RNA (33538 features, 2000 variable features)
 <h3 id="diagnostic-report">Diagnostic report<a class="anchor" aria-label="anchor" href="#diagnostic-report"></a>
 </h3>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">report</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gnrh_report.html">gnrh_report</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">hpsc</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh.html">run_gnrh</a></span><span class="op">(</span><span class="va">hpsc</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">report</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gnrh_report.html">gnrh_report</a></span><span class="op">(</span></span>
 <span>  <span class="va">hpsc</span>,</span>
 <span>  roc_mode <span class="op">=</span> <span class="st">"internal"</span>,</span>
 <span>  style <span class="op">=</span> <span class="st">"bw"</span></span>
@@ -552,7 +556,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 <span><span class="op">)</span></span>
 <span><span class="va">report</span></span></code></pre></div>
 <div align="center">
-<p><img src="reference/figures/hpsc-report-class.png" width="800" alt="Internal GnRHcell diagnostic summary"></p>
+<p><img src="reference/figures/hpsc-report-status.png" width="800" alt="Internal GnRHcell diagnostic summary"></p>
 </div>
 <p>Export a vector report:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
@@ -583,6 +587,10 @@ Active assay: RNA (33538 features, 2000 variable features)
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">genes</span><span class="op">$</span><span class="va">candidates</span>, <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="va">genes</span><span class="op">$</span><span class="va">donor_cells</span></span></code></pre></div>
+<pre class="text"><code>[GNRH] GnRH marker discovery
+[STEP] Running DE method: wilcox
+[DONE] Markers detected: 199 Duration: 2.8s
+[INFO] Top marker: GNRH1</code></pre>
 <p>Top results from the <code>hpsc</code> comparison (<code>gnrh_status == "pos"</code> versus <code>ann2 == "GLU"</code> controls):</p>
 <table style="width:100%;" class="table">
 <colgroup>
@@ -649,17 +657,18 @@ Active assay: RNA (33538 features, 2000 variable features)
 <div class="section level3">
 <h3 id="co-expression-and-gene-networks">Co-expression and gene networks<a class="anchor" aria-label="anchor" href="#co-expression-and-gene-networks"></a>
 </h3>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_coexpr.html">plot_gnrh_coexpr</a></span><span class="op">(</span></span>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">p1</span><span class="op">=</span><span class="fu"><a href="reference/plot_gnrh_coexpr.html">plot_gnrh_coexpr</a></span><span class="op">(</span></span>
 <span>  <span class="va">genes</span><span class="op">$</span><span class="va">markers</span>,</span>
 <span>  coexp_cutoff <span class="op">=</span> <span class="fl">0.30</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/plot_network.html">plot_network</a></span><span class="op">(</span></span>
+<span><span class="va">p2</span><span class="op">=</span><span class="fu"><a href="reference/plot_network.html">plot_network</a></span><span class="op">(</span></span>
 <span>  <span class="va">genes</span><span class="op">$</span><span class="va">markers</span>,</span>
 <span>  top_n <span class="op">=</span> <span class="fl">40</span>,</span>
-<span>  threshold <span class="op">=</span> <span class="fl">0.20</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span>  threshold <span class="op">=</span> <span class="fl">0.10</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">p1</span><span class="op">+</span><span class="va">p2</span></span></code></pre></div>
 <p>Result:</p>
 <div align="center">
 <p><img src="reference/figures/hpsc-lineage-marker-results.png" width="900" alt="GnRH-lineage co-expression and marker network results"></p>
@@ -670,7 +679,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 <h2 id="stage-specific-marker-discovery">Stage-specific marker discovery<a class="anchor" aria-label="anchor" href="#stage-specific-marker-discovery"></a>
 </h2>
 <p><code><a href="reference/find_gnrh_stage_markers.html">find_gnrh_stage_markers()</a></code> compares each selected developmental stage with the other GnRH-positive stages. It does not require coexpression with <code>GNRH1</code>, avoiding enrichment for general GnRH-lineage markers.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">stage_markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/find_gnrh_stage_markers.html">find_gnrh_stage_markers</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">hpsc</span>,</span>
 <span>  stage_col <span class="op">=</span> <span class="st">"gnrh_stage"</span>,</span>
@@ -777,7 +786,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="va">top</span> <span class="op">&lt;-</span> <span class="va">stage_markers</span><span class="op">$</span><span class="va">candidates</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">stage</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
@@ -796,7 +805,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 </div>
 <p>The complete result is available in <a href="https://github.com/ymbouamboua/GnRHcell/blob/main/man/figures/hpsc-stage-markers.csv" class="external-link"><code>hpsc-stage-markers.csv</code></a>.</p>
 <p>Retrieve the top markers per stage:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">top_stage_markers</span> <span class="op">&lt;-</span> <span class="va">stage_markers</span><span class="op">$</span><span class="va">candidates</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">.data</span><span class="op">$</span><span class="va">stage</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_max</a></span><span class="op">(</span></span>
@@ -816,7 +825,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 <h3 id="configure-datasets">Configure datasets<a class="anchor" aria-label="anchor" href="#configure-datasets"></a>
 </h3>
 <p>Each row defines an independent Seurat dataset:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"hpsc"</span>,</span>
@@ -872,7 +881,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 <div class="section level3">
 <h3 id="validate-the-configuration">Validate the configuration<a class="anchor" aria-label="anchor" href="#validate-the-configuration"></a>
 </h3>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/prepare_gnrh_datasets.html">prepare_gnrh_datasets</a></span><span class="op">(</span></span>
 <span>  <span class="va">datasets</span>,</span>
 <span>  check_files <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -938,7 +947,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 <div class="section level3">
 <h3 id="run-the-collection">Run the collection<a class="anchor" aria-label="anchor" href="#run-the-collection"></a>
 </h3>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_collection.html">run_gnrh_collection</a></span><span class="op">(</span></span>
 <span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
@@ -963,11 +972,11 @@ Active assay: RNA (33538 features, 2000 variable features)
 <h3 id="collection-gallery-assets">Collection gallery assets<a class="anchor" aria-label="anchor" href="#collection-gallery-assets"></a>
 </h3>
 <p><code><a href="reference/run_gnrh_collection.html">run_gnrh_collection()</a></code> now builds the cross-dataset gallery as part of its comparison step. With <code>clean_objects = FALSE</code>, it uses the processed objects kept in memory. With <code>save_objects = TRUE</code>, it can load them from the collection output directory. The configured reduction is respected, including <code>umap_scvi</code>.</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">$</span><span class="va">gallery</span><span class="op">$</span><span class="va">summary</span></span>
 <span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">$</span><span class="va">gallery</span><span class="op">$</span><span class="va">umap_plot</span></span>
 <span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">$</span><span class="va">gallery</span><span class="op">$</span><span class="va">stage_plot</span></span></code></pre></div>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">collection</span><span class="op">$</span><span class="va">results</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">)</span></span>
 <span></span>
@@ -976,7 +985,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 <span><span class="va">collection</span><span class="op">$</span><span class="va">comparisons</span><span class="op">$</span><span class="va">programs</span><span class="op">$</span><span class="va">summary</span></span></code></pre></div>
 <p>The workflow loads datasets sequentially, runs GnRHcell, creates dataset-level outputs, compares markers, and optionally identifies conserved programs.</p>
 <p>For lower memory use:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_collection.html">run_gnrh_collection</a></span><span class="op">(</span></span>
 <span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
@@ -988,7 +997,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 <h3 id="validate-a-collection">Validate a collection<a class="anchor" aria-label="anchor" href="#validate-a-collection"></a>
 </h3>
 <p>Processed objects must remain available in the collection when running validation directly:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">validation</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/validate_gnrh_collection.html">validate_gnrh_collection</a></span><span class="op">(</span></span>
 <span>  <span class="va">collection</span>,</span>
 <span>  positive_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"direct"</span>, <span class="st">"supported"</span><span class="op">)</span>,</span>
@@ -1008,7 +1017,7 @@ GNRH1-negative transcriptomic candidates: 14 (diagnostic only; not counted as Gn
 Developmental-stage refinements: 66 cells.
 Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 ==== GNRH COLLECTION VALIDATION DONE ====</code></pre>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">validation</span><span class="op">$</span><span class="va">detection</span></span>
 <span><span class="va">validation</span><span class="op">$</span><span class="va">status_class</span></span>
 <span><span class="va">validation</span><span class="op">$</span><span class="va">scores</span></span>
@@ -1082,11 +1091,14 @@ Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 <div align="center">
 <p><img src="reference/figures/demo-stage-composition.png" width="800" alt="Cross-dataset GnRH stage composition"></p>
 </div>
+<div align="center">
+<p><img src="reference/figures/gnrh_detected_plot.png" width="800" alt="Cross-dataset detected GnRH neurons"></p>
+</div>
 </div>
 <div class="section level3">
 <h3 id="run-one-dataset">Run one dataset<a class="anchor" aria-label="anchor" href="#run-one-dataset"></a>
 </h3>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_gnrh_dataset.html">run_gnrh_dataset</a></span><span class="op">(</span></span>
 <span>  object <span class="op">=</span> <span class="va">hpsc</span>,</span>
 <span>  dataset_id <span class="op">=</span> <span class="st">"hpsc"</span>,</span>
@@ -1135,7 +1147,7 @@ Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 <div class="section level2">
 <h2 id="cross-dataset-comparisons">Cross-dataset comparisons<a class="anchor" aria-label="anchor" href="#cross-dataset-comparisons"></a>
 </h2>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compare_gnrh_datasets.html">compare_gnrh_datasets</a></span><span class="op">(</span></span>
 <span>  datasets <span class="op">=</span> <span class="va">datasets</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"gnrh_results"</span>,</span>
@@ -1153,7 +1165,7 @@ Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">gallery</span><span class="op">$</span><span class="va">umap_plot</span></span>
 <span><span class="va">comparison</span><span class="op">$</span><span class="va">gallery</span><span class="op">$</span><span class="va">stage_plot</span></span></code></pre></div>
 <p>Marker programs can also be generated from existing result tables:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"HuDeCa nose"</span> <span class="op">=</span> <span class="st">"gnrh_hudeca_nose_markers.tsv"</span>,</span>
 <span>  <span class="st">"Human hPSC"</span> <span class="op">=</span> <span class="st">"gnrh_hpsc_markers.tsv"</span>,</span>
@@ -1174,7 +1186,117 @@ Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 <div align="center">
 <p><img src="reference/figures/gene_overlap_plot.png" width="800" alt="Cross-dataset overlap of GnRH-associated markers"></p>
 </div>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="section level3">
+<h3 id="compare-marker-scores-across-datasets">Compare marker scores across datasets<a class="anchor" aria-label="anchor" href="#compare-marker-scores-across-datasets"></a>
+</h3>
+<p><code><a href="reference/merge_gnrh_marker_scores.html">merge_gnrh_marker_scores()</a></code> converts the dataset-level outputs from <code><a href="reference/gnrh_markers.html">gnrh_markers()</a></code> into a gene-by-dataset matrix. Gene symbols are standardized to uppercase by default, and genes absent from a dataset remain <code>NA</code> so that missing markers are not confused with genuine zero scores.</p>
+<p>The plotting functions require the optional Bioconductor packages <code>ComplexHeatmap</code> and <code>circlize</code>:</p>
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("BiocManager")</span></span>
+<span><span class="co"># BiocManager::install(c("ComplexHeatmap", "circlize"))</span></span></code></pre></div>
+<p>Use the marker files produced by <code><a href="reference/run_gnrh_collection.html">run_gnrh_collection()</a></code>:</p>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">marker_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"gnrh_results"</span>, <span class="st">"markers"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">marker_files</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"gnrh_"</span>, <span class="va">datasets</span><span class="op">$</span><span class="va">id</span>, <span class="st">"_markers.tsv"</span><span class="op">)</span>,</span>
+<span>  <span class="va">datasets</span><span class="op">$</span><span class="va">label</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">marker_files</span> <span class="op">&lt;-</span> <span class="va">marker_files</span><span class="op">[</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">marker_dir</span>, <span class="va">marker_files</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">]</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">marker_files</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">2L</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">marker_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/merge_gnrh_marker_scores.html">merge_gnrh_marker_scores</a></span><span class="op">(</span></span>
+<span>  <span class="va">marker_files</span>,</span>
+<span>  dir <span class="op">=</span> <span class="va">marker_dir</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">marker_matrix</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">10L</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">marker_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">marker_matrix</span>, <span class="st">"score_columns"</span><span class="op">)</span></span></code></pre></div>
+<p>When <code>score_col = NULL</code>, each table uses the first available column among <code>score</code>, <code>avg_log2FC</code>, <code>coexpr</code>, and <code>avg_logFC</code>. For directly comparable heatmaps, specify the same score explicitly when it is present in every table:</p>
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">conserved_markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/plot_gnrh_conserved_markers.html">plot_gnrh_conserved_markers</a></span><span class="op">(</span></span>
+<span>  files <span class="op">=</span> <span class="va">marker_files</span>,</span>
+<span>  dir <span class="op">=</span> <span class="va">marker_dir</span>,</span>
+<span>  score_col <span class="op">=</span> <span class="st">"avg_log2FC"</span>,</span>
+<span>  min_datasets <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  top_n <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  scale_rows <span class="op">=</span> <span class="cn">F</span>,</span>
+<span>  cluster_rows <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filename <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
+<span>    <span class="st">"gnrh_results"</span>,</span>
+<span>    <span class="st">"comparisons"</span>,</span>
+<span>    <span class="st">"conserved_gnrh_markers.pdf"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">conserved_markers</span><span class="op">$</span><span class="va">conserved</span></span>
+<span><span class="va">conserved_markers</span><span class="op">$</span><span class="va">heatmap</span></span>
+<span></span>
+<span></span>
+<span></span>
+<span><span class="va">conserved_markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/plot_gnrh_conserved_markers.html">plot_gnrh_conserved_markers</a></span><span class="op">(</span></span>
+<span>  files <span class="op">=</span> <span class="va">marker_files</span>,</span>
+<span>  dir <span class="op">=</span> <span class="va">marker_dir</span>,</span>
+<span>  score_col <span class="op">=</span> <span class="st">"avg_log2FC"</span>,</span>
+<span>  min_datasets <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  top_n <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  scale_rows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cluster_rows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filename <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
+<span>    <span class="st">"gnrh_results"</span>,</span>
+<span>    <span class="st">"comparisons"</span>,</span>
+<span>    <span class="st">"conserved_gnrh_markers.pdf"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">conserved_markers</span><span class="op">$</span><span class="va">heatmap</span></span></code></pre></div>
+<div align="center">
+<p><img src="reference/figures/conserved-gnrh-marker-heatmap.png" width="800" alt="Conserved GnRH markers"></p>
+</div>
+<p>Conserved markers are ranked first by the number of supporting datasets and then by their mean marker score. Dataset-specific markers are restricted by their cross-dataset support and ranked by the difference between their target dataset score and the mean score in the other datasets:</p>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">specific_markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/plot_gnrh_dataset_specific_markers.html">plot_gnrh_dataset_specific_markers</a></span><span class="op">(</span></span>
+<span>  files <span class="op">=</span> <span class="va">marker_files</span>,</span>
+<span>  dir <span class="op">=</span> <span class="va">marker_dir</span>,</span>
+<span>  score_col <span class="op">=</span> <span class="st">"avg_log2FC"</span>,</span>
+<span>  top_n_per_dataset <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  max_datasets <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  scale_rows <span class="op">=</span> <span class="cn">F</span>,</span>
+<span>  cluster_rows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cluster_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filename <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span></span>
+<span>    <span class="st">"gnrh_results"</span>,</span>
+<span>    <span class="st">"comparisons"</span>,</span>
+<span>    <span class="st">"dataset_specific_gnrh_markers.pdf"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">specific_markers</span><span class="op">$</span><span class="va">specific_table</span></span>
+<span><span class="va">specific_markers</span><span class="op">$</span><span class="va">heatmap</span></span></code></pre></div>
+<div align="center">
+<p><img src="reference/figures/dataset-specific-gnrh-marker-heatmap.png" width="800" alt="Dataset-specific GnRH markers"></p>
+</div>
+<p>The returned tables can be filtered or exported independently of the heatmaps:</p>
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span></span>
+<span>  <span class="va">conserved_markers</span><span class="op">$</span><span class="va">conserved</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"gnrh_results"</span>, <span class="st">"comparisons"</span>, <span class="st">"conserved_gnrh_markers.csv"</span><span class="op">)</span>,</span>
+<span>  row.names <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span></span>
+<span>  <span class="va">specific_markers</span><span class="op">$</span><span class="va">specific_table</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"gnrh_results"</span>, <span class="st">"comparisons"</span>, <span class="st">"dataset_specific_gnrh_markers.csv"</span><span class="op">)</span>,</span>
+<span>  row.names <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>These score-based heatmaps complement <code><a href="reference/gnrh_gene_upset.html">gnrh_gene_upset()</a></code>: the UpSet plot describes set membership, whereas the heatmaps retain marker-effect magnitude across datasets.</p>
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">marker_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"gnrh_results"</span>, <span class="st">"markers"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -1199,7 +1321,7 @@ Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 <span>  outdir <span class="op">=</span> <span class="st">"gnrh_results"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Visualize the results:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_gnrh_marker_programs.html">plot_gnrh_marker_programs</a></span><span class="op">(</span></span>
 <span>  <span class="va">programs</span>,</span>
 <span>  table <span class="op">=</span> <span class="st">"high_confidence"</span>,</span>
@@ -1207,6 +1329,7 @@ Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 <span><span class="op">)</span></span></code></pre></div>
 <div align="center">
 <p><img src="reference/figures/marker-program-plots.png" width="800" alt="Cross-dataset GnRH stage composition"></p>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -1307,13 +1430,13 @@ Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">document</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">check</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">pkgdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">build_site</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Rebuild <code>README.md</code> after editing this source file:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">build_readme</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">

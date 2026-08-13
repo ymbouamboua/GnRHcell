@@ -56,8 +56,13 @@
 <span>  label.size <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  plot.ttl <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  txtsize <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  x.ang <span class="op">=</span> <span class="fl">45</span>,</span>
-<span>  flip <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  x.ang <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  style <span class="op">=</span> <span class="st">"classic"</span>,</span>
+<span>  flip <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  bar.width <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bar.gap <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  legend.position <span class="op">=</span> <span class="st">"auto"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -106,11 +111,37 @@
 
 
 <dt id="arg-x-ang">x.ang<a class="anchor" aria-label="anchor" href="#arg-x-ang"></a></dt>
-<dd><p>X-axis label angle.</p></dd>
+<dd><p>X-axis label angle. When <code>NULL</code>, the angle is selected from</p></dd>
+
+
+<dt id="arg-style">style<a class="anchor" aria-label="anchor" href="#arg-style"></a></dt>
+<dd><p>Theme style: <code>"classic"</code>, <code>"minimal"</code>, <code>"bw"</code>, or <code>"test"</code>.
+the number and length of sample labels.</p></dd>
 
 
 <dt id="arg-flip">flip<a class="anchor" aria-label="anchor" href="#arg-flip"></a></dt>
 <dd><p>Flip coordinates.</p></dd>
+
+
+<dt id="arg-adaptive">adaptive<a class="anchor" aria-label="anchor" href="#arg-adaptive"></a></dt>
+<dd><p>Automatically use compact spacing, an economical legend
+layout, and recommended export dimensions based on the number of samples.</p></dd>
+
+
+<dt id="arg-bar-width">bar.width<a class="anchor" aria-label="anchor" href="#arg-bar-width"></a></dt>
+<dd><p>Bar width. When <code>NULL</code>, it is selected automatically.</p></dd>
+
+
+<dt id="arg-bar-gap">bar.gap<a class="anchor" aria-label="anchor" href="#arg-bar-gap"></a></dt>
+<dd><p>Gap between adjacent bar edges, in x-axis units. It is
+independent of <code>bar.width</code>; for example, <code>bar.width = 0.3</code> and
+<code>bar.gap = 0.2</code> produce centres 0.5 units apart. When <code>NULL</code>, an adaptive
+value is used.</p></dd>
+
+
+<dt id="arg-legend-position">legend.position<a class="anchor" aria-label="anchor" href="#arg-legend-position"></a></dt>
+<dd><p>Legend position. Use <code>"auto"</code> to place it according
+to the number of samples, or a standard ggplot2 legend position.</p></dd>
 
 </dl></div>
     <div class="section level2">
