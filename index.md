@@ -16,6 +16,10 @@ transcriptomic datasets. It combines `GNRH1` expression with lineage,
 migration, neuroendocrine, neighborhood, and alternative-program
 evidence in a Seurat-compatible workflow.
 
+The central principle is to **avoid relying on `GNRH1` expression
+alone**. Orthogonal biological evidence supports dropout rescue,
+confidence classification, and developmental-stage inference.
+
 The package provides:
 
 - GnRH-cell detection with direct, supported, and dropout-rescue
@@ -352,21 +356,20 @@ object](reference/figures/hpsc-genes.png)
 plot_gnrh_dot(
   hpsc,
   features = c(
-    "GNRH1", "FEZF1", "ISL1",
-    "ANOS1", "PROKR2", "DCX",
-    "CHGA", "PCSK2"
+    "ISL1","SIX3","DLX1","DLX2","DLX5","DLX6","PBX3","RASD1","RMST", # identity
+    "PROKR2","NSMF","SEMA3C","SEMA3F","ROBO2","ROBO3","RIPOR2","PLXNA3","SLIT1","CXCR4", # migrating
+    "KISS1R","DOC2B","PTPRN","BAIAP3","ECEL1","SCG2","SCG5","NALCN" # mature
   ),
   group.by = "gnrh_stage",
   dot.outline = TRUE,
-  th.cols = "RdYlBu",
-  title = "GnRH developmental programs"
+  th.cols = "RdYlBu"
 )
 ```
 
 Result:
 
 ![GnRH developmental-program dot
-plot](reference/figures/hpsc-program-dotplot.png)
+plot](reference/figures/hpsc-dotplot.png)
 
 ### Distributions
 
@@ -541,6 +544,23 @@ Top stage-associated results in the `hpsc` demo:
 | Mature | `EMX2` | 1.54 | 94.4% | 44.7% | 1.69e-35 |
 | Mature | `LHX5-AS1` | 1.35 | 95.5% | 50.5% | 1.42e-29 |
 
+``` r
+
+library(dplyr)
+top <- stage_markers$candidates %>% 
+  group_by(stage) %>% 
+  top_n(n = 5, wt = avg_log2FC)
+
+plot_gnrh_dot(
+  hpsc,
+  features = rev(top$gene),
+  group.by = "gnrh_stage",
+  dot.outline = TRUE,
+  th.cols = "RdYlBu",
+  title = "GnRH developmental programs"
+)
+```
+
 ![Top stage-associated markers in the hPSC demo
 object](reference/figures/hpsc-stage-marker-dotplot.png)
 
@@ -586,7 +606,7 @@ datasets <- data.frame(
   label = c(
     "Human hPSC",
     "HuDeCa nose",
-    "Human medial eminence",
+    "Human ME",
     "Mouse HypoMap",
     "Human HypoMap"
   ),
@@ -666,6 +686,32 @@ collection <- run_gnrh_collection(
   clean_objects = FALSE,
   save_objects = FALSE
 )
+
+
+comparison <- collection$comparisons
+
+comparison$runtime_plot
+comparison$detected_plot
+comparison$overlap
+comparison$programs
+comparison$gallery$umap_plot
+comparison$gallery$stage_plot
+```
+
+### Collection gallery assets
+
+[`run_gnrh_collection()`](https://ymbouamboua.github.io/GnRHcell/reference/run_gnrh_collection.md)
+now builds the cross-dataset gallery as part of its comparison step.
+With `clean_objects = FALSE`, it uses the processed objects kept in
+memory. With `save_objects = TRUE`, it can load them from the collection
+output directory. The configured reduction is respected, including
+`umap_scvi`.
+
+``` r
+
+collection$comparisons$gallery$summary
+collection$comparisons$gallery$umap_plot
+collection$comparisons$gallery$stage_plot
 ```
 
 ``` r
@@ -810,13 +856,19 @@ Running GnRHcell: Human hPSC
 comparison <- compare_gnrh_datasets(
   datasets = datasets,
   output_dir = "gnrh_results",
-  run_programs = TRUE
+  run_programs = TRUE,
+  run_gallery = TRUE,
+  objects = lapply(collection$results, `[[`, "object")
 )
 
 comparison$runtime_plot
 comparison$detected_plot
 comparison$overlap
 comparison$programs
+comparison$gallery
+comparison$gallery$summary
+comparison$gallery$umap_plot
+comparison$gallery$stage_plot
 ```
 
 Marker programs can also be generated from existing result tables:
@@ -842,8 +894,8 @@ overlap <- gnrh_gene_upset(
 )
 ```
 
-![Cross-dataset GnRH stage
-composition](reference/figures/gene_overlap_plot.png)
+![Cross-dataset overlap of GnRH-associated
+markers](reference/figures/gene_overlap_plot.png)
 
 ``` r
 
@@ -902,7 +954,7 @@ composition](reference/figures/marker-program-plots.png)
 - [`find_gnrh_genes()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_genes.md)
 - [`find_gnrh_stage_markers()`](https://ymbouamboua.github.io/GnRHcell/reference/find_gnrh_stage_markers.md)
 - [`build_gene_sets()`](https://ymbouamboua.github.io/GnRHcell/reference/build_gene_sets.md)
-- `gene_upset()`
+- [`gnrh_gene_upset()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_gene_upset.md)
 - [`gnrh_marker_programs()`](https://ymbouamboua.github.io/GnRHcell/reference/gnrh_marker_programs.md)
 
 ### Visualization
@@ -947,7 +999,11 @@ gnrh_results/
 ├── markers/
 ├── comparisons/
 │   ├── marker_overlap/
-│   └── marker_programs/
+│   ├── marker_programs/
+│   └── gallery/
+│       ├── collection-results.csv
+│       ├── collection-umap-status.png
+│       └── collection-stage-composition.png
 ├── validation/
 └── objects/
 ```

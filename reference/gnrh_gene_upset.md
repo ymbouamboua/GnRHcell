@@ -13,8 +13,9 @@ gnrh_gene_upset(
   venn_title = "Overlap of Gene Sets",
   outdir = ".",
   save_plot = TRUE,
-  plot_width = 10,
-  plot_height = 8,
+  max_intersections = 30,
+  plot_width = NULL,
+  plot_height = NULL,
   dpi = 600
 )
 ```
@@ -47,13 +48,21 @@ gnrh_gene_upset(
   Logical indicating whether plots should be exported. Default is
   `TRUE`.
 
+- max_intersections:
+
+  Maximum number of intersections displayed. The largest intersections
+  are retained. Default is `30`; use `Inf` to display every
+  intersection.
+
 - plot_width:
 
-  Numeric width of exported figures in inches. Default is `10`.
+  Numeric width of exported figures in inches, or `NULL` to calculate it
+  from the number of displayed intersections.
 
 - plot_height:
 
-  Numeric height of exported figures in inches. Default is `8`.
+  Numeric height of exported figures in inches, or `NULL` to calculate
+  it from the number of gene sets.
 
 - dpi:
 

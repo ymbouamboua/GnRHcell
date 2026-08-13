@@ -57,8 +57,9 @@ publication-quality UpSet plot.</p>
 <span>  venn_title <span class="op">=</span> <span class="st">"Overlap of Gene Sets"</span>,</span>
 <span>  outdir <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  save_plot <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  plot_width <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  plot_height <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  max_intersections <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  plot_width <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plot_height <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dpi <span class="op">=</span> <span class="fl">600</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -93,14 +94,20 @@ Default is current working directory.</p></dd>
 Default is <code>TRUE</code>.</p></dd>
 
 
+<dt id="arg-max-intersections">max_intersections<a class="anchor" aria-label="anchor" href="#arg-max-intersections"></a></dt>
+<dd><p>Maximum number of intersections displayed. The
+largest intersections are retained. Default is <code>30</code>; use
+<code>Inf</code> to display every intersection.</p></dd>
+
+
 <dt id="arg-plot-width">plot_width<a class="anchor" aria-label="anchor" href="#arg-plot-width"></a></dt>
-<dd><p>Numeric width of exported figures in inches.
-Default is <code>10</code>.</p></dd>
+<dd><p>Numeric width of exported figures in inches, or
+<code>NULL</code> to calculate it from the number of displayed intersections.</p></dd>
 
 
 <dt id="arg-plot-height">plot_height<a class="anchor" aria-label="anchor" href="#arg-plot-height"></a></dt>
-<dd><p>Numeric height of exported figures in inches.
-Default is <code>8</code>.</p></dd>
+<dd><p>Numeric height of exported figures in inches, or
+<code>NULL</code> to calculate it from the number of gene sets.</p></dd>
 
 
 <dt id="arg-dpi">dpi<a class="anchor" aria-label="anchor" href="#arg-dpi"></a></dt>

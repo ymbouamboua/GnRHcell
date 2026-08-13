@@ -6,7 +6,13 @@ GnRH cells, marker overlap, and optionally conserved marker programs.
 ## Usage
 
 ``` r
-compare_gnrh_datasets(datasets, output_dir, run_programs = TRUE)
+compare_gnrh_datasets(
+  datasets,
+  output_dir,
+  run_programs = TRUE,
+  run_gallery = FALSE,
+  objects = NULL
+)
 ```
 
 ## Arguments
@@ -24,6 +30,16 @@ compare_gnrh_datasets(datasets, output_dir, run_programs = TRUE)
 
   Logical. Whether to compute conserved marker programs. Default is
   `TRUE`.
+
+- run_gallery:
+
+  Logical. Whether to build cross-dataset detection and
+  developmental-stage gallery assets. Default is `FALSE`.
+
+- objects:
+
+  Optional named list of processed Seurat objects. When `NULL`, gallery
+  generation looks for saved objects in `output_dir/objects`.
 
 ## Value
 
@@ -52,6 +68,11 @@ A named list containing:
 - programs:
 
   Conserved marker program results, if requested and available.
+
+- gallery:
+
+  Detection summary, UMAP gallery, and stage-composition gallery, if
+  requested and processed objects are available.
 
 ## Details
 
