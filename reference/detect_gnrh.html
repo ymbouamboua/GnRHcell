@@ -156,13 +156,16 @@ diagnostics, and detection parameters.</p>
 <li><p>neighborhood enrichment using k-nearest neighbors; and</p></li>
 <li><p>adaptive transcriptomic support thresholds.</p></li>
 </ul><p>Classification uses two GnRH-positive routes: <code>direct</code> and
-<code>supported</code>. Both routes require detectable <code>GNRH1</code> expression.</p>
+<code>supported</code>. Both routes require detectable <code>GNRH1</code> expression
+together with independent GnRH identity evidence.</p>
 <p>Cells without detected <code>GNRH1</code> are never classified as GnRH-positive.
 However, cells showing strong GnRH-like transcriptomic evidence can be
 flagged separately as <code>gnrh_dropout_candidate</code> for diagnostic
 purposes.</p>
-<p>Direct candidates require at least <code>min_umi</code> raw <code>GNRH1</code>
-counts.</p>
+<p>Direct candidates require at least <code>min_umi</code> raw <code>GNRH1</code> counts
+and moderate independent GnRH identity evidence. Cells meeting the UMI rule
+without identity evidence are retained as <code>gnrh_direct_isolated</code> and
+<code>gnrh_direct_signal</code>, but remain GnRH-negative.</p>
 <p>Supported candidates contain detectable but sub-threshold <code>GNRH1</code>
 and additionally require independent GnRH identity and transcriptomic
 support.</p>

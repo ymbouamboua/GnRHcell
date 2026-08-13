@@ -118,13 +118,17 @@ Detection integrates:
 - adaptive transcriptomic support thresholds.
 
 Classification uses two GnRH-positive routes: `direct` and `supported`.
-Both routes require detectable `GNRH1` expression.
+Both routes require detectable `GNRH1` expression together with
+independent GnRH identity evidence.
 
 Cells without detected `GNRH1` are never classified as GnRH-positive.
 However, cells showing strong GnRH-like transcriptomic evidence can be
 flagged separately as `gnrh_dropout_candidate` for diagnostic purposes.
 
-Direct candidates require at least `min_umi` raw `GNRH1` counts.
+Direct candidates require at least `min_umi` raw `GNRH1` counts and
+moderate independent GnRH identity evidence. Cells meeting the UMI rule
+without identity evidence are retained as `gnrh_direct_isolated` and
+`gnrh_direct_signal`, but remain GnRH-negative.
 
 Supported candidates contain detectable but sub-threshold `GNRH1` and
 additionally require independent GnRH identity and transcriptomic
