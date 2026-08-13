@@ -286,8 +286,6 @@ plot_gnrh_embedding(
   group_by = "gnrh_stage",
   reduction = "umap",
   percentage = TRUE,
-  label = TRUE,
-  repel = TRUE,
   cols = gnrh_colors("stage")
 )
 ```
@@ -388,8 +386,12 @@ plot_gnrh_distribution(
   group.by = "gnrh_stage",
   split.by = "orig.ident",
   proportion = TRUE,
-  label = FALSE,
-  cols = gnrh_colors("stage")
+  adaptive = FALSE,
+  cols = gnrh_colors("stage"),
+  bar.width = 0.3,
+  bar.gap = 0.2,
+  x.ang = 45,
+  legend.position = "right"
 )
 ```
 
@@ -404,6 +406,8 @@ Result:
 ### Diagnostic report
 
 ``` r
+hpsc <- run_gnrh(hpsc)
+
 report <- gnrh_report(
   hpsc,
   roc_mode = "internal",
@@ -440,7 +444,7 @@ report
 
 <div align="center">
 
-<img src="man/figures/hpsc-report-class.png" width="800" alt="Internal GnRHcell diagnostic summary">
+<img src="man/figures/hpsc-report-status.png" width="800" alt="Internal GnRHcell diagnostic summary">
 
 </div>
 
@@ -479,6 +483,13 @@ head(genes$candidates, 20)
 genes$donor_cells
 ```
 
+``` text
+[GNRH] GnRH marker discovery
+[STEP] Running DE method: wilcox
+[DONE] Markers detected: 199 Duration: 2.8s
+[INFO] Top marker: GNRH1
+```
+
 Top results from the `hpsc` comparison (`gnrh_status == "pos"` versus
 `ann2 == "GLU"` controls):
 
@@ -501,16 +512,17 @@ indiscriminately.
 ### Co-expression and gene networks
 
 ``` r
-plot_gnrh_coexpr(
+p1=plot_gnrh_coexpr(
   genes$markers,
   coexp_cutoff = 0.30
 )
 
-plot_network(
+p2=plot_network(
   genes$markers,
   top_n = 40,
-  threshold = 0.20
+  threshold = 0.10
 )
+p1+p2
 ```
 
 Result:
@@ -805,6 +817,12 @@ Cross-dataset result:
 
 </div>
 
+<div align="center">
+
+<img src="man/figures/gnrh_detected_plot.png" width="800" alt="Cross-dataset detected GnRH neurons">
+
+</div>
+
 ### Run one dataset
 
 ``` r
@@ -904,6 +922,153 @@ overlap <- gnrh_gene_upset(
 <img src="man/figures/gene_overlap_plot.png" width="800" alt="Cross-dataset overlap of GnRH-associated markers">
 
 </div>
+
+### Compare marker scores across datasets
+
+`merge_gnrh_marker_scores()` converts the dataset-level outputs from
+`gnrh_markers()` into a gene-by-dataset matrix. Gene symbols are
+standardized to uppercase by default, and genes absent from a dataset
+remain `NA` so that missing markers are not confused with genuine zero
+scores.
+
+The plotting functions require the optional Bioconductor packages
+`ComplexHeatmap` and `circlize`:
+
+``` r
+# install.packages("BiocManager")
+# BiocManager::install(c("ComplexHeatmap", "circlize"))
+```
+
+Use the marker files produced by `run_gnrh_collection()`:
+
+``` r
+marker_dir <- file.path("gnrh_results", "markers")
+
+marker_files <- stats::setNames(
+  paste0("gnrh_", datasets$id, "_markers.tsv"),
+  datasets$label
+)
+
+marker_files <- marker_files[
+  file.exists(file.path(marker_dir, marker_files))
+]
+
+stopifnot(length(marker_files) >= 2L)
+
+marker_matrix <- merge_gnrh_marker_scores(
+  marker_files,
+  dir = marker_dir
+)
+
+marker_matrix[seq_len(min(10L, nrow(marker_matrix))), , drop = FALSE]
+attr(marker_matrix, "score_columns")
+```
+
+When `score_col = NULL`, each table uses the first available column
+among `score`, `avg_log2FC`, `coexpr`, and `avg_logFC`. For directly
+comparable heatmaps, specify the same score explicitly when it is
+present in every table:
+
+``` r
+conserved_markers <- plot_gnrh_conserved_markers(
+  files = marker_files,
+  dir = marker_dir,
+  score_col = "avg_log2FC",
+  min_datasets = 3,
+  top_n = 50,
+  scale_rows = F,
+  cluster_rows = TRUE,
+  cluster_columns = FALSE,
+  filename = file.path(
+    "gnrh_results",
+    "comparisons",
+    "conserved_gnrh_markers.pdf"
+  )
+)
+
+conserved_markers$conserved
+conserved_markers$heatmap
+
+
+
+conserved_markers <- plot_gnrh_conserved_markers(
+  files = marker_files,
+  dir = marker_dir,
+  score_col = "avg_log2FC",
+  min_datasets = 3,
+  top_n = 50,
+  scale_rows = FALSE,
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  filename = file.path(
+    "gnrh_results",
+    "comparisons",
+    "conserved_gnrh_markers.pdf"
+  )
+)
+
+conserved_markers$heatmap
+```
+
+<div align="center">
+
+<img src="man/figures/conserved-gnrh-marker-heatmap.png" width="800" alt="Conserved GnRH markers">
+
+</div>
+
+Conserved markers are ranked first by the number of supporting datasets
+and then by their mean marker score. Dataset-specific markers are
+restricted by their cross-dataset support and ranked by the difference
+between their target dataset score and the mean score in the other
+datasets:
+
+``` r
+specific_markers <- plot_gnrh_dataset_specific_markers(
+  files = marker_files,
+  dir = marker_dir,
+  score_col = "avg_log2FC",
+  top_n_per_dataset = 20,
+  max_datasets = 2,
+  scale_rows = F,
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  filename = file.path(
+    "gnrh_results",
+    "comparisons",
+    "dataset_specific_gnrh_markers.pdf"
+  )
+)
+
+specific_markers$specific_table
+specific_markers$heatmap
+```
+
+<div align="center">
+
+<img src="man/figures/dataset-specific-gnrh-marker-heatmap.png" width="800" alt="Dataset-specific GnRH markers">
+
+</div>
+
+The returned tables can be filtered or exported independently of the
+heatmaps:
+
+``` r
+utils::write.csv(
+  conserved_markers$conserved,
+  file.path("gnrh_results", "comparisons", "conserved_gnrh_markers.csv"),
+  row.names = FALSE
+)
+
+utils::write.csv(
+  specific_markers$specific_table,
+  file.path("gnrh_results", "comparisons", "dataset_specific_gnrh_markers.csv"),
+  row.names = FALSE
+)
+```
+
+These score-based heatmaps complement `gnrh_gene_upset()`: the UpSet
+plot describes set membership, whereas the heatmaps retain marker-effect
+magnitude across datasets.
 
 ``` r
 marker_dir <- file.path("gnrh_results", "markers")

@@ -1,0 +1,16 @@
+id,label,species,gnrh_stage_raw,n,median_hits,q25_hits,q75_hits,pct_ge1,pct_ge2,pct_ge3
+hpsc,Human hPSC,Human,identity,321,1,1,2,76.32398753894081,46.10591900311526,20.87227414330218
+hpsc,Human hPSC,Human,mature,216,1,1,2,76.85185185185185,40.27777777777778,12.037037037037036
+hpsc,Human hPSC,Human,migrating,120,2,2,3,100,83.33333333333334,42.5
+hudeca_nose,HuDeCa nose,Human,identity,36,1,0,3,61.111111111111114,38.88888888888889,27.77777777777778
+hudeca_nose,HuDeCa nose,Human,mature,10,3,1,4,90,60,60
+hudeca_nose,HuDeCa nose,Human,migrating,79,2,1.5,3,100,74.68354430379746,32.91139240506329
+human_me,Human ME,Human,identity,38,1,0,2,63.1578947368421,31.57894736842105,13.157894736842104
+human_me,Human ME,Human,mature,98,3,1,4,90.81632653061224,73.46938775510205,52.04081632653062
+human_me,Human ME,Human,migrating,25,2,2,4,100,76,40
+mouse_hypomap,Mouse HypoMap,Mouse,identity,9,0,0,0,0,0,0
+mouse_hypomap,Mouse HypoMap,Mouse,mature,162,1,0,2,63.580246913580254,33.33333333333333,10.493827160493826
+mouse_hypomap,Mouse HypoMap,Mouse,migrating,3,1,1,1,100,0,0
+human_hypomap,Human HypoMap,Human,identity,17,1,0,2,58.82352941176471,29.411764705882355,11.76470588235294
+human_hypomap,Human HypoMap,Human,mature,277,4,3,5,94.58483754512635,85.1985559566787,75.45126353790613
+human_hypomap,Human HypoMap,Human,migrating,106,4,3,5,100,92.45283018867924,80.18867924528303

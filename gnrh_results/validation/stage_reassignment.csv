@@ -1,0 +1,25 @@
+id,label,species,gnrh_stage_raw,gnrh_stage,gnrh_stage_reason,n_cells
+hpsc,Human hPSC,Human,identity,identity,max_score,321
+hpsc,Human hPSC,Human,mature,mature,max_score,216
+hpsc,Human hPSC,Human,migrating,identity,migration_core_filter,19
+hpsc,Human hPSC,Human,migrating,mature,migration_core_filter,1
+hpsc,Human hPSC,Human,migrating,migrating,max_score,100
+hudeca_nose,HuDeCa nose,Human,identity,identity,max_score,36
+hudeca_nose,HuDeCa nose,Human,mature,mature,max_score,10
+hudeca_nose,HuDeCa nose,Human,migrating,identity,migration_core_filter,19
+hudeca_nose,HuDeCa nose,Human,migrating,mature,migration_core_filter,1
+hudeca_nose,HuDeCa nose,Human,migrating,migrating,max_score,59
+human_me,Human ME,Human,identity,identity,max_score,38
+human_me,Human ME,Human,mature,mature,max_score,98
+human_me,Human ME,Human,migrating,identity,migration_core_filter,2
+human_me,Human ME,Human,migrating,mature,migration_core_filter,4
+human_me,Human ME,Human,migrating,migrating,max_score,19
+mouse_hypomap,Mouse HypoMap,Mouse,identity,identity,max_score,9
+mouse_hypomap,Mouse HypoMap,Mouse,mature,mature,max_score,162
+mouse_hypomap,Mouse HypoMap,Mouse,migrating,identity,migration_core_filter,2
+mouse_hypomap,Mouse HypoMap,Mouse,migrating,mature,migration_core_filter,1
+human_hypomap,Human HypoMap,Human,identity,identity,max_score,17
+human_hypomap,Human HypoMap,Human,mature,mature,max_score,277
+human_hypomap,Human HypoMap,Human,migrating,identity,migration_core_filter,5
+human_hypomap,Human HypoMap,Human,migrating,mature,migration_core_filter,3
+human_hypomap,Human HypoMap,Human,migrating,migrating,max_score,98

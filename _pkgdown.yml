@@ -53,6 +53,9 @@ reference:
       - build_gene_sets
       - gnrh_gene_upset
       - gnrh_marker_programs
+      - merge_gnrh_marker_scores
+      - plot_gnrh_conserved_markers
+      - plot_gnrh_dataset_specific_markers
 
   - title: Multi-dataset workflows
     desc: >

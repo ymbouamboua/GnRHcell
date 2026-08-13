@@ -1,0 +1,6 @@
+id,label,species,n_positive_without_GNRH1,n_negative_positive_class,n_positive_negative_class,n_dropout_called_positive
+hpsc,Human hPSC,Human,0,0,0,0
+hudeca_nose,HuDeCa nose,Human,0,0,0,0
+human_me,Human ME,Human,0,0,0,0
+mouse_hypomap,Mouse HypoMap,Mouse,0,0,0,0
+human_hypomap,Human HypoMap,Human,0,0,0,0

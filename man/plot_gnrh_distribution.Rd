@@ -15,8 +15,13 @@ plot_gnrh_distribution(
   label.size = 3,
   plot.ttl = NULL,
   txtsize = 10,
-  x.ang = 45,
-  flip = FALSE
+  x.ang = NULL,
+  style = "classic",
+  flip = FALSE,
+  adaptive = TRUE,
+  bar.width = NULL,
+  bar.gap = NULL,
+  legend.position = "auto"
 )
 }
 \arguments{
@@ -40,9 +45,25 @@ plot_gnrh_distribution(
 
 \item{txtsize}{Base text size.}
 
-\item{x.ang}{X-axis label angle.}
+\item{x.ang}{X-axis label angle. When \code{NULL}, the angle is selected from}
+
+\item{style}{Theme style: \code{"classic"}, \code{"minimal"}, \code{"bw"}, or \code{"test"}.
+the number and length of sample labels.}
 
 \item{flip}{Flip coordinates.}
+
+\item{adaptive}{Automatically use compact spacing, an economical legend
+layout, and recommended export dimensions based on the number of samples.}
+
+\item{bar.width}{Bar width. When \code{NULL}, it is selected automatically.}
+
+\item{bar.gap}{Gap between adjacent bar edges, in x-axis units. It is
+independent of \code{bar.width}; for example, \code{bar.width = 0.3} and
+\code{bar.gap = 0.2} produce centres 0.5 units apart. When \code{NULL}, an adaptive
+value is used.}
+
+\item{legend.position}{Legend position. Use \code{"auto"} to place it according
+to the number of samples, or a standard ggplot2 legend position.}
 }
 \value{
 A ggplot object.

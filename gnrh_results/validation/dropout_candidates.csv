@@ -1,0 +1,6 @@
+id,label,species,n_cells,pct_dataset,pct_GNRH1_detected,median_GNRH1,median_support,median_identity_primary,median_core,median_neuro,median_knn,median_alternative
+hpsc,Human hPSC,Human,6,0.25,0,0,2.2752697308744327,1,7,5.5,138.725,0
+hudeca_nose,HuDeCa nose,Human,0,0,0,0,NA,NA,NA,NA,NA,NA
+human_me,Human ME,Human,6,0.2776492364645997,0,0,3.0044565206473646,2,5.5,6.5,0.275,0
+mouse_hypomap,Mouse HypoMap,Mouse,0,0,0,0,NA,NA,NA,NA,NA,NA
+human_hypomap,Human HypoMap,Human,2,0.08333333333333333,0,0,3.556986338415563,1.5,5.5,6.5,0.775,0

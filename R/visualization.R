@@ -1225,8 +1225,19 @@ plot_gnrh_dot <- function(
 #' @param label.size Label text size.
 #' @param plot.ttl Optional plot title.
 #' @param txtsize Base text size.
-#' @param x.ang X-axis label angle.
+#' @param x.ang X-axis label angle. When `NULL`, the angle is selected from
+#' @param style Theme style: `"classic"`, `"minimal"`, `"bw"`, or `"test"`.
+#'   the number and length of sample labels.
 #' @param flip Flip coordinates.
+#' @param adaptive Automatically use compact spacing, an economical legend
+#'   layout, and recommended export dimensions based on the number of samples.
+#' @param bar.width Bar width. When `NULL`, it is selected automatically.
+#' @param bar.gap Gap between adjacent bar edges, in x-axis units. It is
+#'   independent of `bar.width`; for example, `bar.width = 0.3` and
+#'   `bar.gap = 0.2` produce centres 0.5 units apart. When `NULL`, an adaptive
+#'   value is used.
+#' @param legend.position Legend position. Use `"auto"` to place it according
+#'   to the number of samples, or a standard ggplot2 legend position.
 #' @return A ggplot object.
 #' @export
 plot_gnrh_distribution <- function(
@@ -1240,10 +1251,17 @@ plot_gnrh_distribution <- function(
     label.size = 3,
     plot.ttl = NULL,
     txtsize = 10,
-    x.ang = 45,
-    flip = FALSE
+    x.ang = NULL,
+    style = "classic",
+    flip = FALSE,
+    adaptive = TRUE,
+    bar.width = NULL,
+    bar.gap = NULL,
+    legend.position = "auto"
 ) {
   .validate_seurat(object)
+
+  style = match.arg(style)
 
   md <- object[[]]
 
@@ -1285,23 +1303,101 @@ plot_gnrh_distribution <- function(
   groups <- unique(as.character(df$group))
   cols <- .resolve_colors(groups, cols, group.by)
 
+  sample_labels <- unique(as.character(df$split))
+  n_samples <- length(sample_labels)
+  longest_label <- max(nchar(sample_labels), 1L)
+
+  if (is.null(bar.width)) {
+    bar.width <- if (isTRUE(adaptive)) {
+      if (n_samples <= 4L) 0.58 else if (n_samples <= 10L) 0.68 else 0.78
+    } else {
+      0.75
+    }
+  }
+
+  if (is.null(bar.gap)) bar.gap <- if (isTRUE(adaptive)) 0.12 else 0.25
+  if (length(bar.gap) != 1L || !is.finite(bar.gap) || bar.gap < 0) {
+    stop("`bar.gap` must be one non-negative number.", call. = FALSE)
+  }
+
+  split_levels <- unique(as.character(df$split))
+  spacing <- bar.width + bar.gap
+  split_positions <- stats::setNames(
+    (seq_along(split_levels) - 1) * spacing + 1,
+    split_levels
+  )
+  df$.split_position <- unname(split_positions[as.character(df$split)])
+  outer_gap <- bar.gap / 2
+  x_limits <- c(
+    min(split_positions) - bar.width / 2 - outer_gap,
+    max(split_positions) + bar.width / 2 + outer_gap
+  )
+
+  if (is.null(x.ang)) {
+    x.ang <- if (isTRUE(flip)) {
+      0
+    } else if (n_samples <= 4L && longest_label <= 8L) {
+      0
+    } else if (n_samples <= 10L && longest_label <= 15L) {
+      30
+    } else {
+      60
+    }
+  }
+
+  if (identical(legend.position, "auto")) {
+    legend.position <- if (is.null(split.by)) {
+      "none"
+    } else if (isTRUE(adaptive) && n_samples <= 8L) {
+      "bottom"
+    } else {
+      "right"
+    }
+  }
+
+  plot_width <- if (isTRUE(flip)) {
+    max(5.5, min(9, 5 + longest_label / 10))
+  } else {
+    max(4.8, min(14, 3.4 + 0.62 * n_samples + longest_label / 30))
+  }
+  plot_height <- if (isTRUE(flip)) {
+    max(4.2, min(12, 2.8 + 0.42 * n_samples))
+  } else {
+    if (identical(legend.position, "bottom")) 5.2 else 4.8
+  }
+
   p <- ggplot2::ggplot(
     df,
-    ggplot2::aes(.data$split, .data$value, fill = .data$group)
+    ggplot2::aes(.data$.split_position, .data$value, fill = .data$group)
   ) +
     ggplot2::geom_col(
       position = position,
-      width = 0.75,
+      width = bar.width,
       colour = "black",
       linewidth = 0.2
     ) +
     ggplot2::scale_fill_manual(values = cols) +
+    ggplot2::scale_x_continuous(
+      breaks = unname(split_positions),
+      labels = names(split_positions),
+      limits = x_limits,
+      expand = ggplot2::expansion(mult = 0, add = 0)
+    ) +
     ggplot2::labs(
       title = plot.ttl,
       x = if (is.null(split.by)) NULL else split.by,
       y = if (proportion) "Proportion" else "Cells",
       fill = group.by
     )
+
+  if (isTRUE(proportion)) {
+    p <- p + ggplot2::scale_y_continuous(
+      breaks = seq(0, 1, 0.25),
+      labels = function(x) ifelse(x == 1, "100", sprintf("%.2f", x)),
+      limits = c(0, 1),
+      expand = ggplot2::expansion(mult = c(0, 0.015))
+    )
+  }
 
   if (label) {
     p <- p +
@@ -1310,19 +1406,29 @@ plot_gnrh_distribution <- function(
         position = if (position == "stack")
           ggplot2::position_stack(vjust = 0.5)
         else
-          ggplot2::position_dodge(width = 0.75),
+          ggplot2::position_dodge(width = bar.width),
         size = label.size
       )
   }
 
   if (flip) p <- p + ggplot2::coord_flip()
 
-  p +
+  p <- p +
     .gnrh_theme(
       txtsize = txtsize,
       x.ang = x.ang,
-      leg.pos = if (is.null(split.by)) "none" else "right"
+      leg.pos = legend.position,
+      style = style
+    ) +
+    ggplot2::theme(
+      legend.direction = if (identical(legend.position, "bottom")) "horizontal" else "vertical",
+      legend.box.margin = ggplot2::margin(0, 0, 0, 0),
+      plot.margin = ggplot2::margin(6, 6, 6, 6)
     )
+
+  attr(p, "recommended_size") <- c(width = plot_width, height = plot_height)
+  attr(p, "n_samples") <- n_samples
+  p
 }
 
 
@@ -1621,7 +1727,7 @@ gnrh_report <- function(
     plot_data,
     ggplot2::aes(.data$expr, .data$score, colour = .data$status)
   ) +
-    ggplot2::geom_point(alpha = 0.42, size = 0.5, stroke = 0) +
+    ggplot2::geom_point(alpha = 0.42, size = 1.5, stroke = 0) +
     ggplot2::scale_colour_manual(
       values = status_colors,
       breaks = names(status_labels),
@@ -1647,7 +1753,7 @@ gnrh_report <- function(
       plot_data,
       ggplot2::aes(.data$expr, .data$score, colour = .data$gnrh_stage)
     ) +
-      ggplot2::geom_point(alpha = 0.42, size = 0.5, stroke = 0) +
+      ggplot2::geom_point(alpha = 0.42, size = 1.5, stroke = 0) +
       ggplot2::scale_colour_manual(
         values = stage_colors,
         breaks = names(stage_labels),
@@ -1855,30 +1961,31 @@ gnrh_report <- function(
     }
   }
 
-  if (is.null(p5) && show_class_panel && "gnrh_class" %in% names(diagnostics)) {
-    class_order <- c("neg", "supported", "direct")
-    class_data <- as.data.frame(table(as.character(diagnostics$gnrh_class)), stringsAsFactors = FALSE)
-    names(class_data) <- c("class", "n")
-    class_data$class <- factor(class_data$class, levels = class_order)
-    class_data <- class_data[!is.na(class_data$class), , drop = FALSE]
-    class_data$pct <- 100 * class_data$n / sum(class_data$n)
-    class_colors <- gnrh_colors("class")
+  if (is.null(p5) && show_class_panel) {
+    status_order <- c("neg", "pos")
+    status_data <- as.data.frame(
+      table(factor(as.character(diagnostics$status), levels = status_order)),
+      stringsAsFactors = FALSE
+    )
+    names(status_data) <- c("status", "n")
+    status_data$pct <- 100 * status_data$n / sum(status_data$n)
+    status_colors <- gnrh_colors("status")
 
-    p5 <- ggplot2::ggplot(class_data, ggplot2::aes(.data$class, .data$n, fill = .data$class)) +
+    p5 <- ggplot2::ggplot(status_data, ggplot2::aes(.data$status, .data$n, fill = .data$status)) +
       ggplot2::geom_col(width = 0.68, colour = tile_border, linewidth = 0.3) +
       ggplot2::geom_text(
         ggplot2::aes(label = sprintf("%s\n%.1f%%", format(.data$n, big.mark = ","), .data$pct)),
         vjust = -0.2, size = txtsize / 3.2, colour = foreground
       ) +
-      ggplot2::scale_fill_manual(values = class_colors, drop = FALSE) +
+      ggplot2::scale_fill_manual(values = status_colors, drop = FALSE) +
       ggplot2::scale_y_continuous(
         labels = scales::label_comma(),
         expand = ggplot2::expansion(mult = c(0, 0.16))
       ) +
-      ggplot2::labs(title = "GnRH detection classes", x = NULL, y = "Cells") +
-      report_theme(leg.pos = "none", x.ang = 25)
+      ggplot2::labs(title = "GnRH detection status", x = NULL, y = "Cells") +
+      report_theme(leg.pos = "none")
   }
-  if (is.null(p5)) p5 <- empty_panel("Detection-class panel unavailable")
+  if (is.null(p5)) p5 <- empty_panel("Detection-status panel unavailable")
 
   # F — Marker-program support
   module_data <- data.frame(
@@ -2043,7 +2150,10 @@ plot_network <- function(df, top_n = 25, threshold = 0.4) {
       colour = "Module",
       size = "Score"
     ) +
-    ggplot2::theme_void()
+    ggplot2::theme_void() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(face = "bold", hjust = 0.5)
+    )
 }
 
 
@@ -2108,7 +2218,8 @@ plot_gnrh_coexpr <- function(
     ) +
     .gnrh_theme(txtsize = txtsize, style = style) +
     ggplot2::theme(
-      axis.text.y = ggplot2::element_text(face = "italic")
+      axis.text.y = ggplot2::element_text(face = "italic"),
+      plot.title = ggplot2::element_text(face = "bold", hjust = 0.5)
     )
 }
 

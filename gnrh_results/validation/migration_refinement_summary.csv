@@ -1,0 +1,6 @@
+id,label,species,n_raw_migrating,n_retained,n_reassigned,pct_retained,pct_reassigned,n_to_identity,n_to_mature,n_to_secreting,pct_to_identity,pct_to_mature,pct_to_secreting,mean_hits_retained
+mouse_hypomap,Mouse HypoMap,Mouse,3,0,3,0,100,2,1,0,66.66666666666667,33.333333333333336,0,NA
+hudeca_nose,HuDeCa nose,Human,79,59,20,74.68354430379746,25.31645569620253,19,1,0,95,5,0,2.559322033898305
+human_me,Human ME,Human,25,19,6,76,24,2,4,0,33.333333333333336,66.66666666666667,0,3.1052631578947367
+hpsc,Human hPSC,Human,120,100,20,83.33333333333333,16.666666666666668,19,1,0,95,5,0,2.66
+human_hypomap,Human HypoMap,Human,106,98,8,92.45283018867924,7.547169811320755,5,3,0,62.5,37.5,0,4.214285714285714

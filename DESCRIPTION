@@ -33,6 +33,7 @@ Imports:
     igraph,
     methods,
     grDevices,
+    grid,
     stats,
     rlang,
     utils,
@@ -42,6 +43,8 @@ Imports:
     readr
 Suggests:
     ggrastr,
+    ComplexHeatmap,
+    circlize,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,

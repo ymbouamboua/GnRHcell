@@ -1,0 +1,6 @@
+"dataset","species","cells","gnrh_detected","detected_percent","identity","migrating","mature"
+"Human hPSC","Human",2400,657,27.375,340,100,217
+"HuDeCa nose","Human",2125,125,5.88235294117647,55,59,11
+"Human ME","Human",2161,161,7.45025451180009,40,19,102
+"Mouse HypoMap","Mouse",2174,174,8.00367985280589,11,0,163
+"Human HypoMap","Human",2400,400,16.6666666666667,22,98,280

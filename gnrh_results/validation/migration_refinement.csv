@@ -1,0 +1,15 @@
+id,label,species,migration_outcome,gnrh_stage,n_cells,median_hits,q25_hits,q75_hits,mean_hits,pct_zero,pct_ge1,pct_ge2,pct_ge3
+hpsc,Human hPSC,Human,reassigned,identity,19,1,1,1,1,0,100,0,0
+hpsc,Human hPSC,Human,reassigned,mature,1,1,1,1,1,0,100,0,0
+hpsc,Human hPSC,Human,retained_migrating,migrating,100,3,2,3,2.66,0,100,100,51
+hudeca_nose,HuDeCa nose,Human,reassigned,identity,19,1,1,1,1,0,100,0,0
+hudeca_nose,HuDeCa nose,Human,reassigned,mature,1,1,1,1,1,0,100,0,0
+hudeca_nose,HuDeCa nose,Human,retained_migrating,migrating,59,2,2,3,2.559322033898305,0,100,100,44.06779661016949
+human_hypomap,Human HypoMap,Human,reassigned,identity,5,1,1,1,1,0,100,0,0
+human_hypomap,Human HypoMap,Human,reassigned,mature,3,1,1,1,1,0,100,0,0
+human_hypomap,Human HypoMap,Human,retained_migrating,migrating,98,4,3,5,4.214285714285714,0,100,100,86.73469387755102
+human_me,Human ME,Human,reassigned,identity,2,1,1,1,1,0,100,0,0
+human_me,Human ME,Human,reassigned,mature,4,1,1,1,1,0,100,0,0
+human_me,Human ME,Human,retained_migrating,migrating,19,3,2,4,3.1052631578947367,0,100,100,52.63157894736842
+mouse_hypomap,Mouse HypoMap,Mouse,reassigned,identity,2,1,1,1,1,0,100,0,0
+mouse_hypomap,Mouse HypoMap,Mouse,reassigned,mature,1,1,1,1,1,0,100,0,0
