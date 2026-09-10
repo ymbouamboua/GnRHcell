@@ -10,14 +10,15 @@ merge_gnrh_marker_scores(
   dir = ".",
   gene_col = "gene",
   score_col = NULL,
-  score_candidates = c("score", "avg_log2FC", "coexpr", "avg_logFC"),
+  score_candidates = c("final_score", "marker_score", "specificity_score", "avg_log2FC",
+    "avg_logFC", "coexpr_cor", "coexpr"),
   gene_case = c("upper", "asis"),
-  fill = NA_real_
+  fill = NA_real_,
+  require_same_score = TRUE
 )
 }
 \arguments{
-\item{...}{Marker data frames, one list of marker data frames, or a character
-vector of marker-table paths.}
+\item{...}{Marker data frames, marker lists, or marker table paths.}
 
 \item{dataset_names}{Optional dataset labels.}
 
@@ -25,21 +26,19 @@ vector of marker-table paths.}
 
 \item{gene_col}{Gene-symbol column.}
 
-\item{score_col}{Score column. \code{NULL} selects the first available column from
-\code{score_candidates} independently for each table.}
+\item{score_col}{Optional score column used in every dataset.}
 
-\item{score_candidates}{Preferred GnRH marker-score columns.}
+\item{score_candidates}{Preferred score columns when \code{score_col = NULL}.}
 
-\item{gene_case}{Standardize genes to uppercase or preserve their case.}
+\item{gene_case}{Standardize genes to uppercase or preserve original case.}
 
-\item{fill}{Value used for genes absent from a dataset. \code{NA_real_} is safest.}
+\item{fill}{Value used for genes absent from a dataset.}
+
+\item{require_same_score}{Require the same score column across datasets.}
 }
 \value{
-A numeric gene-by-dataset matrix. Attribute \code{score_columns} records
-the score column selected for each dataset.
+Numeric gene-by-dataset score matrix.
 }
 \description{
-Builds a gene-by-dataset score matrix from marker tables returned by
-\code{\link[=gnrh_markers]{gnrh_markers()}}. Marker tables may be supplied as data frames, as one list
-of data frames, or as a named vector of TSV files.
+Merge GnRH marker scores across datasets
 }

@@ -89,7 +89,7 @@ Default is \code{FALSE}.}
 Default is \code{FALSE}.}
 
 \item{...}{Additional arguments passed to \code{Seurat::DotPlot()} and
-the internal GnRHcell theme.}
+the internal gnrhcell theme.}
 }
 \value{
 A \code{ggplot2} object.
@@ -98,7 +98,7 @@ A \code{ggplot2} object.
 Generates a customizable dot plot for gene expression patterns across
 clusters or metadata-defined groups. This function wraps
 \code{Seurat::DotPlot()} and adds improved color control, optional dot
-outlines, flexible axis formatting, legend customization, and GnRHcell
+outlines, flexible axis formatting, legend customization, and gnrhcell
 theme support.
 }
 \details{

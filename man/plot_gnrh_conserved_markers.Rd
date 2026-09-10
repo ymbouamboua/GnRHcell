@@ -11,53 +11,54 @@ plot_gnrh_conserved_markers(
   score_col = NULL,
   dataset_names = names(files),
   gene_case = c("upper", "asis"),
-  min_datasets = 2,
-  top_n = 50,
+  min_datasets = 2L,
+  top_n = 50L,
+  exclude_genes = NULL,
   scale_rows = TRUE,
   cluster_rows = TRUE,
   cluster_columns = FALSE,
   show_column_names = TRUE,
-  fontsize_row = 8,
-  fontsize_col = 9,
+  fontsize_row = NULL,
+  fontsize_col = NULL,
   fontsize_legend = 10,
   filename = NULL,
-  width = 7,
-  height = 9
+  width = NULL,
+  height = NULL
 )
 }
 \arguments{
-\item{files}{Named character vector of GnRH marker TSV filenames or paths.
-Names are used as dataset labels unless \code{dataset_names} is supplied.}
+\item{files}{Named marker TSV filenames or paths.}
 
 \item{dir}{Directory prepended to relative file paths.}
 
 \item{gene_col}{Gene-symbol column.}
 
-\item{score_col}{Score column. \code{NULL} selects the first available column from
-\code{score_candidates} independently for each table.}
+\item{score_col}{Optional score column used in every dataset.}
 
 \item{dataset_names}{Optional dataset labels.}
 
-\item{gene_case}{Standardize genes to uppercase or preserve their case.}
+\item{gene_case}{Standardize genes to uppercase or preserve original case.}
 
-\item{min_datasets}{Minimum datasets supporting a gene.}
+\item{min_datasets}{Minimum number of datasets supporting a gene.}
 
-\item{top_n}{Maximum genes displayed.}
+\item{top_n}{Maximum number of genes displayed.}
 
-\item{scale_rows}{Row-standardize scores before plotting.}
+\item{exclude_genes}{Optional genes excluded from visualization.}
+
+\item{scale_rows}{Row-standardize marker scores.}
 
 \item{cluster_rows, cluster_columns}{Cluster heatmap rows or columns.}
 
 \item{show_column_names}{Show dataset labels.}
 
-\item{fontsize_row, fontsize_col, fontsize_legend}{Text sizes.}
+\item{fontsize_row, fontsize_col, fontsize_legend}{Font sizes.}
 
-\item{filename}{Optional PDF filename. Nothing is written when \code{NULL}.}
+\item{filename}{Optional PDF or PNG filename.}
 
-\item{width, height}{PDF dimensions.}
+\item{width, height}{Optional figure dimensions in inches.}
 }
 \value{
-A list with \code{heatmap}, \code{matrix}, \code{plot_matrix}, and \code{conserved}.
+List containing heatmap matrices and conserved-marker summary.
 }
 \description{
 Plot conserved GnRH markers across datasets

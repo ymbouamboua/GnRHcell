@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_runtime_curve}
 \alias{plot_gnrh_runtime_curve}
-\title{Plot GnRHcell runtime across datasets}
+\title{Plot gnrhcell runtime across datasets}
 \usage{
 plot_gnrh_runtime_curve(
   files = NULL,
@@ -33,5 +33,5 @@ plot_gnrh_runtime_curve(
 A ggplot object.
 }
 \description{
-Plot GnRHcell runtime across datasets
+Plot gnrhcell runtime across datasets
 }

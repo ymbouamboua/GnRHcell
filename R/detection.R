@@ -47,6 +47,9 @@
 #'   distribution used only to flag GNRH1-negative transcriptomic candidates.
 #'   These cells are never classified as GnRH-positive. Default is 0.95.
 #' @param scale_factor Library normalization scale factor. Default is 10000.
+#' @param min_reference_cells Minimum number of direct-signal cells required
+#'   to construct empirical reference distributions used for detection
+#'   thresholds. Default is \code{20L}.
 #' @param max_alternative Maximum alternative identity score tolerated for
 #'   \code{GNRH1}-dropout rescue. Default is 0.75.
 #' @param verbose Logical. Whether to print progress messages.
@@ -81,6 +84,8 @@
 #' \code{\link{stage_gnrh}},
 #' \code{\link{run_gnrh}}
 #'
+#' Detect GnRH neurons from single-cell RNA-seq data
+#'
 #' @export
 detect_gnrh <- function(
     object,
@@ -94,199 +99,108 @@ detect_gnrh <- function(
     mad_factor = 2,
     supported_q = 0.60,
     candidate_q = 0.95,
+    min_reference_cells = 20L,
     scale_factor = 10000,
     max_alternative = 0.75,
     verbose = TRUE
 ) {
-
   log <- .msg(verbose)
 
-  # --------------------------------------------------------------------------- #
-  # Validate input
-  # --------------------------------------------------------------------------- #
+  object <- validate_input(object, assay = assay, verbose = verbose)
 
-  object <- validate_input(
-    object,
-    assay = assay,
-    verbose = verbose
-  )
-
-  expr <- .get_expr(
-    object,
-    assay = assay,
-    layer = layer
-  )
-
+  expr <- .get_expr(object, assay = assay, layer = layer)
   genes <- rownames(expr)
 
-  log(
-    sprintf(
-      "Matrix loaded: %d genes by %d cells",
-      nrow(expr),
-      ncol(expr)
-    )
-  )
+  log(sprintf(
+    "Matrix loaded: %d genes by %d cells",
+    nrow(expr), ncol(expr)
+  ))
 
-  # --------------------------------------------------------------------------- #
-  # Resolve GNRH1
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # GNRH1
+  # ------------------------------------------------------------------------- #
 
-  gene <- .match_genes(
-    c(
-      "GNRH1",
-      "Gnrh1",
-      "gnrh1"
-    ),
-    genes
-  )
+  gene <- .match_genes(c("GNRH1", "Gnrh1", "gnrh1"), genes)
 
-  if (!length(gene)) {
-    stop(
-      "GnRH gene not found. Tried: GNRH1, Gnrh1, gnrh1",
-      call. = FALSE
-    )
-  }
+  if (!length(gene))
+    stop("GnRH gene not found. Tried: GNRH1, Gnrh1, gnrh1",
+         call. = FALSE)
 
   gnrh_gene <- gene[[1]]
-
   log("Using GnRH gene:", gnrh_gene)
 
-  # --------------------------------------------------------------------------- #
-  # Curated modules
-  # --------------------------------------------------------------------------- #
+  modules <- .gnrh_modules(genes)
+  alternative_modules <- .gnrh_alternative_modules(genes)
 
-  modules <- .gnrh_modules(
-    genes
-  )
+  # ------------------------------------------------------------------------- #
+  # Basic expression
+  # ------------------------------------------------------------------------- #
 
-  alternative_modules <- .gnrh_alternative_modules(
-    genes
-  )
-
-  # --------------------------------------------------------------------------- #
-  # Basic expression signals
-  # --------------------------------------------------------------------------- #
-
-  lib <- Matrix::colSums(
-    expr
-  )
+  lib <- Matrix::colSums(expr)
 
   raw <- as.numeric(
-    expr[
-      gnrh_gene,
-      ,
-      drop = TRUE
-    ]
+    expr[gnrh_gene, , drop = TRUE]
   )
 
-  safe_lib <- pmax(
-    lib,
-    1
-  )
+  safe_lib <- pmax(lib, 1)
 
   norm <- log1p(
-    (raw / safe_lib) *
-      scale_factor
+    raw / safe_lib * scale_factor
   )
 
-  # --------------------------------------------------------------------------- #
-  # Ambient RNA
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Ambient RNA: diagnostic only
+  # ------------------------------------------------------------------------- #
 
-  amb <- .ambient(
-    expr,
-    gene,
-    lib
-  )
+  ambient <- .ambient(expr, gnrh_gene, lib)
 
-  amb_ratio <-
+  ambient_ratio <-
     (raw + 1) /
-    (amb + 1)
+    (ambient + 1)
 
-  # --------------------------------------------------------------------------- #
-  # Module helpers
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Helpers
+  # ------------------------------------------------------------------------- #
 
-  score_gene_set <- function(gene_set) {
-
-    if (!length(gene_set)) {
-      return(
-        rep(
-          0,
-          ncol(expr)
-        )
-      )
-    }
+  score_gene_set <- function(g) {
+    if (!length(g)) return(rep(0, ncol(expr)))
 
     Matrix::colMeans(
-      expr[
-        gene_set,
-        ,
-        drop = FALSE
-      ] > 0
+      expr[g, , drop = FALSE] > 0
     )
   }
 
-  count_gene_hits <- function(gene_set) {
-
-    if (!length(gene_set)) {
-      return(
-        integer(
-          ncol(expr)
-        )
-      )
-    }
+  count_gene_hits <- function(g) {
+    if (!length(g)) return(integer(ncol(expr)))
 
     as.integer(
       Matrix::colSums(
-        expr[
-          gene_set,
-          ,
-          drop = FALSE
-        ] > 0
+        expr[g, , drop = FALSE] > 0
       )
     )
   }
 
-  # --------------------------------------------------------------------------- #
-  # Module scores
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Biological programs
+  # ------------------------------------------------------------------------- #
 
-  identity_primary <- score_gene_set(
-    modules$identity$primary
-  )
+  identity_primary <- score_gene_set(modules$identity$primary)
+  identity_supportive <- score_gene_set(modules$identity$supportive)
 
-  identity_supportive <- score_gene_set(
-    modules$identity$supportive
-  )
+  migration_primary <- score_gene_set(modules$migration$primary)
+  migration_supportive <- score_gene_set(modules$migration$supportive)
 
-  migration_primary <- score_gene_set(
-    modules$migration$primary
-  )
+  neuro_primary <- score_gene_set(modules$neuroendocrine$primary)
+  neuro_supportive <- score_gene_set(modules$neuroendocrine$supportive)
 
-  migration_supportive <- score_gene_set(
-    modules$migration$supportive
-  )
+  hormone_supportive <- score_gene_set(modules$hormone$supportive)
 
-  neuro_primary <- score_gene_set(
-    modules$neuroendocrine$primary
-  )
+  guidance_environment <-
+    score_gene_set(modules$guidance_environment$supportive)
 
-  neuro_supportive <- score_gene_set(
-    modules$neuroendocrine$supportive
-  )
-
-  hormone_supportive <- score_gene_set(
-    modules$hormone$supportive
-  )
-
-  guidance_environment <- score_gene_set(
-    modules$guidance_environment$supportive
-  )
-
-  # --------------------------------------------------------------------------- #
-  # Weighted biological scores
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Biological scores
+  # ------------------------------------------------------------------------- #
 
   identity_score <-
     3.0 * identity_primary +
@@ -303,33 +217,27 @@ detect_gnrh <- function(
   hormone_score <-
     0.25 * hormone_supportive
 
-  # --------------------------------------------------------------------------- #
-  # Marker hits
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Hits
+  # ------------------------------------------------------------------------- #
 
-  identity_primary_hits <- count_gene_hits(
-    modules$identity$primary
-  )
+  identity_primary_hits <-
+    count_gene_hits(modules$identity$primary)
 
-  identity_supportive_hits <- count_gene_hits(
-    modules$identity$supportive
-  )
+  identity_supportive_hits <-
+    count_gene_hits(modules$identity$supportive)
 
-  migration_primary_hits <- count_gene_hits(
-    modules$migration$primary
-  )
+  migration_primary_hits <-
+    count_gene_hits(modules$migration$primary)
 
-  migration_supportive_hits <- count_gene_hits(
-    modules$migration$supportive
-  )
+  migration_supportive_hits <-
+    count_gene_hits(modules$migration$supportive)
 
-  neuro_primary_hits <- count_gene_hits(
-    modules$neuroendocrine$primary
-  )
+  neuro_primary_hits <-
+    count_gene_hits(modules$neuroendocrine$primary)
 
-  neuro_supportive_hits <- count_gene_hits(
-    modules$neuroendocrine$supportive
-  )
+  neuro_supportive_hits <-
+    count_gene_hits(modules$neuroendocrine$supportive)
 
   core_hits <-
     identity_primary_hits +
@@ -343,141 +251,13 @@ detect_gnrh <- function(
     neuro_primary_hits +
     neuro_supportive_hits
 
-  # --------------------------------------------------------------------------- #
-  # Alternative neuronal / neuroendocrine programs
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Identity gates
+  # ------------------------------------------------------------------------- #
 
-  alternative <- .score_gnrh_alternatives(
-    expr = expr,
-    modules = alternative_modules
-  )
-
-  alternative_score <-
-    alternative$score
-
-  alternative_hits <-
-    alternative$hits
-
-  # --------------------------------------------------------------------------- #
-  # Neighborhood support
-  # --------------------------------------------------------------------------- #
-
-  knn <- .knn_signal(
-    object,
-    raw,
-    reduction,
-    dims,
-    k
-  )
-
-  # --------------------------------------------------------------------------- #
-  # Main GnRH score
-  #
-  # Includes direct GNRH1 information.
-  # --------------------------------------------------------------------------- #
-
-  score_raw <-
-    3.0 * log1p(norm) +
-    identity_score +
-    migration_score +
-    neuro_score +
-    hormone_score +
-    1.0 * log1p(amb_ratio) +
-    0.75 * log1p(knn)
-
-  score <- .scale0(
-    score_raw
-  )
-
-  # --------------------------------------------------------------------------- #
-  # Independent transcriptomic support score
-  #
-  # IMPORTANT:
-  #
-  # - excludes direct GNRH1 expression;
-  # - excludes ambient GNRH1 ratio;
-  # - heavily favors GnRH identity;
-  # - migration and generic neuroendocrine programs are supportive only.
-  # --------------------------------------------------------------------------- #
-
-  support_score_raw <-
-    4.0 * identity_score +
-    0.35 * migration_score +
-    0.75 * neuro_score +
-    0.10 * hormone_score +
-    0.35 * log1p(knn)
-
-  support_score <- .scale0(
-    support_score_raw
-  )
-
-  # --------------------------------------------------------------------------- #
-  # Adaptive GNRH1 expression threshold
-  # --------------------------------------------------------------------------- #
-
-  nz <- norm[
-    is.finite(norm) &
-      norm > 0
-  ]
-
-  expr_thr <- if (
-    length(nz) > 20L &&
-    stats::mad(nz) > 0
-  ) {
-
-    stats::median(nz) +
-      mad_factor *
-      stats::mad(nz)
-
-  } else if (length(nz) > 0L) {
-
-    as.numeric(
-      stats::quantile(
-        nz,
-        probs = 0.99,
-        names = FALSE
-      )
-    )
-
-  } else {
-
-    Inf
-  }
-
-  # --------------------------------------------------------------------------- #
-  # Marker structure
-  # --------------------------------------------------------------------------- #
-
-  hits <- list(
-    core = core_hits,
-    mig = mig_hits,
-    neuro = neuro_hits,
-
-    identity_primary =
-      identity_primary_hits,
-
-    identity_supportive =
-      identity_supportive_hits,
-
-    migration_primary =
-      migration_primary_hits,
-
-    migration_supportive =
-      migration_supportive_hits,
-
-    neuro_primary =
-      neuro_primary_hits,
-
-    neuro_supportive =
-      neuro_supportive_hits
-  )
-
-  # --------------------------------------------------------------------------- #
-  # GnRH identity gates
-  #
-  # These gates prevent migration or generic neuroendocrine programs from
-  # independently defining a GnRH candidate.
-  # --------------------------------------------------------------------------- #
+  identity_moderate <-
+    identity_primary_hits >= 1L |
+    identity_supportive_hits >= 2L
 
   identity_strong <-
     identity_primary_hits >= 2L |
@@ -485,10 +265,6 @@ detect_gnrh <- function(
       identity_primary_hits >= 1L &
         identity_supportive_hits >= 2L
     )
-
-  identity_moderate <-
-    identity_primary_hits >= 1L |
-    identity_supportive_hits >= 2L
 
   neuro_support <-
     neuro_primary_hits >= 1L |
@@ -504,15 +280,116 @@ detect_gnrh <- function(
         neuro_support
     )
 
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Alternative identities
+  # ------------------------------------------------------------------------- #
+
+  alternative <- .score_gnrh_alternatives(
+    expr = expr,
+    modules = alternative_modules
+  )
+
+  alternative_score <- alternative$score
+  alternative_hits <- alternative$hits
+  alternative_strong <- alternative$strong
+
+  # ------------------------------------------------------------------------- #
+  # Independent neighborhood support
+  #
+  # IMPORTANT: based on GnRH identity, not GNRH1.
+  # ------------------------------------------------------------------------- #
+
+  knn_identity <- .knn_signal(
+    object = object,
+    signal = as.numeric(identity_moderate),
+    reduction = reduction,
+    dims = dims,
+    k = k
+  )
+
+  # ------------------------------------------------------------------------- #
+  # Main score: ranking/visualization
+  #
+  # Ambient RNA is deliberately excluded.
+  # ------------------------------------------------------------------------- #
+
+  score_raw <-
+    3.0 * norm +
+    identity_score +
+    migration_score +
+    neuro_score +
+    hormone_score +
+    0.75 * knn_identity
+
+  score <- .scale0(score_raw)
+
+  # ------------------------------------------------------------------------- #
+  # Independent support score
+  #
+  # Raw score is used for classification.
+  # Scaled score is provided for plotting.
+  # ------------------------------------------------------------------------- #
+
+  support_score_raw <-
+    4.0 * identity_score +
+    0.35 * migration_score +
+    0.75 * neuro_score +
+    0.10 * hormone_score +
+    0.35 * knn_identity
+
+  support_score <- .scale0(support_score_raw)
+
+  # ------------------------------------------------------------------------- #
+  # GNRH1 normalized-expression threshold
+  #
+  # Diagnostic only.
+  # ------------------------------------------------------------------------- #
+
+  nz <- norm[
+    is.finite(norm) &
+      norm > 0
+  ]
+
+  expr_thr <- if (
+    length(nz) > 20L &&
+    stats::mad(nz) > 0
+  ) {
+    stats::median(nz) +
+      mad_factor * stats::mad(nz)
+  } else if (length(nz)) {
+    as.numeric(stats::quantile(
+      nz,
+      probs = 0.99,
+      names = FALSE
+    ))
+  } else {
+    Inf
+  }
+
+  hits <- list(
+    core = core_hits,
+    mig = mig_hits,
+    neuro = neuro_hits,
+
+    identity_primary = identity_primary_hits,
+    identity_supportive = identity_supportive_hits,
+
+    migration_primary = migration_primary_hits,
+    migration_supportive = migration_supportive_hits,
+
+    neuro_primary = neuro_primary_hits,
+    neuro_supportive = neuro_supportive_hits
+  )
+
+  # ------------------------------------------------------------------------- #
   # Classification
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
 
   cls <- .classify(
     raw = raw,
     norm = norm,
     score = score,
-    support_score = support_score,
+    support_score = support_score_raw,
     hits = hits,
     lib = lib,
 
@@ -521,12 +398,14 @@ detect_gnrh <- function(
 
     supported_q = supported_q,
     candidate_q = candidate_q,
+    min_reference_cells = min_reference_cells,
 
     expr_thr = expr_thr,
 
-    knn = knn,
+    knn = knn_identity,
 
     alternative_score = alternative_score,
+    alternative_strong = alternative_strong,
     max_alternative = max_alternative,
 
     identity_strong = identity_strong,
@@ -534,94 +413,69 @@ detect_gnrh <- function(
     independent_support = independent_support
   )
 
-  # --------------------------------------------------------------------------- #
-  # Metadata: classification
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Classification metadata
+  # ------------------------------------------------------------------------- #
 
   object$gnrh_status <- factor(
     cls$status,
-    levels = c(
-      "neg",
-      "pos"
-    )
+    levels = c("neg", "pos")
   )
 
   object$gnrh_class <- factor(
     cls$class,
-    levels = c(
-      "neg",
-      "supported",
-      "direct"
-    )
+    levels = c("neg", "supported", "direct")
   )
 
-  # Direct-cell diagnostic subclass.
-  object$gnrh_direct_supported <-
-    cls$direct_supported
+  object$gnrh_direct_supported <- cls$direct_supported
+  object$gnrh_direct_isolated <- cls$direct_isolated
+  object$gnrh_direct_signal <- cls$direct_signal
 
-  object$gnrh_direct_isolated <-
-    cls$direct_isolated
-
-  object$gnrh_direct_signal <-
-    cls$direct_signal
-
-  # Sensitive screening output. This records direct GNRH1 signal separately
-  # from the identity-supported biological call in `gnrh_status`.
   object$gnrh_signal_status <- factor(
     ifelse(cls$direct_signal, "signal", "no_signal"),
     levels = c("no_signal", "signal")
   )
 
-  # GNRH1-negative transcriptomic candidate.
-  # Diagnostic only: these cells remain gnrh_status == "neg".
+  # Preferred new name
+  object$gnrh_transcriptomic_candidate <-
+    cls$transcriptomic_candidate
+
+  # Backward compatibility
   object$gnrh_dropout_candidate <-
-    cls$dropout_candidate
+    cls$transcriptomic_candidate
 
-  # --------------------------------------------------------------------------- #
-  # Metadata: scores
-  # --------------------------------------------------------------------------- #
+  object$gnrh_reference_positive <-
+    cls$reference_positive
 
-  object$gnrh_score <-
-    score
+  # ------------------------------------------------------------------------- #
+  # Scores
+  # ------------------------------------------------------------------------- #
 
-  object$gnrh_support_score <-
-    support_score
+  object$gnrh_score <- score
+  object$gnrh_score_raw <- score_raw
 
-  object$gnrh_expr <-
-    norm
+  object$gnrh_support_score <- support_score
+  object$gnrh_support_score_raw <- support_score_raw
 
-  object$gnrh_raw <-
-    raw
+  object$gnrh_expr <- norm
+  object$gnrh_raw <- raw
 
-  object$gnrh_identity_score <- .scale0(
-    identity_score
-  )
+  object$gnrh_identity_score <- .scale0(identity_score)
+  object$gnrh_migration_score <- .scale0(migration_score)
+  object$gnrh_neuro_score <- .scale0(neuro_score)
+  object$gnrh_hormone_score <- .scale0(hormone_score)
 
-  object$gnrh_migration_score <- .scale0(
-    migration_score
-  )
+  object$gnrh_guidance_score <-
+    .scale0(guidance_environment)
 
-  object$gnrh_neuro_score <- .scale0(
-    neuro_score
-  )
+  # Ambient diagnostics
+  object$gnrh_ambient_ratio <- ambient_ratio
 
-  object$gnrh_hormone_score <- .scale0(
-    hormone_score
-  )
+  # ------------------------------------------------------------------------- #
+  # Hits
+  # ------------------------------------------------------------------------- #
 
-  object$gnrh_guidance_score <- .scale0(
-    guidance_environment
-  )
-
-  object$gnrh_alternative_score <-
-    alternative_score
-
-  # --------------------------------------------------------------------------- #
-  # Metadata: marker hits
-  # --------------------------------------------------------------------------- #
-
-  object$gnrh_core_hits <-
-    core_hits
+  object$gnrh_core_hits <- core_hits
 
   object$gnrh_identity_primary_hits <-
     identity_primary_hits
@@ -629,8 +483,7 @@ detect_gnrh <- function(
   object$gnrh_identity_supportive_hits <-
     identity_supportive_hits
 
-  object$gnrh_mig_hits <-
-    mig_hits
+  object$gnrh_mig_hits <- mig_hits
 
   object$gnrh_migration_primary_hits <-
     migration_primary_hits
@@ -638,8 +491,7 @@ detect_gnrh <- function(
   object$gnrh_migration_supportive_hits <-
     migration_supportive_hits
 
-  object$gnrh_neuro_hits <-
-    neuro_hits
+  object$gnrh_neuro_hits <- neuro_hits
 
   object$gnrh_neuro_primary_hits <-
     neuro_primary_hits
@@ -647,50 +499,39 @@ detect_gnrh <- function(
   object$gnrh_neuro_supportive_hits <-
     neuro_supportive_hits
 
+  object$gnrh_alternative_score <-
+    alternative_score
+
   object$gnrh_alternative_hits <-
     alternative_hits
 
-  object$gnrh_knn <-
-    knn
+  object$gnrh_alternative_strong <-
+    alternative_strong
 
-  # --------------------------------------------------------------------------- #
-  # Metadata: biological gates
-  # --------------------------------------------------------------------------- #
+  object$gnrh_knn <- knn_identity
 
-  object$gnrh_identity_moderate <-
-    identity_moderate
+  # ------------------------------------------------------------------------- #
+  # Biological gates
+  # ------------------------------------------------------------------------- #
 
-  object$gnrh_identity_strong <-
-    identity_strong
-
-  object$gnrh_neuro_support <-
-    neuro_support
-
-  object$gnrh_migration_support <-
-    migration_support
+  object$gnrh_identity_moderate <- identity_moderate
+  object$gnrh_identity_strong <- identity_strong
+  object$gnrh_neuro_support <- neuro_support
+  object$gnrh_migration_support <- migration_support
 
   object$gnrh_independent_support <-
     independent_support
 
-  # --------------------------------------------------------------------------- #
-  # Store detected GnRH gene
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Stored parameters
+  # ------------------------------------------------------------------------- #
 
-  object@misc$gnrh_gene <-
-    gnrh_gene
-
-  # --------------------------------------------------------------------------- #
-  # High-confidence classification
-  # --------------------------------------------------------------------------- #
+  object@misc$gnrh_gene <- gnrh_gene
 
   object$gnrh_confident <- .compute_gnrh_confident(
     object[[]],
     min_umi
   )
-
-  # --------------------------------------------------------------------------- #
-  # Store parameters
-  # --------------------------------------------------------------------------- #
 
   object@misc$gnrh_params <- list(
     assay = assay,
@@ -707,38 +548,33 @@ detect_gnrh <- function(
 
     supported_q = supported_q,
     candidate_q = candidate_q,
+    min_reference_cells = min_reference_cells,
 
     scale_factor = scale_factor,
 
     expr_thr = expr_thr,
 
-    supported_thr =
-      cls$supported_thr,
+    supported_thr = cls$supported_thr,
+    candidate_thr = cls$candidate_thr,
 
-    dropout_thr =
-      cls$dropout_thr,
+    # Backward-compatible alias
+    dropout_thr = cls$candidate_thr,
 
-    knn_support_thr =
-      cls$knn_support_thr,
+    reference_n = cls$reference_n,
 
-    knn_strong_thr =
-      cls$knn_strong_thr,
+    knn_support_thr = cls$knn_support_thr,
+    knn_strong_thr = cls$knn_strong_thr,
 
-    max_alternative =
-      max_alternative,
+    max_alternative = max_alternative,
 
     module_weights = c(
       identity_primary = 3.0,
       identity_supportive = 1.5,
-
       migration_primary = 1.0,
       migration_supportive = 0.5,
-
       neuroendocrine_primary = 1.5,
       neuroendocrine_supportive = 0.75,
-
       hormone_supportive = 0.25,
-
       guidance_environment = 0
     ),
 
@@ -747,14 +583,12 @@ detect_gnrh <- function(
       migration = 0.35,
       neuroendocrine = 0.75,
       hormone = 0.10,
-      knn = 0.35
+      knn_identity = 0.35
     ),
 
     identity_rules = list(
-      moderate = paste0(
-        "identity_primary_hits >= 1 OR ",
-        "identity_supportive_hits >= 2"
-      ),
+      moderate =
+        "identity_primary_hits >= 1 OR identity_supportive_hits >= 2",
 
       strong = paste0(
         "identity_primary_hits >= 2 OR ",
@@ -769,32 +603,15 @@ detect_gnrh <- function(
     )
   )
 
-  # --------------------------------------------------------------------------- #
-  # Store modules
-  # --------------------------------------------------------------------------- #
+  object@misc$gnrh_modules <- modules
+  object@misc$gnrh_alternative_modules <- alternative_modules
+  object@misc$gnrh_alternative_scores <- alternative$scores
 
-  object@misc$gnrh_modules <-
-    modules
-
-  object@misc$gnrh_alternative_modules <-
-    alternative_modules
-
-  object@misc$gnrh_alternative_scores <-
-    alternative$scores
-
-  # --------------------------------------------------------------------------- #
-  # Classification diagnostics
-  # --------------------------------------------------------------------------- #
-
-  if (is.null(object@misc$gnrh)) {
+  if (is.null(object@misc$gnrh))
     object@misc$gnrh <- list()
-  }
 
-  object@misc$gnrh$classify_rules <-
-    cls$rules
-
-  object@misc$gnrh$classify_summary <-
-    cls$rule_summary
+  object@misc$gnrh$classify_rules <- cls$rules
+  object@misc$gnrh$classify_summary <- cls$rule_summary
 
   object
 }

@@ -7,13 +7,15 @@
 plot_gnrh_embedding(
   object,
   group_by = "gnrh_status",
+  split_by = NULL,
   reduction = NULL,
   dims = c(1, 2),
   shuffle = FALSE,
   raster = NULL,
-  raster.dpi = c(2048, 2048),
-  alpha = 0.9,
-  background_alpha = 0.18,
+  raster.dpi = 600,
+  alpha = 1,
+  background_alpha = 1,
+  background.col = NULL,
   n.cells = TRUE,
   percentage = FALSE,
   label = FALSE,
@@ -26,70 +28,102 @@ plot_gnrh_embedding(
   legend = TRUE,
   leg.ttl = NULL,
   leg.ttl.size = NULL,
-  item.size = 3.5,
+  item.size = 4,
   leg.pos = "right",
   leg.dir = "vertical",
-  leg.size = NULL,
+  leg.size = 10,
   leg.ncol = NULL,
   item.border = TRUE,
   txtsize = 12,
   pt.size = NULL,
   dark = FALSE,
   total.cells = FALSE,
-  style = "classic",
+  style = c("classic", "minimal", "bw", "test", "void", "dirty", "gray"),
+  facet.bg = FALSE,
+  ncol = NULL,
   ...
 )
 }
 \arguments{
 \item{object}{A Seurat object.}
 
-\item{group_by}{Metadata column used to colour cells.}
+\item{group_by}{One or more metadata columns used to colour cells.}
 
-\item{reduction}{Dimensional reduction; an available reduction is selected when \code{NULL}.}
+\item{split_by}{Optional metadata column used to facet the embedding.}
+
+\item{reduction}{Dimensional reduction.}
 
 \item{dims}{Two reduction dimensions to display.}
 
 \item{shuffle}{Randomize plotting order.}
 
-\item{raster}{Use rasterized points; selected automatically when \code{NULL}.}
+\item{raster}{Rasterize points; selected automatically when \code{NULL}.}
 
-\item{raster.dpi}{Raster resolution passed to the raster geom.}
+\item{raster.dpi}{Raster resolution.}
 
-\item{alpha, background_alpha}{Opacity for highlighted and background cells.}
+\item{alpha}{Opacity of highlighted cells.}
 
-\item{n.cells, percentage}{Add cell counts or percentages to legend labels.}
+\item{background_alpha}{Opacity of background cells.}
 
-\item{label, repel, label.size, label.face}{Cluster-label controls.}
+\item{background.col}{Colour used for background groups such as
+\code{"neg"} and \code{"non-gnrh"}. When \code{NULL}, a light or dark
+mode default is selected automatically.}
+
+\item{n.cells}{Add cell counts to legend labels.}
+
+\item{percentage}{Add percentages to legend labels.}
+
+\item{label}{Label groups on the embedding.}
+
+\item{repel}{Use repelled labels.}
+
+\item{label.size}{Label text size.}
+
+\item{label.face}{Label font face.}
 
 \item{cols}{Optional named colour vector.}
 
-\item{axes}{Show embedding axes.}
+\item{axes}{Show embedding axis titles.}
 
 \item{plot.ttl}{Optional plot title.}
 
-\item{legend}{Show the legend.}
+\item{legend}{Show legend.}
 
-\item{leg.ttl, leg.ttl.size}{Legend title and title size.}
+\item{leg.ttl}{Legend title. Explicit \code{NULL} removes the title.}
 
-\item{item.size, item.border}{Legend-key controls.}
+\item{leg.ttl.size}{Legend-title size.}
 
-\item{leg.pos, leg.dir, leg.size, leg.ncol}{Legend layout controls.}
+\item{item.size}{Legend point size.}
+
+\item{leg.pos}{Legend position.}
+
+\item{leg.dir}{Legend direction.}
+
+\item{leg.size}{Legend text size.}
+
+\item{leg.ncol}{Number of legend columns.}
+
+\item{item.border}{Draw bordered legend points.}
 
 \item{txtsize}{Base text size.}
 
-\item{pt.size}{Point size; selected automatically when \code{NULL}.}
+\item{pt.size}{Point size.}
 
-\item{dark}{Use dark display mode.}
+\item{dark}{Use dark mode.}
 
-\item{total.cells}{Include total-cell counts in the legend.}
+\item{total.cells}{Add total cell number to title.}
 
-\item{style}{Theme style.}
+\item{style}{Plot style.}
+
+\item{facet.bg}{Draw facet-strip background.}
+
+\item{ncol}{Number of columns for facets or multiple plots.}
 
 \item{...}{Additional graphical arguments.}
 }
 \value{
-A ggplot object.
+A ggplot or patchwork object.
 }
 \description{
-Plot GnRH embedding
+Visualize GnRHcell categorical metadata on a dimensional reduction.
 }

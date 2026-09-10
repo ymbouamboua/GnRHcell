@@ -35,9 +35,13 @@
       contextual = c(
         "GAD2",
         "HESX1",
-        "FGFR1"
+        "FGFR1",
+        "RBFOX1",
+        "MYT1L",
+        "BCL11B"
       )
     ),
+
     migration = list(
       primary = c(
         "PROKR2",
@@ -52,8 +56,21 @@
         "CXCR4",
         "L1CAM",
         "DCX"
+      ),
+      contextual = c(
+        "DCC",
+        "CNTN1",
+        "ITGAV",
+        "ACKR3",
+        "PLXNA1",
+        "PLXNA2",
+        "PLXNA3",
+        "PLXNA4",
+        "RELN",
+        "DSCAM"
       )
     ),
+
     neuroendocrine = list(
       primary = c(
         "KISS1R",
@@ -69,8 +86,14 @@
         "VGF",
         "SYP",
         "RAB3A"
+      ),
+      contextual = c(
+        "SCN2A",
+        "TAC1",
+        "PTPRN2"
       )
     ),
+
     hormone = list(
       supportive = c(
         "ESR1",
@@ -79,10 +102,12 @@
         "AR"
       )
     ),
+
     guidance_environment = list(
       supportive = c(
         "ANOS1",
         "PROK2",
+        "NTN1",
         "SEMA3A",
         "SEMA3C",
         "SEMA3E",
@@ -95,16 +120,20 @@
       )
     )
   )
+
   lapply(
     modules,
     function(module) {
       lapply(
         module,
-        function(x) .match_genes(x, genes)
+        .match_genes,
+        genes = genes
       )
     }
   )
 }
+
+
 
 
 #' Alternative neuronal identity modules
@@ -126,15 +155,16 @@
 #' @noRd
 .gnrh_alternative_modules <- function(genes) {
   modules <- list(
-    kndy = c("KISS1","TAC3","PDYN"),
-    pomc = c("POMC"),
-    agrp_npy = c("AGRP","NPY"),
-    avp = c("AVP"),
-    oxt = c("OXT"),
-    crh = c("CRH"),
-    trh = c("TRH"),
-    sst = c("SST")
+    kndy = c("KISS1", "TAC3", "PDYN"),
+    pomc = "POMC",
+    agrp_npy = c("AGRP", "NPY"),
+    avp = "AVP",
+    oxt = "OXT",
+    crh = "CRH",
+    trh = "TRH",
+    sst = "SST"
   )
+
   lapply(
     modules,
     .match_genes,
@@ -156,93 +186,70 @@
 #'   maximum marker hit counts, individual program scores, and program-specific
 #'   hit counts.
 #'
+#'
 #' @keywords internal
 #' @noRd
-.score_gnrh_alternatives <- function(
-    expr,
-    modules
-) {
+.score_gnrh_alternatives <- function(expr, modules) {
   n <- ncol(expr)
+
   if (!length(modules)) {
-    return(
-      list(
-        score = rep(0, n),
-        hits = integer(n),
-        scores = matrix(
-          numeric(0),
-          nrow = n,
-          ncol = 0
-        ),
-        hit_matrix = matrix(
-          integer(0),
-          nrow = n,
-          ncol = 0
-        )
-      )
-    )
+    return(list(
+      score = rep(0, n),
+      hits = integer(n),
+      strong = rep(FALSE, n),
+      scores = matrix(numeric(0), nrow = n),
+      hit_matrix = matrix(integer(0), nrow = n)
+    ))
   }
-  score_one <- function(x) {
-    if (!length(x)) {
-      return(rep(0, n))
-    }
-    Matrix::colMeans(
-      expr[
-        x,
-        ,
-        drop = FALSE
-      ] > 0
-    )
-  }
-  hits_one <- function(x) {
-    if (!length(x)) {
-      return(integer(n))
-    }
+
+  hits_one <- function(g) {
+    if (!length(g)) return(integer(n))
+
     as.integer(
       Matrix::colSums(
-        expr[
-          x,
-          ,
-          drop = FALSE
-        ] > 0
+        expr[g, , drop = FALSE] > 0
       )
     )
   }
-  scores <- do.call(
-    cbind,
-    lapply(
-      modules,
-      score_one
-    )
-  )
-  hit_matrix <- do.call(
-    cbind,
-    lapply(
-      modules,
-      hits_one
-    )
-  )
+
+  score_one <- function(g) {
+    if (!length(g)) return(rep(0, n))
+
+    hits <- hits_one(g)
+
+    # Avoid score=1 from a singleton merely because one gene was detected.
+    hits / max(length(g), 2L)
+  }
+
+  strong_one <- function(g) {
+    if (!length(g)) return(rep(FALSE, n))
+
+    hits <- hits_one(g)
+
+    if (length(g) == 1L) {
+      hits >= 1L
+    } else {
+      hits >= min(2L, length(g))
+    }
+  }
+
+  scores <- do.call(cbind, lapply(modules, score_one))
+  hit_matrix <- do.call(cbind, lapply(modules, hits_one))
+  strong_matrix <- do.call(cbind, lapply(modules, strong_one))
+
   colnames(scores) <- names(modules)
   colnames(hit_matrix) <- names(modules)
-  score <- apply(
-    scores,
-    1,
-    max,
-    na.rm = TRUE
-  )
-  hits <- apply(
-    hit_matrix,
-    1,
-    max,
-    na.rm = TRUE
-  )
+  colnames(strong_matrix) <- names(modules)
+
   list(
-    score = as.numeric(score),
-    hits = as.integer(hits),
+    score = apply(scores, 1, max, na.rm = TRUE),
+    hits = apply(hit_matrix, 1, max, na.rm = TRUE),
+    strong = apply(strong_matrix, 1, any),
     scores = scores,
-    hit_matrix = hit_matrix
+    hit_matrix = hit_matrix,
+    strong_matrix = strong_matrix
   )
 }
-
 
 
 #' Build GnRH developmental stage modules
@@ -271,7 +278,6 @@
 #' @keywords internal
 #' @noRd
 .build_stage_modules <- function(genes) {
-
   list(
     identity = .match_genes(
       c(
@@ -311,7 +317,6 @@
     mature = .match_genes(
       c(
         "KISS1R",
-        "ISL1",
         "DOC2B",
         "PTPRN",
         "BAIAP3",
@@ -327,11 +332,9 @@
 
 
 
-
 #' @keywords internal
 #' @noRd
 .build_migration_core <- function(genes) {
-
   .match_genes(
     c(
       "PROKR2",
@@ -362,7 +365,6 @@
 #' @keywords internal
 #' @noRd
 .build_secretory_module <- function(genes) {
-
   list(
     core = .match_genes(
       c(
@@ -388,6 +390,3 @@
     )
   )
 }
-
-
-

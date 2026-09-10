@@ -2,169 +2,54 @@
 % Please edit documentation in R/marker-programs.R
 \name{gnrh_marker_programs}
 \alias{gnrh_marker_programs}
-\title{Classify GnRH marker candidates into developmental programs}
+\title{Classify GnRH marker candidates into biological programs}
 \usage{
 gnrh_marker_programs(
   files,
   results,
   outdir,
   modules = gnrh_stage_modules(),
+  secretory_module = gnrh_secretory_marker_module(),
   coexpr_col = "coexpr_flag",
   gene_col = "gene",
   min_medium_score = 0.25,
   min_high_score = 1,
+  min_high_datasets = 2L,
+  min_medium_datasets = 1L,
+  include_gnrh1 = TRUE,
   write_output = TRUE
 )
 }
 \arguments{
-\item{files}{Named character vector. Names correspond to dataset names and
-values correspond to existing marker-table paths or to file names located
-in \code{file.path(outdir, "tables")}.}
+\item{files}{Named character vector containing marker table paths.}
 
-\item{results}{A list returned by \code{gnrh_gene_upset()}, containing at least
-\code{results$unique}, a named list of dataset-specific unique genes.}
+\item{results}{Result returned by \code{\link{gnrh_gene_upset}}.}
 
-\item{outdir}{Character. Output directory containing a \code{tables/}
-subdirectory with marker tables.}
+\item{outdir}{Output directory.}
 
-\item{modules}{Named list of developmental gene modules. By default, uses
-\code{gnrh_stage_modules()}.}
+\item{modules}{Developmental modules.}
 
-\item{coexpr_col}{Character. Name of the column indicating GNRH1
-co-expression. Default is \code{"coexpr_flag"}.}
+\item{secretory_module}{Functional secretory program.}
 
-\item{gene_col}{Character. Name of the gene column in marker tables.
-Default is \code{"gene"}.}
+\item{coexpr_col}{Optional GNRH1 co-expression column.}
 
-\item{min_medium_score}{Numeric. Minimum specificity score required for
-medium confidence. Default is \code{0.25}.}
+\item{gene_col}{Gene column.}
 
-\item{min_high_score}{Numeric. Minimum specificity score required for
-high confidence. Default is \code{1}.}
+\item{min_medium_score}{Minimum marker evidence score for medium confidence.}
 
-\item{write_output}{Logical. If \code{TRUE}, writes output tables to
-\code{file.path(outdir, "tables")}. Default is \code{TRUE}.}
+\item{min_high_score}{Minimum marker evidence score for high confidence.}
+
+\item{min_high_datasets}{Minimum datasets supporting a high-confidence gene.}
+
+\item{min_medium_datasets}{Minimum datasets supporting a medium-confidence gene.}
+
+\item{include_gnrh1}{Include GNRH1 as reference gene.}
+
+\item{write_output}{Write TSV outputs.}
 }
 \value{
-A named list with four elements:
-\describe{
-\item{\code{candidate_table}}{
-Data frame containing all evaluated marker candidates. Columns are:
-\describe{
-\item{\code{dataset}}{
-Dataset where the candidate marker was detected.
-}
-\item{\code{gene}}{
-Candidate marker gene symbol, standardized to uppercase.
-}
-\item{\code{is_unique}}{
-Logical value indicating whether the gene is unique to one dataset
-according to \code{\link{gnrh_gene_upset}}.
-}
-\item{\code{known_status}}{
-Biological annotation of the gene. Values include
-\code{"known_GnRH_or_developmental"},
-\code{"candidate_novel"}, \code{"generic_neuronal"}, and
-\code{"unknown_or_context_specific"}.
-}
-\item{\code{program}}{
-Developmental program assigned using
-\code{\link{gnrh_stage_modules}}. Values include
-\code{"identity"}, \code{"migrating"}, \code{"mature"},
-\code{"secreting"}, or \code{"unassigned"}.
-}
-\item{\code{coexpr_GNRH1}}{
-Logical value indicating whether the gene is co-expressed with
-\code{GNRH1} according to the marker table co-expression column.
-}
-\item{\code{specificity_score}}{
-Numeric marker specificity score. Higher values indicate stronger
-enrichment in GnRH-positive cells.
-}
-\item{\code{confidence_level}}{
-Final confidence category assigned by the function:
-\code{"high"}, \code{"medium"}, or \code{"low"}.
-}
-}
-}
-\item{\code{high_confidence}}{
-Subset of \code{candidate_table} classified as high-confidence
-candidate markers.
-}
-\item{\code{summary}}{
-Summary table of candidate genes grouped by dataset, developmental
-program, and confidence level.
-}
-\item{\code{split_by_dataset_program}}{
-List of candidate genes split by dataset and developmental program.
-}
-}
+Named marker-program result list.
 }
 \description{
-Combines marker tables, dataset-specific marker overlap results, GNRH1
-co-expression evidence, specificity scores, and curated developmental
-programs to identify candidate GnRH markers associated with identity,
-migration, maturation, or secretion.
-}
-\details{
-This function is designed to be used downstream of marker discovery and
-overlap analysis. It reads marker tables generated for multiple datasets,
-intersects dataset-specific unique markers with GNRH1-coexpressed genes,
-assigns candidates to curated GnRH developmental programs, and reports
-confidence levels based on co-expression, specificity, and program
-membership.
-
-The specificity score is computed as:
-\deqn{
-avg\_log2FC \times (pct.1 - pct.2) \times -log10(p\_val\_adj + \epsilon)
-}
-where \eqn{\epsilon = 1e-300}. Missing columns are handled safely and
-replaced with conservative default values.
-
-Confidence levels are assigned as follows:
-\itemize{
-\item \code{high}: unique, GNRH1-coexpressed, assigned to a developmental
-program, specificity score greater than or equal to
-\code{min_high_score}, and not classified as a generic neuronal marker.
-\item \code{medium}: unique, GNRH1-coexpressed, specificity score greater
-than or equal to \code{min_medium_score}, and not classified as generic.
-\item \code{low}: all remaining candidates.
-}
-
-Biologically, \code{candidate_table} separates reference GnRH markers,
-generic neuronal markers, potentially novel GnRH-associated markers, and
-context-specific candidates. Computationally, genes are prioritized by
-dataset specificity, GNRH1 co-expression, developmental program membership,
-and marker specificity score.
-}
-\examples{
-\dontrun{
-files <- c(
-  "HuDeCa Nose" = "gnrh_nose_markers.tsv",
-  "HuDeCa Hypo" = "gnrh_hudeca_hypo_markers.tsv",
-  "HPSC Wang 2022" = "gnrh_wang_markers.tsv",
-  "Human HypoMap" = "gnrh_human_hypomap_markers.tsv",
-  "Mouse HypoMap" = "gnrh_mouse_hypomap_markers.tsv",
-  "Mouse Amato 2024" = "gnrh_mouse_amato_markers.tsv",
-  "Mouse POA" = "gnrh_mouse_poa_markers.tsv",
-  "Mouse MBH" = "gnrh_mouse_mbh_markers.tsv"
-)
-
-marker_programs <- gnrh_marker_programs(
-  files = files,
-  results = overlap_results,
-  outdir = "results/gnrh",
-  write_output = TRUE
-)
-
-marker_programs$candidate_table
-marker_programs$high_confidence
-marker_programs$summary
-marker_programs$split_by_dataset_program
-}
-
-}
-\seealso{
-\code{\link{gnrh_stage_modules}}, \code{\link{gnrh_gene_upset}},
-\code{\link{gnrh_markers}}
+Classify GnRH marker candidates into biological programs
 }

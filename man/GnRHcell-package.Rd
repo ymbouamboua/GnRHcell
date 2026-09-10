@@ -4,9 +4,11 @@
 \name{GnRHcell-package}
 \alias{GnRHcell}
 \alias{GnRHcell-package}
-\title{GnRHcell package internal imports}
+\title{GnRHcell: Detection and characterization of GnRH neurons}
 \description{
-Provides tools to detect, score, and stage GnRH-like cells in single-cell RNA-seq data using gene modules, adaptive scoring, ambient RNA correction, and Seurat-compatible workflows.
+Tools for detecting rare GnRH neurons in single-cell RNA-seq datasets,
+developmental staging, diagnostics, marker discovery, and cross-dataset
+comparison.
 }
 \seealso{
 Useful links:

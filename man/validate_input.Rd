@@ -4,54 +4,63 @@
 \alias{validate_input}
 \title{Validate input Seurat object for GnRH analysis}
 \usage{
-validate_input(object, assay = NULL, auto_normalize = FALSE, verbose = TRUE)
+validate_input(
+  object,
+  assay = NULL,
+  required_layers = c("counts", "data"),
+  auto_normalize = FALSE,
+  min_cells = 1L,
+  min_features = 1L,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{object}{A Seurat object containing single-cell RNA-seq data.}
+\item{object}{A Seurat object.}
 
-\item{assay}{Assay name to validate. If \code{NULL}, the default
-assay of the Seurat object is used.}
+\item{assay}{Assay to validate. If \code{NULL}, the default assay is used.}
 
-\item{auto_normalize}{Logical; automatically normalize the assay
-if normalized data are missing. Default is \code{FALSE}.}
+\item{required_layers}{Character vector containing required expression
+layers. Default is \code{c("counts", "data")}.}
 
-\item{verbose}{Logical; print progress messages.
-Default is \code{TRUE}.}
+\item{auto_normalize}{Logical. Automatically generate the \code{"data"}
+layer with \code{Seurat::NormalizeData()} when required and missing.
+Default is \code{FALSE}.}
+
+\item{min_cells}{Minimum number of cells required. Default is \code{1}.}
+
+\item{min_features}{Minimum number of features required. Default is
+\code{1}.}
+
+\item{verbose}{Logical. Print progress messages.}
 }
 \value{
-A validated Seurat object, optionally normalized if
-requested.
+A validated Seurat object, optionally normalized.
 }
 \description{
-Validates that the input Seurat object contains the required
-expression layers for GnRH analysis.
+Validates that a Seurat object contains the assay and expression layers
+required by GnRHcell.
 }
 \details{
-This function checks compatibility with both Seurat v5
-(\code{Assay5}) and earlier assay formats, ensuring that
-raw counts and normalized expression data are available.
+The function supports Seurat v5 \code{Assay5} objects and legacy Seurat
+assays. Required expression layers can be specified explicitly, allowing
+detection workflows to require raw counts only while staging or marker
+workflows can additionally require normalized data.
 
-If normalized data are missing and \code{auto_normalize = TRUE},
-normalization is performed automatically using
-\code{Seurat::NormalizeData()}.
+When normalized expression is required but unavailable,
+\code{auto_normalize = TRUE} runs \code{Seurat::NormalizeData()}.
 
-Validation checks:
-\itemize{
-\item presence of raw counts (\code{counts})
-\item presence of normalized expression data (\code{data})
-\item compatibility with Seurat v5 \code{Assay5} objects
-\item compatibility with legacy Seurat assay objects
-}
+For \code{\link{detect_gnrh}}, validation should normally use
+\code{required_layers = "counts"}.
 
-If counts are missing, the function stops with an error.
+Functions based on normalized expression, such as developmental staging or
+marker discovery, should require \code{c("counts", "data")} or
+\code{"data"} as appropriate.
 
-If normalized data are missing:
-\itemize{
-\item with \code{auto_normalize = FALSE}: error
-\item with \code{auto_normalize = TRUE}: normalization is performed
-}
+For Seurat v5 assays containing multiple count or data layers,
+\code{Seurat::JoinLayers()} may be required before analysis.
 }
 \seealso{
 \code{\link{detect_gnrh}},
+\code{\link{stage_gnrh}},
 \code{\link[Seurat:NormalizeData]{Seurat::NormalizeData}}
 }

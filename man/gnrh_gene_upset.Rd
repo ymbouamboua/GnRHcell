@@ -10,77 +10,35 @@ gnrh_gene_upset(
   venn_title = "Overlap of Gene Sets",
   outdir = ".",
   save_plot = TRUE,
-  max_intersections = 30,
+  max_intersections = Inf,
   plot_width = NULL,
   plot_height = NULL,
   dpi = 600
 )
 }
 \arguments{
-\item{gene_sets}{A named list of gene vectors. Each element should contain
-a character vector of gene symbols.}
+\item{gene_sets}{Named list of gene sets to compare.}
 
-\item{min_size}{Integer. Minimum intersection size to display in the UpSet
-plot. Default is \code{1}.}
+\item{min_size}{Minimum intersection size retained for visualization.}
 
-\item{venn_title}{Character string specifying the UpSet plot title. The
-argument name is retained for backward compatibility.
-Default is \code{"Overlap of Gene Sets"}.}
+\item{venn_title}{Plot title.}
 
-\item{outdir}{Output directory where CSV tables and figures will be saved.
-Default is current working directory.}
+\item{outdir}{Optional output directory.}
 
-\item{save_plot}{Logical indicating whether plots should be exported.
-Default is \code{TRUE}.}
+\item{save_plot}{Logical. Save PDF and PNG.}
 
-\item{max_intersections}{Maximum number of intersections displayed. The
-largest intersections are retained. Default is \code{30}; use
-\code{Inf} to display every intersection.}
+\item{max_intersections}{Maximum intersections displayed. If \code{NULL},
+automatically determined from the number of gene sets.}
 
-\item{plot_width}{Numeric width of exported figures in inches, or
-\code{NULL} to calculate it from the number of displayed intersections.}
+\item{plot_width}{Optional output width.}
 
-\item{plot_height}{Numeric height of exported figures in inches, or
-\code{NULL} to calculate it from the number of gene sets.}
+\item{plot_height}{Optional output height.}
 
-\item{dpi}{Numeric resolution for PNG export. Default is \code{600}.}
+\item{dpi}{Raster resolution.}
 }
 \value{
-A list containing cleaned gene sets, overlap tables, unique genes,
-common genes, the membership table, and the generated UpSet plot.
+Named overlap-analysis list.
 }
 \description{
-Perform overlap analysis between multiple gene sets, export overlap
-tables, compute unique/common genes, and always generate a
-publication-quality UpSet plot.
-}
-\details{
-Prior to overlap analysis, gene symbols are standardized by:
-\itemize{
-\item removing duplicated entries,
-\item removing missing values,
-\item removing empty strings,
-\item converting all gene symbols to uppercase.
-}
-
-This ensures robust overlap comparisons across datasets originating
-from different species or annotation conventions.
-}
-\examples{
-\dontrun{
-gene_sets <- list(
-  Dataset_A = c("GNRH1", "KISS1", "TAC3"),
-  Dataset_B = c("GNRH1", "TAC3", "PAX6"),
-  Dataset_C = c("GNRH1", "DLX1", "DLX2")
-)
-
-results <- gnrh_gene_upset(
-  gene_sets = gene_sets,
-  venn_title = "GnRH Marker Overlap",
-  outdir = "results/gene_overlap"
-)
-
-results$upset_plot
-}
-
+Gene Set Overlap Analysis and Visualization
 }

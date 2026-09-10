@@ -1,874 +1,213 @@
-# =========================================================================== #
+# ========================================================================= #== #
 # GnRHcell multi-dataset workflows
-# =========================================================================== #
+# ========================================================================= #== #
 
 
-#' Resolve a dimensional reduction
-#'
-#' Selects the requested dimensional reduction from a Seurat object. If the
-#' requested reduction is unavailable, the function falls back to `"umap"`
-#' when present.
-#'
-#' @param object A Seurat object.
-#' @param reduction Character scalar giving the requested dimensional
-#'   reduction. Default is `"umap"`.
-#'
-#' @return A character scalar containing the name of the reduction to use.
-#'
-#' @keywords internal
-#' @noRd
-resolve_reduction <- function(object, reduction = "umap") {
-  available <- names(object@reductions)
-
-  if (reduction %in% available) {
-    return(reduction)
-  }
-
-  if ("umap" %in% available) {
-    warning(
-      "Reduction '", reduction,
-      "' not found; using 'umap'.",
-      call. = FALSE
-    )
-    return("umap")
-  }
-
-  stop(
-    "No usable UMAP reduction found. Available reductions: ",
-    paste(available, collapse = ", "),
-    call. = FALSE
-  )
-}
-
+# ========================================================================= #== #
+# Internal helpers
+# ========================================================================= #== #
 
 #' Resolve a metadata column for dataset splitting
 #'
-#' Identifies an available metadata column that can be used to split or group
-#' cells in downstream GnRHcell plots. The requested column is preferred,
-#' followed by `"orig.ident"`, `"sample"`, and `"library_id"`.
-#'
-#' @param object A Seurat object.
-#' @param split_by Character scalar giving the preferred metadata column.
-#'
-#' @return A character scalar containing the selected metadata column, or
-#'   `NULL` if none of the candidate columns are present.
+#' @keywords internal
+#' @noRd
+resolve_split_column <- function(
+    object,
+    split_by = NULL
+) {
+  md <- object[[]]
+
+  candidates <- unique(
+    c(
+      split_by,
+      "orig.ident",
+      "sample",
+      "library_id"
+    )
+  )
+
+  candidates <- candidates[
+    !is.na(candidates) &
+      nzchar(candidates)
+  ]
+
+  found <- candidates[
+    candidates %in% colnames(md)
+  ]
+
+  if (!length(found))
+    return(NULL)
+
+  found[[1L]]
+}
+
+
+#' Save GnRHcell table
 #'
 #' @keywords internal
 #' @noRd
-resolve_split_column <- function(object, split_by) {
-  candidates <- unique(c(
-    split_by,
-    "orig.ident",
-    "sample",
-    "library_id"
-  ))
+.save_gnrh_table <- function(
+    x,
+    filename
+) {
+  utils::write.table(
+    x = x,
+    file = paste0(filename, ".tsv"),
+    sep = "\t",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = TRUE
+  )
 
-  found <- candidates[
-    candidates %in% colnames(object@meta.data)
-  ]
-
-  if (length(found) == 0L) {
-    return(NULL)
-  }
-
-  found[[1]]
+  invisible(filename)
 }
 
 
-#' Run GnRHcell analysis on a single dataset
+# ========================================================================= #
+# Adaptive plot dimensions
+# ========================================================================= #
+#' Plot dimmensions
 #'
-#' Runs the GnRHcell workflow on a Seurat object and generates dataset-level
-#' diagnostic plots, embeddings, feature plots, distribution plots, marker
-#' tables, co-expression plots, and marker networks.
-#'
-#' The function is primarily used internally by [GnRHcell::run_gnrh_collection()] but
-#' can also be called directly for individual datasets.
-#'
-#' @param object A Seurat object containing the dataset to analyze.
-#' @param dataset_id Character scalar giving a short unique identifier for the
-#'   dataset. This identifier is used in output file names and directories.
-#' @param dataset_label Character scalar giving a human-readable dataset name.
-#' @param split_by Character scalar giving the metadata column used to split
-#'   GnRH distributions. If unavailable, common alternatives such as
-#'   `"orig.ident"`, `"sample"`, and `"library_id"` are considered.
-#' @param reduction Character scalar giving the dimensional reduction used for
-#'   embedding plots. Default is `"umap"`.
-#' @param output_dir Character scalar giving the root output directory.
-#' @param run_markers Logical. Whether to identify GnRH-associated markers and
-#'   generate marker-based plots. Default is `TRUE`.
-#' @param clean_object Logical. Whether to trigger garbage collection after
-#'   processing the dataset. Default is `TRUE`.
-#'
-#' @return A named list containing:
-#' \describe{
-#'   \item{object}{The processed Seurat object.}
-#'   \item{run_info}{Dataset-level GnRHcell run information.}
-#'   \item{markers}{GnRH marker results, or `NULL` when marker analysis was
-#'   disabled.}
-#'   \item{reduction}{The dimensional reduction used for plotting.}
-#'   \item{split_by}{The metadata column used for distribution plots, or
-#'   `NULL`.}
-#' }
-#'
-#' @seealso
-#' [GnRHcell::run_gnrh_collection()], [GnRHcell::run_gnrh()]
-#'
-#' @export
-run_gnrh_dataset <- function(
-    object,
-    dataset_id,
-    dataset_label,
-    split_by = "orig.ident",
-    reduction = "umap",
-    output_dir,
-    run_markers = TRUE,
-    clean_object = TRUE
+#' @keywords internal
+#' @noRd
+.gnrh_plot_dims <- function(
+    n_datasets=1L,
+    n_genes=1L,
+    type=c("heatmap","upset","program")
 ) {
-  message("Running GnRHcell: ", dataset_label)
-  dataset_dir <- file.path(
-    output_dir,
-    "figures",
-    dataset_id
-  )
-  table_dir <- file.path(
-    output_dir,
-    "tables"
-  )
-  marker_dir <- file.path(
-    output_dir,
-    "markers"
-  )
-  invisible(lapply(
-    c(
-      dataset_dir,
-      table_dir,
-      marker_dir
-    ),
-    dir.create,
-    recursive = TRUE,
-    showWarnings = FALSE
-  ))
-  # --------------------------------------------------------------------------- #
-  # Local helpers
-  # --------------------------------------------------------------------------- #
-  save_table <- function(x, filename) {
-    utils::write.table(
-      x = x,
-      file = paste0(filename, ".tsv"),
-      sep = "\t",
-      quote = FALSE,
-      row.names = FALSE,
-      col.names = TRUE
-    )
+  type <- match.arg(type)
+  n_datasets <- max(1L,as.integer(n_datasets))
+  n_genes <- max(1L,as.integer(n_genes))
+  if (type=="heatmap") {
+    width <- max(7,min(16,4.5+0.85*n_datasets))
+    height <- max(5,min(20,3.5+0.13*n_genes))
+  } else if (type=="upset") {
+    width <- max(9,min(24,7+1.1*n_datasets))
+    height <- max(5.5,min(12,5+0.35*n_datasets))
+  } else {
+    width <- max(8,min(20,5+2.4*ceiling(sqrt(n_datasets))))
+    height <- max(6,min(20,4+2.2*ceiling(n_datasets/3)))
   }
-  save_plot <- function(
+  c(width=width,height=height)
+}
+# ========================================================================= #
+# Adaptive text
+# ========================================================================= #
+.gnrh_text_size <- function(n,base=10,min_size=5,max_size=12) {
+  size <- base*sqrt(20/max(20,n))
+  max(min_size,min(max_size,size))
+}
+# ========================================================================= #
+# Contrast-aware label colour
+# ========================================================================= #
+.gnrh_label_colour <- function(style="bw") {
+  dark <- tolower(style) %in% c("dark","dirty")
+  if (dark) "#F2F2F2" else "#111111"
+}
+
+
+# ========================================================================= #
+# Save GnRHcell plot
+# ========================================================================= #
+#' Save GnRHcell ggplot
+#'
+#' @keywords internal
+#' @noRd
+.save_gnrh_plot <- function(
     plot,
     filename,
-    width,
-    height,
-    dpi = 300
-  ) {
-    ggplot2::ggsave(
-      filename = paste0(filename, ".pdf"),
-      plot = plot,
-      width = width,
-      height = height,
-      units = "in",
-      device = grDevices::cairo_pdf
-    )
-    ggplot2::ggsave(
-      filename = paste0(filename, ".png"),
-      plot = plot,
-      width = width,
-      height = height,
-      units = "in",
-      dpi = dpi
-    )
-    invisible(NULL)
-  }
-  reduction <- resolve_reduction(
-    object,
-    reduction
-  )
-  split_by <- resolve_split_column(
-    object,
-    split_by
-  )
-  # --------------------------------------------------------------------------- #
-  # Run pipeline
-  # --------------------------------------------------------------------------- #
-  object <- GnRHcell::run_gnrh(
-    object
-  )
-  run_info <- GnRHcell::extract_gnrh_run_info(
-    object,
-    dataset_name = dataset_label
-  )
-  save_table(
-    run_info,
-    file.path(
-      table_dir,
-      paste0(
-        dataset_id,
-        "_gnrh_run_info"
-      )
-    )
-  )
-  # --------------------------------------------------------------------------- #
-  # QC report
-  # --------------------------------------------------------------------------- #
-  report_plot <- GnRHcell::gnrh_report(
-    object
-  )
-  save_plot(
-    plot = report_plot,
-    filename = file.path(
-      dataset_dir,
-      paste0(
-        dataset_id,
-        "_gnrh_report"
-      )
-    ),
-    width = 16,
-    height = 8
-  )
-  # --------------------------------------------------------------------------- #
-  # Embeddings
-  # --------------------------------------------------------------------------- #
-  embedding_plot <- patchwork::wrap_plots(
-    lapply(
-      c("gnrh_status", "gnrh_confident", "gnrh_stage"),
-      function(column) {
-        GnRHcell::plot_gnrh_embedding(
-          object,
-          group_by = column,
-          reduction = reduction,
-          plot.ttl = column
-        )
-      }
-    ),
-    nrow = 1
-  )
-  save_plot(
-    plot = embedding_plot,
-    filename = file.path(
-      dataset_dir,
-      paste0(
-        dataset_id,
-        "_gnrh_embedding"
-      )
-    ),
-    width = 15,
-    height = 5
-  )
-  feature_plot <- GnRHcell::plot_gnrh_feature(
-    object,
-    preset = "all",
-    reduction = reduction,
-    ncol = 4
-  )
-  save_plot(
-    plot = feature_plot,
-    filename = file.path(
-      dataset_dir,
-      paste0(
-        dataset_id,
-        "_gnrh_features"
-      )
-    ),
-    width = 16,
-    height = 4
-  )
-  # --------------------------------------------------------------------------- #
-  # Distribution plots
-  # --------------------------------------------------------------------------- #
-  if (!is.null(split_by)) {
-    status_plot <- GnRHcell::plot_gnrh_distribution(
-      object,
-      label = FALSE,
-      proportion = TRUE,
-      group.by = "gnrh_status",
-      split.by = split_by,
-      cols = GnRHcell::gnrh_colors("status")
-    )
-    save_plot(
-      plot = status_plot,
-      filename = file.path(
-        dataset_dir,
-        paste0(
-          dataset_id,
-          "_status_distribution"
-        )
-      ),
-      width = 5,
-      height = 4
-    )
-    stage_plot <- GnRHcell::plot_gnrh_distribution(
-      object,
-      label = FALSE,
-      proportion = TRUE,
-      group.by = "gnrh_stage",
-      split.by = split_by,
-      cols = GnRHcell::gnrh_colors("stage")
-    )
-    save_plot(
-      plot = stage_plot,
-      filename = file.path(
-        dataset_dir,
-        paste0(
-          dataset_id,
-          "_stage_distribution"
-        )
-      ),
-      width = 5,
-      height = 4
-    )
-  }
-  # --------------------------------------------------------------------------- #
-  # Markers
-  # --------------------------------------------------------------------------- #
-  markers <- NULL
-  if (isTRUE(run_markers)) {
-
-    markers <- GnRHcell::gnrh_markers(
-      object = object,
-      min_pct = 0.01,
-      min_fc = 0.25,
-      max_padj = 0.05,
-      coexpr_min = 0.05,
-      min_detect = 3,
-      only.pos = TRUE,
-      logfc.threshold = 0.10
-    )
-
-    invisible(gc())
-    save_table(
-      markers,
-      file.path(
-        marker_dir,
-        paste0(
-          "gnrh_",
-          dataset_id,
-          "_markers"
-        )
-      )
-    )
-    if ("coexpr_flag" %in% colnames(markers)) {
-      coexpr <- markers[
-        !is.na(markers$coexpr_flag) &
-          markers$coexpr_flag &
-          is.finite(markers$coexpr) &
-          markers$coexpr >= 0.3 &
-          toupper(as.character(markers$gene)) != "GNRH1",
-        ,
-        drop = FALSE
-      ]
-
-      if (nrow(coexpr)) {
-        coexpr_plot <- GnRHcell::plot_gnrh_coexpr(
-          coexpr,
-          coexp_cutoff = 0.3
-        )
-        save_plot(
-          plot = coexpr_plot,
-          filename = file.path(
-            dataset_dir,
-            paste0(dataset_id, "_coexpression")
-          ),
-          width = 5,
-          height = 6
-        )
-      }
-
-      network_plot <- tryCatch(
-        GnRHcell::plot_network(
-          markers,
-          top_n = 50,
-          threshold = 0.1
-        ),
-        error = function(error) {
-          message(
-            "Skipping marker network for ", dataset_label,
-            ": ", conditionMessage(error)
-          )
-          NULL
-        }
-      )
-
-      if (!is.null(network_plot)) {
-        save_plot(
-          plot = network_plot,
-          filename = file.path(
-            dataset_dir,
-            paste0(dataset_id, "_network")
-          ),
-          width = 10,
-          height = 10
-        )
-      }
-    }
-  }
-  if (isTRUE(clean_object)) {
-    invisible(gc())
-  }
-  list(
-    object = object,
-    run_info = run_info,
-    markers = markers,
-    reduction = reduction,
-    split_by = split_by
-  )
-}
-
-
-
-#' Run GnRHcell across multiple datasets
-#'
-#' Applies the GnRHcell workflow to a collection of Seurat datasets and
-#' optionally performs cross-dataset marker comparisons and conserved marker
-#' program analysis.
-#'
-#' Each row of `datasets` represents one dataset. Dataset files are loaded
-#' sequentially to limit memory usage.
-#'
-#' @param datasets A data frame or tibble containing the columns `id`, `label`,
-#'   `species`, `file`, `split_by`, and `reduction`.
-#' @param output_dir Character scalar giving the root output directory.
-#' @param run_markers Logical. Whether to identify GnRH markers for each
-#'   dataset. Default is `TRUE`.
-#' @param run_comparisons Logical. Whether to perform cross-dataset
-#'   comparisons after all datasets have been processed. Default is `TRUE`.
-#' @param run_programs Logical. Whether to identify conserved marker programs
-#'   during cross-dataset comparisons. Default is `TRUE`.
-#' @param clean_objects Logical. Whether processed Seurat objects should be
-#'   removed from the returned dataset-level results to reduce memory usage.
-#'   Default is `TRUE`.
-#' @param save_objects Logical. Whether processed Seurat objects should be
-#'   saved to disk. Default is `FALSE`.
-#' @param verbose Logical. Whether to print progress messages. Default is
-#'   `TRUE`.
-#'
-#' @return An object of class `"gnrh_collection"` containing:
-#' \describe{
-#'   \item{datasets}{The dataset configuration table used for the analysis.}
-#'   \item{results}{Named list of dataset-level GnRHcell results.}
-#'   \item{comparisons}{Cross-dataset comparison results, or `NULL`.}
-#'   \item{output_dir}{Normalized output directory.}
-#' }
-#'
-#' @seealso
-#' [GnRHcell::prepare_gnrh_datasets()], [GnRHcell::run_gnrh_dataset()],
-#' [GnRHcell::compare_gnrh_datasets()]
-#'
-#' @examples
-#' \dontrun{
-#' datasets <- data.frame(
-#'   id = c("human_hpsc", "mouse_hypomap"),
-#'   label = c("Human hPSC GnRH", "Mouse HypoMap"),
-#'   species = c("Human", "Mouse"),
-#'   file = c("human_hpsc.rds", "mouse_hypomap.rds"),
-#'   split_by = c("orig.ident", "orig.ident"),
-#'   reduction = c("umap", "umap")
-#' )
-#'
-#' datasets <- prepare_gnrh_datasets(datasets)
-#'
-#' results <- run_gnrh_collection(
-#'   datasets = datasets,
-#'   output_dir = "gnrh_results"
-#' )
-#' }
-#'
-#' @export
-run_gnrh_collection <- function(
-    datasets,
-    output_dir,
-    run_markers = TRUE,
-    run_comparisons = TRUE,
-    run_programs = TRUE,
-    clean_objects = TRUE,
-    save_objects = FALSE,
-    verbose = TRUE
+    width=7,
+    height=5,
+    dpi=300,
+    bg="white"
 ) {
-  required_columns <- c(
-    "id",
-    "label",
-    "species",
-    "file",
-    "split_by",
-    "reduction"
-  )
-
-  missing_columns <- setdiff(
-    required_columns,
-    colnames(datasets)
-  )
-
-  if (length(missing_columns) > 0L) {
-    stop(
-      "Missing dataset columns: ",
-      paste(missing_columns, collapse = ", "),
-      call. = FALSE
+  if (is.null(plot)) return(invisible(NULL))
+  dir.create(dirname(filename),recursive=TRUE,showWarnings=FALSE)
+  ext <- tolower(tools::file_ext(filename))
+  if (!nzchar(ext)) {
+    ggplot2::ggsave(
+      filename=paste0(filename,".pdf"),
+      plot=plot,
+      width=width,
+      height=height,
+      units="in",
+      bg=bg
+    )
+    ggplot2::ggsave(
+      filename=paste0(filename,".png"),
+      plot=plot,
+      width=width,
+      height=height,
+      units="in",
+      dpi=dpi,
+      bg=bg
+    )
+  } else {
+    ggplot2::ggsave(
+      filename=filename,
+      plot=plot,
+      width=width,
+      height=height,
+      units="in",
+      dpi=if (ext %in% c("png","jpg","jpeg","tiff")) dpi else NULL,
+      bg=bg
     )
   }
-
-  datasets$exists <- file.exists(
-    path.expand(datasets$file)
-  )
-
-  unavailable <- datasets$id[
-    !datasets$exists
-  ]
-
-  if (
-    length(unavailable) > 0L &&
-    isTRUE(verbose)
-  ) {
-    warning(
-      "Skipping unavailable datasets: ",
-      paste(unavailable, collapse = ", "),
-      call. = FALSE
-    )
-  }
-
-  datasets <- datasets[
-    datasets$exists,
-    ,
-    drop = FALSE
-  ]
-
-  if (nrow(datasets) == 0L) {
-    stop(
-      "No dataset files were found.",
-      call. = FALSE
-    )
-  }
-
-  directories <- c(
-    output_dir,
-    file.path(output_dir, "figures"),
-    file.path(output_dir, "tables"),
-    file.path(output_dir, "markers"),
-    file.path(output_dir, "comparisons"),
-    file.path(output_dir, "objects")
-  )
-
-  invisible(lapply(
-    directories,
-    dir.create,
-    recursive = TRUE,
-    showWarnings = FALSE
-  ))
-
-  dataset_results <- setNames(
-    vector("list", nrow(datasets)),
-    datasets$id
-  )
-
-  for (i in seq_len(nrow(datasets))) {
-    info <- datasets[
-      i,
-      ,
-      drop = FALSE
-    ]
-
-    if (isTRUE(verbose)) {
-      message(
-        "[",
-        i,
-        "/",
-        nrow(datasets),
-        "] ",
-        info$label
-      )
-    }
-
-    object <- readRDS(
-      path.expand(info$file)
-    )
-
-    result <- run_gnrh_dataset(
-      object = object,
-      dataset_id = info$id,
-      dataset_label = info$label,
-      split_by = info$split_by,
-      reduction = info$reduction,
-      output_dir = output_dir,
-      run_markers = run_markers,
-      clean_object = clean_objects
-    )
-
-    if (isTRUE(save_objects)) {
-      saveRDS(
-        result$object,
-        file.path(
-          output_dir,
-          "objects",
-          paste0(
-            info$id,
-            "_gnrh.rds"
-          )
-        )
-      )
-    }
-
-    if (isTRUE(clean_objects)) {
-      result$object <- NULL
-    }
-
-    dataset_results[[info$id]] <- result
-
-    rm(object)
-    invisible(gc())
-  }
-
-  comparison_results <- NULL
-
-  if (isTRUE(run_comparisons)) {
-    comparison_objects <- lapply(dataset_results, `[[`, "object")
-    if (any(vapply(comparison_objects, is.null, logical(1)))) {
-      comparison_objects <- NULL
-    }
-    comparison_results <- compare_gnrh_datasets(
-      datasets = datasets,
-      output_dir = output_dir,
-      run_programs = run_programs,
-      run_gallery = !isTRUE(clean_objects) || isTRUE(save_objects),
-      objects = comparison_objects
-    )
-  }
-
-  structure(
-    list(
-      datasets = datasets,
-      results = dataset_results,
-      comparisons = comparison_results,
-      output_dir = normalizePath(
-        output_dir,
-        mustWork = FALSE
-      )
-    ),
-    class = "gnrh_collection"
-  )
+  invisible(filename)
 }
 
 
-#' Compare GnRHcell results across datasets
+#' Recover processed collection objects
 #'
-#' Combines dataset-level GnRHcell outputs to compare runtime, detected GnRH
-#' cells, marker overlap, and optionally conserved marker programs.
+#' Uses in-memory objects when available and optionally falls back to
+#' saved objects under output_dir/objects.
 #'
-#' The function expects outputs previously generated by
-#' [GnRHcell::run_gnrh_collection()] or [GnRHcell::run_gnrh_dataset()].
-#'
-#' @param datasets A dataset configuration data frame containing at least
-#'   `id` and `label`.
-#' @param output_dir Character scalar giving the GnRHcell output directory.
-#' @param run_programs Logical. Whether to compute conserved marker programs.
-#'   Default is `TRUE`.
-#' @param run_gallery Logical. Whether to build cross-dataset detection and
-#'   developmental-stage gallery assets. Default is `FALSE`.
-#' @param objects Optional named list of processed Seurat objects. When `NULL`,
-#'   gallery generation looks for saved objects in `output_dir/objects`.
-#'
-#' @return A named list containing:
-#' \describe{
-#'   \item{run_info_files}{Run-information files included in the comparison.}
-#'   \item{marker_files}{Marker files included in the comparison.}
-#'   \item{runtime_plot}{Runtime comparison plot, if available.}
-#'   \item{detected_plot}{Detected GnRH cell comparison plot, if available.}
-#'   \item{overlap}{Marker overlap results, if at least two marker files are
-#'   available.}
-#'   \item{programs}{Conserved marker program results, if requested and
-#'   available.}
-#'   \item{gallery}{Detection summary, UMAP gallery, and stage-composition
-#'   gallery, if requested and processed objects are available.}
-#' }
-#'
-#' @seealso
-#' [GnRHcell::run_gnrh_collection()], [GnRHcell::gnrh_marker_programs()]
-#'
-#' @export
-compare_gnrh_datasets <- function(
-    datasets,
-    output_dir,
-    run_programs = TRUE,
-    run_gallery = FALSE,
-    objects = NULL
+#' @keywords internal
+#' @noRd
+.get_collection_objects <- function(
+    collection,
+    allow_saved = TRUE
 ) {
-  table_dir <- file.path(
-    output_dir,
-    "tables"
+  ids <- as.character(
+    collection$datasets$id
   )
 
-  marker_dir <- file.path(
-    output_dir,
-    "markers"
+  out <- stats::setNames(
+    vector("list", length(ids)),
+    ids
   )
 
-  comparison_dir <- file.path(
-    output_dir,
-    "comparisons"
-  )
+  for (id in ids) {
+    x <- collection$results[[id]]$object %||% NULL
 
-  dir.create(
-    comparison_dir,
-    recursive = TRUE,
-    showWarnings = FALSE
-  )
-
-  run_info_files <- file.path(
-    table_dir,
-    paste0(
-      datasets$id,
-      "_gnrh_run_info.tsv"
-    )
-  )
-
-  run_info_files <- run_info_files[
-    file.exists(run_info_files)
-  ]
-
-  marker_files <- setNames(
-    paste0(
-      "gnrh_",
-      datasets$id,
-      "_markers.tsv"
-    ),
-    datasets$label
-  )
-
-  marker_files <- marker_files[
-    file.exists(
-      file.path(
-        marker_dir,
-        marker_files
+    if (
+      is.null(x) &&
+      isTRUE(allow_saved)
+    ) {
+      file <- file.path(
+        collection$output_dir,
+        "objects",
+        paste0(id, "_gnrh.rds")
       )
-    )
-  ]
 
-  if (length(run_info_files) == 0L) {
-    warning(
-      "No run-information files were found in `", table_dir,
-      "`. Check that `output_dir` is the same directory used by ",
-      "`run_gnrh_collection()`.",
-      call. = FALSE
-    )
-  }
-
-  if (length(marker_files) < 2L) {
-    warning(
-      "Fewer than two marker files were found in `", marker_dir,
-      "`; marker overlap and conserved programs cannot be computed. ",
-      "Run the collection with `run_markers = TRUE` and reuse the same ",
-      "`output_dir`.",
-      call. = FALSE
-    )
-  }
-
-  runtime_plot <- NULL
-  detected_plot <- NULL
-  overlap <- NULL
-  programs <- NULL
-  gallery <- NULL
-
-  if (length(run_info_files) > 0L) {
-    runtime_plot <- plot_gnrh_runtime_curve(
-      files = run_info_files,
-      show_points = TRUE,
-      txtsize = 8,
-      x.ang = 60
-    )
-
-    detected_plot <- plot_gnrh_detected(
-      files = run_info_files,
-      txtsize = 8,
-      x.ang = 60
-    )
-  }
-
-  if (length(marker_files) >= 2L) {
-    gene_sets <- build_gene_sets(
-      files = marker_files,
-      dir = marker_dir
-    )
-
-    overlap <- gnrh_gene_upset(
-      gene_sets = gene_sets,
-      venn_title = "Overlap of GnRH co-expressed markers",
-      outdir = file.path(
-        comparison_dir,
-        "marker_overlap"
-      )
-    )
-  }
-
-  if (
-    isTRUE(run_programs) &&
-    !is.null(overlap) &&
-    length(marker_files) >= 2L
-  ) {
-    program_files <- file.path(marker_dir, marker_files)
-    names(program_files) <- names(marker_files)
-
-    programs <- gnrh_marker_programs(
-      files = program_files,
-      results = overlap,
-      outdir = file.path(
-        comparison_dir,
-        "marker_programs"
-      ),
-      min_high_score = 0,
-      min_medium_score = 0,
-      write_output = TRUE
-    )
-  }
-
-  if (isTRUE(run_gallery)) {
-    if (is.null(objects)) {
-      objects <- .load_collection_gallery_objects(datasets, output_dir)
+      if (file.exists(file))
+        x <- readRDS(file)
     }
-    if (is.null(objects)) {
-      warning(
-        "Gallery generation requires processed objects. Supply `objects` or ",
-        "save collection objects in `output_dir/objects`.",
-        call. = FALSE
-      )
-    } else {
-      gallery <- .build_collection_gallery(
-        objects = objects,
-        datasets = datasets,
-        output_dir = file.path(comparison_dir, "gallery")
-      )
-    }
+
+    out[[id]] <- x
   }
 
-  list(
-    run_info_files = run_info_files,
-    marker_files = marker_files,
-    runtime_plot = runtime_plot,
-    detected_plot = detected_plot,
-    overlap = overlap,
-    programs = programs,
-    gallery = gallery
-  )
+  out
 }
+
 
 
 #' Prepare a GnRHcell dataset configuration table
-#'
-#' Validates and standardizes a dataset configuration table before running
-#' multi-dataset GnRHcell analyses.
-#'
-#' @param datasets A data frame or tibble containing dataset configuration
-#'   information.
-#' @param check_files Logical. Whether to warn when dataset files are missing.
-#'   Default is \code{TRUE}.
-#' @param remove_missing Logical. Whether rows corresponding to missing files
-#'   should be removed. Default is \code{FALSE}.
-#'
-#' @return A tibble containing the standardized dataset configuration and an
-#'   additional logical column named \code{exists}.
+#' @param datasets Data frame describing datasets to be processed by the
+#'   multi-dataset GnRHcell workflow.
+#' @param check_files Logical. Check whether dataset files exist.
+#' @param remove_missing Logical. Remove datasets whose input files cannot be
+#'   found.
 #'
 #' @export
 prepare_gnrh_datasets <- function(
@@ -876,6 +215,11 @@ prepare_gnrh_datasets <- function(
     check_files = TRUE,
     remove_missing = FALSE
 ) {
+  if (!is.data.frame(datasets))
+    stop(
+      "`datasets` must be a data frame or tibble.",
+      call. = FALSE
+    )
 
   required_columns <- c(
     "id",
@@ -891,7 +235,7 @@ prepare_gnrh_datasets <- function(
     colnames(datasets)
   )
 
-  if (length(missing_columns) > 0L) {
+  if (length(missing_columns))
     stop(
       "Missing required columns: ",
       paste(
@@ -900,74 +244,90 @@ prepare_gnrh_datasets <- function(
       ),
       call. = FALSE
     )
-  }
 
   datasets <- tibble::as_tibble(
     datasets
   )
 
-  # --------------------------------------------------------------------------- #
-  # Standardize columns
-  # --------------------------------------------------------------------------- #
+  # ----------------------------------------------------------------------- # #-- #
+  # Standardize
+  # ----------------------------------------------------------------------- # #-- #
 
-  datasets$id <- as.character(
-    datasets$id
+  datasets$id <- trimws(
+    as.character(datasets$id)
   )
 
-  datasets$label <- as.character(
-    datasets$label
+  datasets$label <- trimws(
+    as.character(datasets$label)
   )
 
   datasets$species <- stringr::str_to_title(
-    as.character(
-      datasets$species
+    trimws(
+      as.character(
+        datasets$species
+      )
     )
   )
 
   datasets$file <- path.expand(
-    as.character(
-      datasets$file
+    trimws(
+      as.character(
+        datasets$file
+      )
     )
   )
 
-  datasets$split_by <- as.character(
-    datasets$split_by
+  datasets$split_by <- trimws(
+    as.character(
+      datasets$split_by
+    )
   )
 
-  datasets$reduction <- as.character(
-    datasets$reduction
+  datasets$reduction <- trimws(
+    as.character(
+      datasets$reduction
+    )
   )
 
-  datasets$exists <- file.exists(
-    datasets$file
-  )
+  # ----------------------------------------------------------------------- # #-- #
+  # Required values
+  # ----------------------------------------------------------------------- # #-- #
 
-  # --------------------------------------------------------------------------- #
-  # Validate IDs
-  # --------------------------------------------------------------------------- #
+  for (column in c(
+    "id",
+    "label",
+    "file"
+  )) {
+    bad <-
+      is.na(datasets[[column]]) |
+      !nzchar(datasets[[column]])
 
-  duplicated_ids <- unique(
-    datasets$id[
-      duplicated(
-        datasets$id
+    if (any(bad))
+      stop(
+        "Column `",
+        column,
+        "` contains missing or empty values.",
+        call. = FALSE
       )
-    ]
-  )
+  }
 
-  if (length(duplicated_ids) > 0L) {
+  if (anyDuplicated(datasets$id))
     stop(
       "Duplicated dataset IDs: ",
       paste(
-        duplicated_ids,
+        unique(
+          datasets$id[
+            duplicated(datasets$id)
+          ]
+        ),
         collapse = ", "
       ),
       call. = FALSE
     )
-  }
 
-  # --------------------------------------------------------------------------- #
-  # Validate species
-  # --------------------------------------------------------------------------- #
+  # ----------------------------------------------------------------------- # #-- #
+  # Species
+  # ----------------------------------------------------------------------- # #-- #
 
   invalid_species <- setdiff(
     unique(
@@ -979,7 +339,12 @@ prepare_gnrh_datasets <- function(
     )
   )
 
-  if (length(invalid_species) > 0L) {
+  invalid_species <- invalid_species[
+    !is.na(invalid_species) &
+      nzchar(invalid_species)
+  ]
+
+  if (length(invalid_species))
     warning(
       "Unrecognized species: ",
       paste(
@@ -988,11 +353,14 @@ prepare_gnrh_datasets <- function(
       ),
       call. = FALSE
     )
-  }
 
-  # --------------------------------------------------------------------------- #
-  # Check dataset files
-  # --------------------------------------------------------------------------- #
+  # ----------------------------------------------------------------------- # #-- #
+  # File availability
+  # ----------------------------------------------------------------------- # #-- #
+
+  datasets$exists <- file.exists(
+    datasets$file
+  )
 
   if (
     isTRUE(check_files) &&
@@ -1010,10 +378,6 @@ prepare_gnrh_datasets <- function(
     )
   }
 
-  # --------------------------------------------------------------------------- #
-  # Optionally remove missing datasets
-  # --------------------------------------------------------------------------- #
-
   if (isTRUE(remove_missing)) {
     datasets <- datasets[
       datasets$exists,
@@ -1027,1974 +391,1988 @@ prepare_gnrh_datasets <- function(
 
 
 
-
-#' Validate a GnRHcell multi-dataset collection
+#' Run GnRHcell analysis on a single dataset
 #'
-#' Performs cross-dataset validation of GnRH detection and developmental
-#' staging results generated by \code{\link{run_gnrh_collection}}.
+#' Runs GnRH detection, developmental staging, diagnostics, essential
+#' visualization, marker discovery, marker co-expression, and marker-network
+#' analysis for one Seurat dataset.
 #'
-#' The function summarizes GnRH detection classes, consistency between
-#' detection status and class, evidence scores, developmental stages,
-#' stage refinement, migration-specific evidence, and selected biological
-#' marker expression across datasets.
+#' @param object A Seurat object.
+#' @param dataset_id Short unique dataset identifier.
+#' @param dataset_label Human-readable dataset label.
+#' @param split_by Metadata column used for grouped summaries.
+#' @param reduction Dimensional reduction used for embedding plots.
+#' @param output_dir Root output directory.
+#' @param run_markers Run marker discovery.
+#' @param run_figures Generate essential GnRH figures.
+#' @param run_report Generate GnRHcell diagnostic report.
+#' @param detect_args Named list passed to \code{\link{detect_gnrh}}.
+#' @param stage_args Named list passed to \code{\link{stage_gnrh}}.
+#' @param diagnostic_args Named list passed to \code{\link{gnrh_diagnostics}}.
+#' @param marker_args Named list passed to \code{\link{gnrh_markers}}.
+#' @param clean_object Trigger garbage collection after analysis.
+#' @param verbose Print progress messages.
 #'
-#' Processed Seurat objects must be present in the collection object.
-#' Therefore, \code{run_gnrh_collection()} should normally be called with
-#' \code{clean_objects = FALSE} before running this function.
-#'
-#' @param collection An object of class \code{"gnrh_collection"} returned by
-#'   \code{\link{run_gnrh_collection}}.
-#' @param output_dir Optional directory in which validation tables are written.
-#'   Default is \code{file.path(collection$output_dir, "validation")}.
-#' @param positive_classes Character vector defining positive GnRH detection
-#'   classes. Default is
-#'   \code{c("direct", "supported")}.
-#' @param validation_markers Character vector of genes used for independent
-#'   biological marker validation. If \code{NULL}, a predefined marker panel
-#'   covering GnRH identity, migration, and neuroendocrine maturation is used.
-#' @param assay Assay used for biological marker expression summaries.
-#'   Default is \code{"RNA"}.
-#' @param layer Expression layer used for biological marker expression
-#'   summaries. Default is \code{"data"}.
-#' @param write_output Logical. Whether validation tables should be written
-#'   to disk. Default is \code{TRUE}.
-#' @param verbose Logical. Whether to print progress messages.
-#'   Default is \code{TRUE}.
-#'
-#' @return An object of class \code{"gnrh_validation"} containing:
-#' \describe{
-#'   \item{\code{datasets}}{Dataset metadata used for validation.}
-#'   \item{\code{input_summary}}{Number of cells and features per dataset.}
-#'   \item{\code{detection}}{GnRH detection summary.}
-#'   \item{\code{dropout_candidates}}{
-#'   Summary of GNRH1-negative cells showing strong GnRH-like transcriptomic
-#'   evidence. These cells are diagnostic candidates only and are not counted
-#'   as GnRH-positive.}
-#'   \item{\code{status_class}}{Consistency between detection status and class.}
-#'   \item{\code{scores}}{Summary of GnRH evidence scores by detection class.}
-#'   \item{\code{stages}}{Developmental-stage distribution among GnRH-positive
-#'   cells.}
-#'   \item{\code{stage_class}}{Developmental-stage distribution within each
-#'   GnRH detection class.}
-#'   \item{\code{stage_refinement}}{Summary of raw-to-final stage refinement.}
-#'   \item{\code{stage_reassignment}}{Detailed raw-to-final stage transitions.}
-#'   \item{\code{migration_core}}{Migration-core evidence by raw stage.}
-#'   \item{\code{migration_refinement}}{
-#'   Comparison of migration-core evidence between retained and reassigned
-#'   migrating cells.}
-#'   \item{\code{migration_refinement_summary}}{
-#'   Dataset-level summary of migration-stage refinement.}
-#'   \item{\code{biological_markers}}{
-#'   Expression of selected biological validation markers by positive
-#'   GnRH detection class.}
-#'   \item{\code{output_dir}}{Validation output directory, or \code{NULL}.}
-#' }
-#'
-#' @seealso
-#' \code{\link{run_gnrh_collection}},
-#' \code{\link{run_gnrh_dataset}},
-#' \code{\link{stage_gnrh}}
-#'
-#' @examples
-#' \dontrun{
-#' results <- run_gnrh_collection(
-#'   datasets = datasets,
-#'   output_dir = "gnrh_results",
-#'   clean_objects = FALSE
-#' )
-#'
-#' validation <- validate_gnrh_collection(
-#'   results
-#' )
-#'
-#' validation$detection
-#' validation$stage_refinement
-#' validation$migration_core
-#' validation$migration_refinement
-#' validation$migration_refinement_summary
-#' }
+#' @return Named dataset-level result list.
 #'
 #' @export
-validate_gnrh_collection <- function(
-    collection,
-    output_dir = file.path(
-      collection$output_dir,
-      "validation"
-    ),
-    positive_classes = c(
-      "direct",
-      "supported"
-    ),
-    validation_markers = NULL,
-    assay = "RNA",
-    layer = "data",
-    write_output = TRUE,
+run_gnrh_dataset <- function(
+    object,
+    dataset_id,
+    dataset_label,
+    split_by = "orig.ident",
+    reduction = "umap",
+    output_dir,
+    run_markers = TRUE,
+    run_figures = TRUE,
+    run_report = TRUE,
+    detect_args = list(),
+    stage_args = list(),
+    diagnostic_args = list(),
+    marker_args = list(),
+    clean_object = TRUE,
     verbose = TRUE
 ) {
-
-  # --------------------------------------------------------------------------- #
-  # Input validation
-  # --------------------------------------------------------------------------- #
-
-  if (!inherits(collection, "gnrh_collection")) {
-    stop(
-      "`collection` must be an object of class `gnrh_collection`.",
-      call. = FALSE
-    )
+  # ========================================================================= #
+  # Validation
+  # ========================================================================= #
+  if (!inherits(object, "Seurat")) {
+    stop("`object` must be a Seurat object.", call. = FALSE)
   }
-
-  if (
-    is.null(collection$results) ||
-    length(collection$results) == 0L
-  ) {
-    stop(
-      "`collection$results` is empty.",
-      call. = FALSE
-    )
-  }
-
-  if (
-    is.null(collection$datasets) ||
-    !is.data.frame(collection$datasets)
-  ) {
-    stop(
-      "`collection$datasets` is missing or invalid.",
-      call. = FALSE
-    )
-  }
-
-  if (
-    length(positive_classes) == 0L ||
-    anyNA(positive_classes)
-  ) {
-    stop(
-      "`positive_classes` must contain at least one non-missing class.",
-      call. = FALSE
-    )
-  }
-
-  positive_classes <- unique(
-    as.character(positive_classes)
+  args <- list(
+    detect_args = detect_args,
+    stage_args = stage_args,
+    diagnostic_args = diagnostic_args,
+    marker_args = marker_args
   )
-
-  allowed_positive_classes <- c(
-    "direct",
-    "supported"
-  )
-
-  invalid_positive_classes <- setdiff(
-    positive_classes,
-    allowed_positive_classes
-  )
-
-  if (length(invalid_positive_classes) > 0L) {
+  if (any(!vapply(args, is.list, logical(1)))) {
     stop(
-      "Unsupported positive GnRH class(es): ",
-      paste(
-        invalid_positive_classes,
-        collapse = ", "
-      ),
-      ". Allowed classes are: direct, supported.",
+      "`detect_args`, `stage_args`, `diagnostic_args`, and `marker_args` must be lists.",
       call. = FALSE
     )
   }
-
-  required_dataset_columns <- c(
-    "id",
-    "label",
-    "species"
+  log <- .msg(verbose)
+  log("Running GnRHcell:", dataset_label, type = "header")
+  # ========================================================================= #
+  # Directories
+  # ========================================================================= #
+  dataset_dir <- file.path(output_dir, "figures", dataset_id)
+  table_dir <- file.path(output_dir, "tables")
+  marker_dir <- file.path(output_dir, "markers")
+  invisible(lapply(
+    c(dataset_dir, table_dir, marker_dir),
+    dir.create,
+    recursive = TRUE,
+    showWarnings = FALSE
+  ))
+  # ========================================================================= #
+  # Plotting metadata
+  # ========================================================================= #
+  reduction <- resolve_reduction(object, reduction)
+  split_by <- resolve_split_column(object, split_by)
+  # ========================================================================= #
+  # Run GnRHcell
+  # ========================================================================= #
+  object <- GnRHcell::run_gnrh(
+    object = object,
+    detect_args = detect_args,
+    stage_args = stage_args,
+    diagnostic_args = diagnostic_args,
+    verbose = verbose
   )
-
-  missing_dataset_columns <- setdiff(
-    required_dataset_columns,
-    colnames(collection$datasets)
+  md <- object[[]]
+  # ========================================================================= #
+  # Run information
+  # ========================================================================= #
+  run_info <- GnRHcell::extract_gnrh_run_info(
+    object,
+    dataset_name = dataset_label
   )
-
-  if (length(missing_dataset_columns) > 0L) {
-    stop(
-      "Missing dataset metadata columns: ",
-      paste(
-        missing_dataset_columns,
-        collapse = ", "
-      ),
-      call. = FALSE
-    )
-  }
-
-
-  # --------------------------------------------------------------------------- #
-  # Local logging
-  # --------------------------------------------------------------------------- #
-
-  log <- function(...) {
-    if (isTRUE(verbose)) {
-      message(...)
+  .save_gnrh_table(
+    run_info,
+    file.path(table_dir, paste0(dataset_id, "_gnrh_run_info"))
+  )
+  # ========================================================================= #
+  # Figures
+  # ========================================================================= #
+  figures <- list()
+  if (isTRUE(run_figures)) {
+    # ----------------------------------------------------------------------- #
+    # Status embedding
+    # ----------------------------------------------------------------------- #
+    if ("gnrh_status" %in% colnames(md)) {
+      figures$status <- GnRHcell::plot_gnrh_embedding(
+        object = object,
+        group_by = "gnrh_status",
+        reduction = reduction,
+        plot.ttl = paste0(dataset_label)
+      )
+      .save_gnrh_plot(
+        figures$status,
+        file.path(dataset_dir, paste0(dataset_id, "_gnrh_status")),
+        width = 6,
+        height = 5
+      )
+    }
+    # ----------------------------------------------------------------------- #
+    # Stage embedding
+    # ----------------------------------------------------------------------- #
+    if ("gnrh_stage" %in% colnames(md)) {
+      figures$stage <- GnRHcell::plot_gnrh_embedding(
+        object = object,
+        group_by = "gnrh_stage",
+        reduction = reduction,
+        plot.ttl = paste0(dataset_label)
+      )
+      .save_gnrh_plot(
+        figures$stage,
+        file.path(dataset_dir, paste0(dataset_id, "_gnrh_stage")),
+        width = 6,
+        height = 5
+      )
+    }
+    # ----------------------------------------------------------------------- #
+    # Core GnRH features
+    # ----------------------------------------------------------------------- #
+    core_features <- .gnrh_features("core")
+    core_features <- core_features[core_features %in% colnames(md)]
+    if (length(core_features)) {
+      figures$core <- GnRHcell::plot_gnrh_feature(
+        object = object,
+        features = core_features,
+        reduction = reduction,
+        ncol = 2
+      )
+      .save_gnrh_plot(
+        figures$core,
+        file.path(dataset_dir, paste0(dataset_id, "_gnrh_core_features")),
+        width = 9,
+        height = 8
+      )
+    }
+    # ----------------------------------------------------------------------- #
+    # Developmental staging features
+    # ----------------------------------------------------------------------- #
+    staging_features <- .gnrh_features("staging")
+    staging_features <- staging_features[staging_features %in% colnames(md)]
+    if (length(staging_features)) {
+      figures$staging <- GnRHcell::plot_gnrh_feature(
+        object = object,
+        features = staging_features,
+        reduction = reduction,
+        ncol = min(3L, length(staging_features))
+      )
+      .save_gnrh_plot(
+        figures$staging,
+        file.path(dataset_dir, paste0(dataset_id, "_gnrh_staging_features")),
+        width = 12,
+        height = 4.5
+      )
+    }
+    # ----------------------------------------------------------------------- #
+    # Status distribution
+    # ----------------------------------------------------------------------- #
+    if (!is.null(split_by) && "gnrh_status" %in% colnames(md)) {
+      figures$status_distribution <- GnRHcell::plot_gnrh_distribution(
+        object,
+        group.by = "gnrh_status",
+        split.by = split_by,
+        proportion = TRUE,
+        label = FALSE,
+        cols = GnRHcell::gnrh_colors("status")
+      )
+      .save_gnrh_plot(
+        figures$status_distribution,
+        file.path(dataset_dir, paste0(dataset_id, "_status_distribution")),
+        width = 6,
+        height = 4
+      )
+    }
+    # ----------------------------------------------------------------------- #
+    # Stage distribution
+    # ----------------------------------------------------------------------- #
+    if (!is.null(split_by) && "gnrh_stage" %in% colnames(md)) {
+      figures$stage_distribution <- GnRHcell::plot_gnrh_distribution(
+        object,
+        group.by = "gnrh_stage",
+        split.by = split_by,
+        proportion = TRUE,
+        label = FALSE,
+        cols = GnRHcell::gnrh_colors("stage")
+      )
+      .save_gnrh_plot(
+        figures$stage_distribution,
+        file.path(dataset_dir, paste0(dataset_id, "_stage_distribution")),
+        width = 6,
+        height = 4
+      )
     }
   }
-
-  log("==== GNRH COLLECTION VALIDATION START ====")
-
-
-  # --------------------------------------------------------------------------- #
-  # Extract processed Seurat objects
-  # --------------------------------------------------------------------------- #
-
-  gnrh_list <- lapply(
-    collection$results,
-    function(x) {
-      x$object
+  # ========================================================================= #
+  # Diagnostic report
+  # ========================================================================= #
+  report_plot <- NULL
+  if (isTRUE(run_report)) {
+    report_plot <- tryCatch(
+      GnRHcell::gnrh_report(
+        object,
+        style = "bw"
+      ),
+      error = function(e) {
+        log(
+          "Skipping diagnostic report:",
+          conditionMessage(e),
+          type = "warn"
+        )
+        NULL
+      }
+    )
+    if (!is.null(report_plot)) {
+      .save_gnrh_plot(
+        report_plot,
+        file.path(dataset_dir, paste0(dataset_id, "_gnrh_report")),
+        width = 10,
+        height = 5
+      )
     }
-  )
-
-  missing_objects <- names(gnrh_list)[
-    vapply(
-      gnrh_list,
-      is.null,
-      logical(1)
-    )
-  ]
-
-  if (length(missing_objects) > 0L) {
-    stop(
-      "Processed Seurat objects are unavailable for: ",
-      paste(
-        missing_objects,
-        collapse = ", "
-      ),
-      ". Re-run `run_gnrh_collection()` with ",
-      "`clean_objects = FALSE`.",
-      call. = FALSE
+  }
+  # ========================================================================= #
+  # Markers
+  # ========================================================================= #
+  markers <- NULL
+  if (isTRUE(run_markers)) {
+    default_marker_args <- list(
+      object=object,
+      group.by="gnrh_status",
+      ident.1="pos",
+      ident.2=NULL,
+      assay=NULL,
+      layer="data",
+      methods="wilcox",
+      coexpr.method="spearman",
+      program_col=NULL,
+      association_mode="combined",
+      min_pct=0.005,
+      min_fc=0.10,
+      max_padj=0.05,
+      coexpr_min=NULL,
+      codetect_min_or=NULL,
+      codetect_max_fdr=NULL,
+      program_min=NULL,
+      min_detect=2L,
+      exclude_gnrh=FALSE,
+      verbose=verbose
     )
   }
-
-  valid_seurat <- vapply(
-    gnrh_list,
-    inherits,
-    logical(1),
-    what = "Seurat"
-  )
-
-  if (!all(valid_seurat)) {
-    stop(
-      "Invalid processed object(s): ",
-      paste(
-        names(gnrh_list)[!valid_seurat],
-        collapse = ", "
-      ),
-      call. = FALSE
-    )
-  }
-
-
-  # --------------------------------------------------------------------------- #
-  # Dataset metadata
-  # --------------------------------------------------------------------------- #
-
-  datasets <- tibble::as_tibble(
-    collection$datasets
-  )
-
-  datasets$id <- as.character(
-    datasets$id
-  )
-
-  dataset_metadata <- datasets |>
-    dplyr::select(
-      .data$id,
-      .data$label,
-      .data$species
-    )
-
-  if (is.null(names(gnrh_list))) {
-    stop(
-      "`collection$results` must be named using dataset IDs.",
-      call. = FALSE
-    )
-  }
-
-  expected_ids <- datasets$id[
-    datasets$id %in% names(gnrh_list)
-  ]
-
-  if (length(expected_ids) == 0L) {
-    stop(
-      "No dataset IDs in `collection$datasets` match ",
-      "`collection$results`.",
-      call. = FALSE
-    )
-  }
-
-  gnrh_list <- gnrh_list[
-    expected_ids
-  ]
-
-  dataset_metadata <- dataset_metadata |>
-    dplyr::filter(
-      .data$id %in% expected_ids
-    )
-
-
-  # --------------------------------------------------------------------------- #
-  # Required GnRH metadata
-  # --------------------------------------------------------------------------- #
-
-  required_columns <- c(
-    "gnrh_status",
-    "gnrh_class",
-    "gnrh_stage"
-  )
-
-  for (id in names(gnrh_list)) {
-
-    md <- gnrh_list[[id]][[]]
-
-    missing_columns <- setdiff(
-      required_columns,
-      colnames(md)
-    )
-
-    if (length(missing_columns) > 0L) {
-      stop(
-        "Dataset `",
-        id,
-        "` is missing GnRHcell metadata column(s): ",
-        paste(
-          missing_columns,
-          collapse = ", "
+    marker_args <- utils::modifyList(default_marker_args,marker_args)
+    markers <- do.call(GnRHcell::gnrh_markers,marker_args)
+    .save_gnrh_table(markers,file.path(marker_dir,paste0("gnrh_",dataset_id,"_markers")))
+    # ========================================================================= #
+    # Marker association plots
+    # ========================================================================= #
+    if (isTRUE(run_figures) && is.data.frame(markers) && nrow(markers)) {
+      figures$coexpression <- tryCatch(
+        GnRHcell::plot_gnrh_coexpr(
+          markers,
+          coexp_cutoff=0.10,
+          top_n=12L,
+          exclude_gnrh=TRUE,
+          txtsize=10,
+          style="bw"
         ),
+        error=function(e) {
+          log("Skipping GnRH co-expression plot:",conditionMessage(e),type="warn")
+          NULL
+        }
+      )
+      figures$codetection <- tryCatch(
+        GnRHcell::plot_gnrh_codetect(
+          markers,
+          top_n=10L,
+          min_or=2,
+          max_fdr=0.05,
+          min_specificity=0.05,
+          exclude_gnrh=TRUE,
+          txtsize=10,
+          style="bw"
+        ),
+        error=function(e) {
+          log("Skipping GnRH co-detection plot:",conditionMessage(e),type="warn")
+          NULL
+        }
+      )
+      figures$detection <- tryCatch(
+        GnRHcell::plot_gnrh_detection(
+          markers,
+          top_n=10L,
+          min_specificity=0.05,
+          max_padj=0.05,
+          exclude_gnrh=TRUE,
+          txtsize=10,
+          style="bw"
+        ),
+        error=function(e) {
+          log("Skipping GnRH phenotype-association plot:",conditionMessage(e),type="warn")
+          NULL
+        }
+      )
+      if (!is.null(figures$coexpression)) {
+        .save_gnrh_plot(
+          figures$coexpression,
+          file.path(dataset_dir,paste0(dataset_id,"_gnrh_coexpression")),
+          width=6,
+          height=6
+        )
+      }
+      if (!is.null(figures$codetection)) {
+        .save_gnrh_plot(
+          figures$codetection,
+          file.path(dataset_dir,paste0(dataset_id,"_gnrh_codetection")),
+          width=6,
+          height=6
+        )
+      }
+      if (!is.null(figures$detection)) {
+        .save_gnrh_plot(
+          figures$detection,
+          file.path(dataset_dir,paste0(dataset_id,"_gnrh_detection")),
+          width=6,
+          height=6
+        )
+      }
+      association_plots <- Filter(
+        Negate(is.null),
+        list(
+          coexpression=figures$coexpression,
+          codetection=figures$codetection,
+          detection=figures$detection
+        )
+      )
+      if (length(association_plots)) {
+        figures$marker_associations <- patchwork::wrap_plots(
+          association_plots,
+          nrow=1
+        )
+        .save_gnrh_plot(
+          figures$marker_associations,
+          file.path(dataset_dir,paste0(dataset_id,"_gnrh_marker_associations")),
+          width=5.5*length(association_plots),
+          height=5.5
+        )
+      }
+    }
+    # ========================================================================= #
+    # Marker networks
+    # ========================================================================= #
+    if (isTRUE(run_figures) && is.data.frame(markers) && nrow(markers)) {
+      figures$network_coexpression <- tryCatch(
+        GnRHcell::plot_network(
+          markers,
+          mode="coexpression",
+          top_n=30L,
+          threshold=0.10,
+          include_gnrh=TRUE,
+          txtsize=10,
+          style="void"
+        ),
+        error=function(e) {
+          log("Skipping co-expression network:",conditionMessage(e),type="warn")
+          NULL
+        }
+      )
+      figures$network_codetection <- tryCatch(
+        GnRHcell::plot_network(
+          markers,
+          mode="codetection",
+          top_n=30L,
+          threshold=0.10,
+          include_gnrh=TRUE,
+          txtsize=10,
+          style="void"
+        ),
+        error=function(e) {
+          log("Skipping co-detection network:",conditionMessage(e),type="warn")
+          NULL
+        }
+      )
+      figures$network_phenotype <- tryCatch(
+        GnRHcell::plot_network(
+          markers,
+          mode="phenotype",
+          top_n=30L,
+          threshold=0.10,
+          include_gnrh=TRUE,
+          txtsize=10,
+          style="void"
+        ),
+        error=function(e) {
+          log("Skipping phenotype network:",conditionMessage(e),type="warn")
+          NULL
+        }
+      )
+      networks <- Filter(
+        Negate(is.null),
+        list(
+          coexpression=figures$network_coexpression,
+          codetection=figures$network_codetection,
+          phenotype=figures$network_phenotype
+        )
+      )
+      if (length(networks)) {
+        purrr::iwalk(
+          networks,
+          function(p,nm) {
+            .save_gnrh_plot(
+              p,
+              file.path(dataset_dir,paste0(dataset_id,"_gnrh_network_",nm)),
+              width=9,
+              height=9
+            )
+          }
+        )
+        figures$networks <- patchwork::wrap_plots(networks,nrow=1)
+        .save_gnrh_plot(
+          figures$networks,
+          file.path(dataset_dir,paste0(dataset_id,"_gnrh_networks")),
+          width=8*length(networks),
+          height=8
+        )
+      }
+    }
+    # ========================================================================= #
+    # Marker network
+    # ========================================================================= #
+    if (isTRUE(run_figures) && is.data.frame(markers) && nrow(markers)) {
+      network_mode <- if (any(c("codetect_log2or","codetect_or") %in% colnames(markers))) {
+        "codetection"
+      } else if (any(c("phenotype_log2or","phenotype_or","specificity","spec") %in% colnames(markers))) {
+        "phenotype"
+      } else if (any(c("coexpr_cor","coexpr","coexpression","coexpr_pct") %in% colnames(markers))) {
+        "coexpression"
+      } else {
+        NA_character_
+      }
+      if (!is.na(network_mode)) {
+        figures$network <- tryCatch(
+          GnRHcell::plot_network(
+            markers,
+            top_n=30L,
+            threshold=0.10,
+            mode=network_mode,
+            include_gnrh=TRUE,
+            txtsize=10,
+            style="void"
+          ),
+          error=function(e) {
+            log("Skipping marker network:",conditionMessage(e),type="warn")
+            NULL
+          }
+        )
+        if (!is.null(figures$network)) {
+          .save_gnrh_plot(
+            figures$network,
+            file.path(dataset_dir,paste0(dataset_id,"_gnrh_network_",network_mode)),
+            width=9,
+            height=9
+          )
+        }
+      } else {
+        log("Skipping marker network: no usable association column.",type="warn")
+      }
+    }
+    # ========================================================================= #
+    # Cleanup
+    # ========================================================================= #
+    if (isTRUE(clean_object)) {
+      invisible(gc())
+    }
+    # ========================================================================= #
+    # Return
+    # ========================================================================= #
+    list(
+      object = object,
+      run_info = run_info,
+      markers = markers,
+      figures = figures,
+      report = report_plot,
+      reduction = reduction,
+      split_by = split_by
+    )
+  }
+
+
+
+
+  #' Run GnRHcell across multiple datasets
+  #'
+  #' @param datasets Dataset configuration table.
+  #' @param output_dir Root output directory.
+  #' @param run_markers Run marker discovery.
+  #' @param run_comparisons Run cross-dataset comparisons.
+  #' @param run_programs Run marker-program analysis.
+  #' @param run_figures Generate minimal status/stage figures.
+  #' @param run_report Generate dataset-level diagnostic reports.
+  #' @param clean_objects Remove processed Seurat objects from returned results.
+  #' @param save_objects Save processed Seurat objects.
+  #' @param detect_args Arguments passed to \code{detect_gnrh()}.
+  #' @param stage_args Arguments passed to \code{stage_gnrh()}.
+  #' @param diagnostic_args Arguments passed to \code{gnrh_diagnostics()}.
+  #' @param marker_args Arguments passed to \code{gnrh_markers()}.
+  #' @param comparison_args Arguments passed to \code{compare_gnrh_datasets()}.
+  #' @param verbose Print progress.
+  #'
+  #' @return Object of class \code{"gnrh_collection"}.
+  #'
+  #' @export
+  run_gnrh_collection <- function(
+    datasets,
+    output_dir,
+    run_markers = TRUE,
+    run_comparisons = TRUE,
+    run_programs = TRUE,
+    run_figures = TRUE,
+    run_report = TRUE,
+    clean_objects = TRUE,
+    save_objects = FALSE,
+    detect_args = list(),
+    stage_args = list(),
+    diagnostic_args = list(),
+    marker_args = list(),
+    comparison_args = list(),
+    verbose = TRUE
+  ) {
+    # ========================================================================= #
+    # Dataset configuration
+    # ========================================================================= #
+    datasets <- prepare_gnrh_datasets(
+      datasets,
+      check_files = TRUE,
+      remove_missing = TRUE
+    )
+    if (!nrow(datasets)) {
+      stop("No available dataset files.", call. = FALSE)
+    }
+    datasets$id <- as.character(datasets$id)
+    datasets$file <- as.character(datasets$file)
+    if (anyNA(datasets$id) || any(!nzchar(datasets$id))) {
+      stop("`datasets$id` cannot contain missing or empty values.", call. = FALSE)
+    }
+    if (anyDuplicated(datasets$id)) {
+      stop("`datasets$id` must contain unique dataset identifiers.", call. = FALSE)
+    }
+    # ========================================================================= #
+    # Output directories
+    # ========================================================================= #
+    output_dir <- path.expand(output_dir)
+    dirs <- c(
+      output_dir,
+      file.path(output_dir, "figures"),
+      file.path(output_dir, "tables"),
+      file.path(output_dir, "markers"),
+      file.path(output_dir, "comparisons"),
+      file.path(output_dir, "objects")
+    )
+    invisible(lapply(
+      dirs,
+      dir.create,
+      recursive = TRUE,
+      showWarnings = FALSE
+    ))
+    # ========================================================================= #
+    # Initialize results
+    # ========================================================================= #
+    results <- stats::setNames(
+      vector("list", nrow(datasets)),
+      datasets$id
+    )
+    log <- .msg(verbose)
+    # ========================================================================= #
+    # Process datasets
+    # ========================================================================= #
+    for (i in seq_len(nrow(datasets))) {
+      info <- datasets[i, , drop = FALSE]
+      id <- info$id[[1L]]
+      label <- info$label[[1L]]
+      file <- info$file[[1L]]
+      split_by <- info$split_by[[1L]]
+      reduction <- info$reduction[[1L]]
+      log(
+        sprintf("[%d/%d] %s", i, nrow(datasets), label),
+        type = "step"
+      )
+      object <- readRDS(file)
+      if (!inherits(object, "Seurat")) {
+        stop(
+          "Dataset `", id, "` is not a Seurat object.",
+          call. = FALSE
+        )
+      }
+      result <- run_gnrh_dataset(
+        object = object,
+        dataset_id = id,
+        dataset_label = label,
+        split_by = split_by,
+        reduction = reduction,
+        output_dir = output_dir,
+        run_markers = run_markers,
+        run_figures = run_figures,
+        run_report = run_report,
+        detect_args = detect_args,
+        stage_args = stage_args,
+        diagnostic_args = diagnostic_args,
+        marker_args = marker_args,
+        clean_object = FALSE,
+        verbose = verbose
+      )
+      # ----------------------------------------------------------------------- #
+      # Save processed object
+      # ----------------------------------------------------------------------- #
+      if (isTRUE(save_objects)) {
+        saveRDS(
+          result$object,
+          file.path(
+            output_dir,
+            "objects",
+            paste0(id, "_gnrh.rds")
+          )
+        )
+      }
+      # ----------------------------------------------------------------------- #
+      # Store result
+      # ----------------------------------------------------------------------- #
+      results[[id]] <- result
+      rm(object)
+      invisible(gc())
+    }
+    # ========================================================================= #
+    # Cross-dataset comparisons
+    # ========================================================================= #
+    comparisons <- NULL
+    if (isTRUE(run_comparisons)) {
+      # ----------------------------------------------------------------------- #
+      # Collect processed objects
+      # ----------------------------------------------------------------------- #
+      comparison_objects <- lapply(results, `[[`, "object")
+      keep <- !vapply(comparison_objects, is.null, logical(1))
+      comparison_objects <- comparison_objects[keep]
+      if (length(comparison_objects)) {
+        names(comparison_objects) <- names(results)[keep]
+      }
+      if (anyDuplicated(names(comparison_objects))) {
+        stop("Dataset IDs must be unique for cross-dataset comparisons.", call. = FALSE)
+      }
+      # ----------------------------------------------------------------------- #
+      # Comparison arguments
+      # ----------------------------------------------------------------------- #
+      default_comparison_args <- list(
+        datasets = datasets,
+        objects = comparison_objects,
+        output_dir = output_dir,
+        run_programs = run_programs,
+        run_gallery = isTRUE(run_figures)
+      )
+      comparison_args <- utils::modifyList(
+        default_comparison_args,
+        comparison_args
+      )
+      # ----------------------------------------------------------------------- #
+      # Run comparisons
+      # ----------------------------------------------------------------------- #
+      comparisons <- do.call(
+        compare_gnrh_datasets,
+        comparison_args
+      )
+    }
+    # ========================================================================= #
+    # Remove heavy Seurat objects
+    # ========================================================================= #
+    if (isTRUE(clean_objects)) {
+      results <- lapply(
+        results,
+        function(x) {
+          x$object <- NULL
+          x
+        }
+      )
+    }
+    # ========================================================================= #
+    # Return
+    # ========================================================================= #
+    structure(
+      list(
+        datasets = datasets,
+        results = results,
+        comparisons = comparisons,
+        parameters = list(
+          detect_args = detect_args,
+          stage_args = stage_args,
+          diagnostic_args = diagnostic_args,
+          marker_args = marker_args,
+          run_markers = run_markers,
+          run_comparisons = run_comparisons,
+          run_programs = run_programs,
+          run_figures = run_figures,
+          run_report = run_report
+        ),
+        output_dir = normalizePath(
+          output_dir,
+          mustWork = FALSE
+        )
+      ),
+      class = "gnrh_collection"
+    )
+  }
+
+
+
+  # ========================================================================= #
+  # Named file-vector validation
+  # ========================================================================= #
+  .validate_named_files <- function(x, name = "files") {
+    if (!is.character(x)) {
+      stop("`", name, "` must be a character vector.", call. = FALSE)
+    }
+    if (!length(x)) {
+      return(invisible(TRUE))
+    }
+    if (is.null(names(x)) || anyNA(names(x)) || any(!nzchar(names(x))) || anyDuplicated(names(x))) {
+      stop("`", name, "` must be a named character vector with unique names.", call. = FALSE)
+    }
+    invisible(TRUE)
+  }
+
+
+
+  # ========================================================================= #
+  # Compare GnRHcell results across datasets
+  # ========================================================================= #
+  #' Compare GnRHcell results across datasets
+  #'
+  #' @param datasets Dataset configuration table.
+  #' @param output_dir GnRHcell output directory.
+  #' @param run_programs Run marker-program integration.
+  #' @param run_marker_heatmaps Generate conserved and dataset-specific heatmaps.
+  #' @param marker_score_col Score used for quantitative cross-dataset marker comparisons.
+  #' @param run_gallery Build cross-dataset gallery.
+  #' @param objects Optional processed Seurat objects.
+  #'
+  #' @return Named cross-dataset comparison list.
+  #'
+  #' @export
+  compare_gnrh_datasets <- function(
+    datasets,
+    output_dir,
+    run_programs = TRUE,
+    run_marker_heatmaps = TRUE,
+    marker_score_col = NULL,
+    run_gallery = FALSE,
+    objects = NULL,
+    comparison_dir = NULL
+  ) {
+    # ========================================================================= #
+    # Validation
+    # ========================================================================= #
+    if (!is.data.frame(datasets)) {
+      stop("`datasets` must be a data frame or tibble.", call. = FALSE)
+    }
+    required <- c("id", "label")
+    missing <- setdiff(required, colnames(datasets))
+    if (length(missing)) {
+      stop("Missing dataset columns: ", paste(missing, collapse = ", "), call. = FALSE)
+    }
+    datasets$id <- trimws(as.character(datasets$id))
+    datasets$label <- trimws(as.character(datasets$label))
+    if (anyNA(datasets$id) || any(!nzchar(datasets$id))) {
+      stop("`datasets$id` cannot contain missing or empty values.", call. = FALSE)
+    }
+    if (anyDuplicated(datasets$id)) {
+      stop("`datasets$id` must contain unique values.", call. = FALSE)
+    }
+    # ========================================================================= #
+    # Directories
+    # ========================================================================= #
+    output_dir <- path.expand(output_dir)
+    table_dir <- file.path(output_dir, "tables")
+    marker_dir <- file.path(output_dir, "markers")
+    if (is.null(comparison_dir)) comparison_dir <- file.path(output_dir,"comparisons")
+    comparison_dir <- path.expand(comparison_dir)
+    dir.create(comparison_dir,recursive=TRUE,showWarnings=FALSE)
+    # ========================================================================= #
+    # Run-info files
+    # ========================================================================= #
+    run_info_files <- stats::setNames(
+      file.path(table_dir, paste0(datasets$id, "_gnrh_run_info.tsv")),
+      datasets$id
+    )
+    run_info_files <- run_info_files[file.exists(unname(run_info_files))]
+    .validate_named_files(run_info_files, "run_info_files")
+    # ========================================================================= #
+    # Marker files
+    # ========================================================================= #
+    marker_files <- stats::setNames(
+      file.path(marker_dir, paste0("gnrh_", datasets$id, "_markers.tsv")),
+      datasets$id
+    )
+    marker_files <- marker_files[file.exists(unname(marker_files))]
+    .validate_named_files(marker_files, "marker_files")
+    # ========================================================================= #
+    # Marker score
+    # ========================================================================= #
+    if (length(marker_files)) {
+      marker_cols <- lapply(marker_files,function(x) names(utils::read.delim(x,nrows=1,check.names=FALSE)))
+      common_cols <- Reduce(intersect,marker_cols)
+      if (is.null(marker_score_col)) {
+        score_candidates <- c("marker_score","final_score","avg_log2FC","avg_logFC","specificity_score","specificity")
+        marker_score_col <- intersect(score_candidates,common_cols)[1L]
+      }
+      if (!length(marker_score_col) || is.na(marker_score_col)) {
+        stop(
+          "No common marker score column found. Common columns: ",
+          paste(common_cols,collapse=", "),
+          call.=FALSE
+        )
+      }
+      if (!marker_score_col %in% common_cols) {
+        stop(
+          "`marker_score_col = ",marker_score_col,"` is not present in all marker tables. ",
+          "Common columns: ",paste(common_cols,collapse=", "),
+          call.=FALSE
+        )
+      }
+      message("[INFO] Cross-dataset marker score: ",marker_score_col)
+    }
+    # ========================================================================= #
+    # Initialize
+    # ========================================================================= #
+    runtime_plot <- NULL
+    detected_plot <- NULL
+    overlap <- NULL
+    programs <- NULL
+    conserved_markers <- NULL
+    dataset_specific_markers <- NULL
+    gallery <- NULL
+    # ========================================================================= #
+    # Runtime / detection
+    # ========================================================================= #
+    if (length(run_info_files)) {
+      runtime_plot <- plot_gnrh_runtime_curve(
+        files = run_info_files,
+        show_points = TRUE,
+        txtsize = 8,
+        x.ang = 60
+      )
+      detected_plot <- plot_gnrh_detected(
+        files = run_info_files,
+        txtsize = 8,
+        x.ang = 60
+      )
+      .save_gnrh_plot(
+        runtime_plot,
+        file.path(comparison_dir, "gnrh_runtime_across_datasets"),
+        width = 7,
+        height = 5
+      )
+      .save_gnrh_plot(
+        detected_plot,
+        file.path(comparison_dir, "gnrh_detected_across_datasets"),
+        width = 7,
+        height = 5
+      )
+    } else {
+      warning("No GnRHcell run-info files were found.", call. = FALSE)
+    }
+    # ========================================================================= #
+    # Marker overlap
+    # ========================================================================= #
+    if (length(marker_files) >= 2L) {
+      marker_basenames <- stats::setNames(
+        basename(unname(marker_files)),
+        names(marker_files)
+      )
+      gene_sets <- build_gene_sets(
+        files = marker_basenames,
+        dir = marker_dir
+      )
+      if (is.null(names(gene_sets)) || anyNA(names(gene_sets)) || any(!nzchar(names(gene_sets)))) {
+        names(gene_sets) <- names(marker_files)
+      }
+      overlap_dir <- file.path(
+        comparison_dir,
+        "marker_overlap"
+      )
+      dir.create(
+        overlap_dir,
+        recursive = TRUE,
+        showWarnings = FALSE
+      )
+      overlap <- gnrh_gene_upset(
+        gene_sets = gene_sets,
+        venn_title = "Overlap of GnRH-associated markers",
+        outdir = overlap_dir
+      )
+    } else {
+      warning(
+        "Fewer than two marker tables are available; cross-dataset marker analyses were skipped.",
         call. = FALSE
       )
     }
-  }
-
-
-  # --------------------------------------------------------------------------- #
-  # Default biological validation markers
-  # --------------------------------------------------------------------------- #
-
-  if (is.null(validation_markers)) {
-
-    validation_markers <- c(
-      "GNRH1",
-      "GNRHR",
-      "FEZF1",
-      "ISL1",
-      "OTX2",
-      "SIX3",
-      "SIX6",
-      "CHGA",
-      "CHGB",
-      "SCG2",
-      "PCSK1",
-      "PCSK2",
-      "CPE",
-      "VGF",
-      "SYP",
-      "ANOS1",
-      "PROKR2",
-      "PROK2",
-      "NRP1",
-      "NRP2",
-      "ROBO1",
-      "ROBO2",
-      "DCX"
-    )
-  }
-
-  validation_markers <- unique(
-    as.character(validation_markers)
-  )
-
-
-  # =========================================================================== #
-  # Input summary
-  # =========================================================================== #
-
-  log("Summarizing datasets")
-
-  input_summary <- purrr::imap_dfr(
-    gnrh_list,
-    function(object, id) {
-
-      tibble::tibble(
-        id = id,
-        n_cells = ncol(object),
-        n_features = nrow(object)
+    # ========================================================================= #
+    # Marker programs
+    # ========================================================================= #
+    program_plot <- NULL
+    program_high_plot <- NULL
+    if (isTRUE(run_programs) && !is.null(overlap) && length(marker_files)>=2L) {
+      program_dir <- file.path(comparison_dir,"marker_programs")
+      dir.create(program_dir,recursive=TRUE,showWarnings=FALSE)
+      programs <- gnrh_marker_programs(
+        files=marker_files,
+        results=overlap,
+        outdir=program_dir,
+        write_output=TRUE
       )
-    }
-  ) |>
-    dplyr::left_join(
-      dataset_metadata,
-      by = "id"
-    ) |>
-    dplyr::select(
-      .data$id,
-      .data$label,
-      .data$species,
-      .data$n_cells,
-      .data$n_features
-    )
-
-
-  # =========================================================================== #
-  # Detection summary
-  # =========================================================================== #
-
-  log("Validating GnRH detection")
-
-  summarise_detection <- function(
-    object,
-    id
-  ) {
-
-    md <- object[[]]
-
-    classes <- table(
-      as.character(
-        md$gnrh_class
-      ),
-      useNA = "no"
-    )
-
-    count_class <- function(x) {
-
-      if (x %in% names(classes)) {
-        return(
-          unname(
-            as.integer(
-              classes[[x]]
-            )
-          )
-        )
-      }
-
-      0L
-    }
-
-    direct <- count_class(
-      "direct"
-    )
-
-    supported <- count_class(
-      "supported"
-    )
-
-    positive <- sum(
-      as.character(
-        md$gnrh_class
-      ) %in%
-        positive_classes,
-      na.rm = TRUE
-    )
-
-    total <- nrow(md)
-
-    dropout_candidates <-
-      if (
-        "gnrh_dropout_candidate" %in%
-        colnames(md)
+      # ----------------------------------------------------------------------- #
+      # Adaptive dimensions
+      # ----------------------------------------------------------------------- #
+      n_program_datasets <- length(marker_files)
+      n_program_genes <- if (
+        !is.null(programs$high_confidence) &&
+        is.data.frame(programs$high_confidence) &&
+        nrow(programs$high_confidence) &&
+        "dataset" %in% colnames(programs$high_confidence)
       ) {
-
-        sum(
-          md$gnrh_dropout_candidate %in% TRUE,
-          na.rm = TRUE
-        )
-
+        max(table(programs$high_confidence$dataset))
       } else {
-
-        0L
+        15L
       }
-
-    direct_supported <-
-      if (
-        "gnrh_direct_supported" %in%
-        colnames(md)
-      ) {
-
-        sum(
-          md$gnrh_direct_supported %in% TRUE,
-          na.rm = TRUE
+      program_width <- max(
+        8,
+        min(
+          18,
+          5 + 2.2*min(4L,ceiling(sqrt(n_program_datasets)))
         )
-
-      } else {
-
-        NA_integer_
-      }
-
-    direct_isolated <-
-      if (
-        "gnrh_direct_isolated" %in%
-        colnames(md)
-      ) {
-
-        sum(
-          md$gnrh_direct_isolated %in% TRUE,
-          na.rm = TRUE
-        )
-
-      } else {
-
-        NA_integer_
-      }
-
-    confident <-
-      if (
-        "gnrh_confident" %in%
-        colnames(md)
-      ) {
-
-        sum(
-          md$gnrh_confident %in% TRUE,
-          na.rm = TRUE
-        )
-
-      } else {
-
-        NA_integer_
-      }
-
-    tibble::tibble(
-      id = id,
-
-      n_cells = total,
-
-      direct = direct,
-      supported = supported,
-
-      direct_supported =
-        direct_supported,
-
-      direct_isolated =
-        direct_isolated,
-
-      dropout_candidates =
-        dropout_candidates,
-
-      gnrh_pos = positive,
-
-      gnrh_confident =
-        confident,
-
-      pct_gnrh =
-        if (total > 0L) {
-          100 * positive / total
-        } else {
-          NA_real_
-        },
-
-      pct_direct =
-        if (positive > 0L) {
-          100 * direct / positive
-        } else {
-          NA_real_
-        },
-
-      pct_supported =
-        if (positive > 0L) {
-          100 * supported / positive
-        } else {
-          NA_real_
-        },
-
-      pct_direct_supported =
-        if (
-          direct > 0L &&
-          !is.na(direct_supported)
-        ) {
-          100 *
-            direct_supported /
-            direct
-        } else {
-          NA_real_
-        },
-
-      pct_direct_isolated =
-        if (
-          direct > 0L &&
-          !is.na(direct_isolated)
-        ) {
-          100 *
-            direct_isolated /
-            direct
-        } else {
-          NA_real_
-        },
-
-      pct_confident =
-        if (
-          positive > 0L &&
-          !is.na(confident)
-        ) {
-          100 *
-            confident /
-            positive
-        } else {
-          NA_real_
-        },
-
-      pct_direct_all =
-        if (total > 0L) {
-          100 * direct / total
-        } else {
-          NA_real_
-        },
-
-      pct_supported_all =
-        if (total > 0L) {
-          100 * supported / total
-        } else {
-          NA_real_
-        },
-
-      pct_dropout_candidates =
-        if (total > 0L) {
-          100 *
-            dropout_candidates /
-            total
-        } else {
-          NA_real_
-        }
-    )
-  }
-
-  detection <- purrr::imap_dfr(
-    gnrh_list,
-    summarise_detection
-  ) |>
-    dplyr::left_join(
-      dataset_metadata,
-      by = "id"
-    ) |>
-    dplyr::select(
-      .data$id,
-      .data$label,
-      .data$species,
-      dplyr::everything()
-    ) |>
-    dplyr::arrange(
-      dplyr::desc(
-        .data$pct_gnrh
       )
-    )
-
-
-
-  # =========================================================================== #
-  # GNRH1-negative transcriptomic candidates
-  #
-  # Diagnostic only.
-  # These cells remain gnrh_status == "neg".
-  # =========================================================================== #
-
-  log(
-    "Summarizing GNRH1-negative transcriptomic candidates"
-  )
-
-  has_dropout_candidate <- vapply(
-    gnrh_list,
-    function(object) {
-
-      "gnrh_dropout_candidate" %in%
-        colnames(
-          object[[]]
+      program_height <- max(
+        6,
+        min(
+          18,
+          4 + 0.22*n_program_genes*ceiling(n_program_datasets/3)
         )
-    },
-    logical(1)
-  )
-
-  if (any(has_dropout_candidate)) {
-
-    dropout_candidates <- purrr::imap_dfr(
-      gnrh_list[has_dropout_candidate],
-      function(object, id) {
-
-        md <- object[[]] |>
-          tibble::as_tibble()
-
-        x <- md |>
-          dplyr::filter(
-            .data$gnrh_dropout_candidate %in% TRUE
-          )
-
-        if (nrow(x) == 0L) {
-
-          return(
-            tibble::tibble(
-              id = id,
-              n_cells = 0L,
-              pct_dataset = 0,
-              pct_GNRH1_detected = 0,
-              median_GNRH1 = 0,
-              median_support = NA_real_,
-              median_identity_primary = NA_real_,
-              median_core = NA_real_,
-              median_neuro = NA_real_,
-              median_knn = NA_real_,
-              median_alternative = NA_real_
+      )
+      summary_height <- max(
+        5.5,
+        min(
+          10,
+          4.5 + 0.35*n_program_datasets
+        )
+      )
+      # ----------------------------------------------------------------------- #
+      # Summary plot
+      # ----------------------------------------------------------------------- #
+      if (!is.null(programs$summary) && is.data.frame(programs$summary) && nrow(programs$summary)) {
+        program_plot <- tryCatch(
+          plot_gnrh_marker_programs(
+            programs=programs,
+            table="summary",
+            type="bar",
+            min_genes=1L,
+            txtsize=10,
+            style="bw"
+          ),
+          error=function(e) {
+            warning(
+              "Marker-program summary plot skipped: ",
+              conditionMessage(e),
+              call.=FALSE
             )
-          )
-        }
-
-        get_median <- function(column) {
-
-          if (!column %in% colnames(x)) {
-            return(NA_real_)
+            NULL
           }
-
-          stats::median(
-            x[[column]],
-            na.rm = TRUE
+        )
+        if (!is.null(program_plot)) {
+          .save_gnrh_plot(
+            program_plot,
+            file.path(program_dir,"gnrh_marker_programs"),
+            width=program_width,
+            height=summary_height
           )
         }
+      }
+      # ----------------------------------------------------------------------- #
+      # High-confidence marker plot
+      # ----------------------------------------------------------------------- #
+      if (!is.null(programs$high_confidence) && is.data.frame(programs$high_confidence) && nrow(programs$high_confidence)) {
+        program_high_plot <- tryCatch(
+          plot_gnrh_marker_programs(
+            programs=programs,
+            table="high_confidence",
+            type="dot",
+            require_coexpr=FALSE,
+            top_n=NULL,
+            txtsize=9,
+            style="bw"
+          ),
+          error=function(e) {
+            warning(
+              "High-confidence marker-program plot skipped: ",
+              conditionMessage(e),
+              call.=FALSE
+            )
+            NULL
+          }
+        )
+        if (!is.null(program_high_plot)) {
+          .save_gnrh_plot(
+            program_high_plot,
+            file.path(program_dir,"gnrh_high_confidence_marker_programs"),
+            width=program_width,
+            height=program_height
+          )
+        }
+      }
+    }
+    # ========================================================================= #
+    # Conserved / dataset-specific markers
+    # ========================================================================= #
+    if (isTRUE(run_marker_heatmaps) && length(marker_files)>=2L) {
+      conserved_pdf <- file.path(comparison_dir,"conserved_gnrh_markers.pdf")
+      conserved_png <- file.path(comparison_dir,"conserved_gnrh_markers.png")
+      dataset_pdf <- file.path(comparison_dir,"dataset_specific_gnrh_markers.pdf")
+      dataset_png <- file.path(comparison_dir,"dataset_specific_gnrh_markers.png")
+      message("[INFO] Generating conserved marker heatmap...")
+      conserved_markers <- plot_gnrh_conserved_markers(
+        files=marker_files,
+        score_col=marker_score_col,
+        min_datasets=2L,
+        top_n=50L,
+        exclude_genes=NULL,
+        filename=conserved_pdf
+      )
+      plot_gnrh_conserved_markers(
+        files=marker_files,
+        score_col=marker_score_col,
+        min_datasets=2L,
+        top_n=50L,
+        exclude_genes=NULL,
+        filename=conserved_png
+      )
+      message("[INFO] Conserved markers: ",conserved_pdf)
+      message("[INFO] Generating dataset-specific marker heatmap...")
+      dataset_specific_markers <- plot_gnrh_dataset_specific_markers(
+        files=marker_files,
+        score_col=marker_score_col,
+        top_n_per_dataset=20L,
+        max_datasets=2L,
+        exclude_genes=NULL,
+        filename=dataset_pdf
+      )
+      plot_gnrh_dataset_specific_markers(
+        files=marker_files,
+        score_col=marker_score_col,
+        top_n_per_dataset=20L,
+        max_datasets=2L,
+        exclude_genes=NULL,
+        filename=dataset_png
+      )
+      message("[INFO] Dataset-specific markers: ",dataset_pdf)
+    }
+    # ========================================================================= #
+    # Gallery
+    # ========================================================================= #
+    if (isTRUE(run_gallery)) {
+      if (is.null(objects)) {
+        objects <- .load_collection_gallery_objects(
+          datasets,
+          output_dir
+        )
+      }
+      if (is.null(objects) || !length(objects)) {
+        warning("Gallery generation requires processed objects.", call. = FALSE)
+      } else {
+        gallery <- .build_collection_gallery(
+          objects = objects,
+          datasets = datasets,
+          output_dir = file.path(comparison_dir, "gallery")
+        )
+      }
+    }
+    # ========================================================================= #
+    # Return
+    # ========================================================================= #
+    list(
+      run_info_files = run_info_files,
+      marker_files = marker_files,
+      runtime_plot = runtime_plot,
+      detected_plot = detected_plot,
+      overlap = overlap,
+      programs = programs,
+      conserved_markers = conserved_markers,
+      dataset_specific_markers = dataset_specific_markers,
+      gallery = gallery
+    )
+  }
 
+
+  #' Validate a GnRHcell multi-dataset collection
+  #'
+  #' Performs descriptive cross-dataset validation of GnRH detection,
+  #' developmental staging, transcriptomic rescue, migration refinement,
+  #' secretory phenotype, and biological evidence.
+  #'
+  #' @param collection A \code{"gnrh_collection"}.
+  #' @param output_dir Validation output directory.
+  #' @param positive_classes GnRH-positive evidence classes. Default is
+  #'   \code{c("direct", "transcriptomic")}.
+  #' @param validation_markers Optional biological validation genes.
+  #' @param assay Assay used for expression summaries.
+  #' @param layer Expression layer.
+  #' @param allow_saved_objects Load saved processed objects when they are not
+  #'   retained in memory.
+  #' @param write_output Write validation tables.
+  #' @param verbose Print progress.
+  #'
+  #' @return Object of class \code{"gnrh_validation"}.
+  #'
+  #' @export
+  validate_gnrh_collection <- function(
+    collection,
+    output_dir = file.path(collection$output_dir, "validation"),
+    positive_classes = c("direct", "transcriptomic"),
+    validation_markers = NULL,
+    assay = "RNA",
+    layer = "data",
+    allow_saved_objects = TRUE,
+    write_output = TRUE,
+    verbose = TRUE
+  ) {
+    # ========================================================================= #
+    # Validation
+    # ========================================================================= #
+    if (!inherits(collection, "gnrh_collection")) {
+      stop("`collection` must inherit from `gnrh_collection`.", call. = FALSE)
+    }
+    if (is.null(collection$results) || !length(collection$results)) {
+      stop("`collection$results` is empty.", call. = FALSE)
+    }
+    positive_classes <- unique(as.character(positive_classes))
+    if (!length(positive_classes) || anyNA(positive_classes) || any(!nzchar(positive_classes))) {
+      stop("`positive_classes` must contain valid class names.", call. = FALSE)
+    }
+    log <- .msg(verbose)
+    log("GNRH COLLECTION VALIDATION", type = "header")
+    # ========================================================================= #
+    # Helpers
+    # ========================================================================= #
+    join_metadata <- function(x, metadata) {
+      if (!is.data.frame(x) || !nrow(x) || !"id" %in% colnames(x)) {
+        return(x)
+      }
+      dplyr::left_join(x, metadata, by = "id")
+    }
+    count_true <- function(md, column) {
+      if (!column %in% colnames(md)) {
+        return(NA_integer_)
+      }
+      x <- md[[column]]
+      if (is.logical(x)) {
+        return(sum(x %in% TRUE, na.rm = TRUE))
+      }
+      if (is.numeric(x)) {
+        return(sum(is.finite(x) & x > 0, na.rm = TRUE))
+      }
+      x <- tolower(trimws(as.character(x)))
+      sum(x %in% c("true", "t", "1", "yes", "y", "pos", "positive"), na.rm = TRUE)
+    }
+    safe_median <- function(x) {
+      x <- suppressWarnings(as.numeric(x))
+      x <- x[is.finite(x)]
+      if (!length(x)) return(NA_real_)
+      stats::median(x)
+    }
+    safe_quantile <- function(x, p) {
+      x <- suppressWarnings(as.numeric(x))
+      x <- x[is.finite(x)]
+      if (!length(x)) return(NA_real_)
+      stats::quantile(x, p, names = FALSE)
+    }
+    # ========================================================================= #
+    # Dataset metadata
+    # ========================================================================= #
+    datasets <- tibble::as_tibble(collection$datasets)
+    required <- c("id", "label", "species")
+    missing <- setdiff(required, colnames(datasets))
+    if (length(missing)) {
+      stop("Missing dataset metadata: ", paste(missing, collapse = ", "), call. = FALSE)
+    }
+    datasets$id <- as.character(datasets$id)
+    datasets$label <- as.character(datasets$label)
+    datasets$species <- as.character(datasets$species)
+    if (anyNA(datasets$id) || any(!nzchar(datasets$id)) || anyDuplicated(datasets$id)) {
+      stop("`collection$datasets$id` must contain unique non-empty identifiers.", call. = FALSE)
+    }
+    dataset_metadata <- datasets |>
+      dplyr::select(.data$id, .data$label, .data$species)
+    # ========================================================================= #
+    # Recover processed objects
+    # ========================================================================= #
+    gnrh_list <- .get_collection_objects(
+      collection,
+      allow_saved = allow_saved_objects
+    )
+    missing_objects <- names(gnrh_list)[
+      vapply(gnrh_list, is.null, logical(1))
+    ]
+    if (length(missing_objects)) {
+      stop(
+        "Processed objects are unavailable for: ",
+        paste(missing_objects, collapse = ", "),
+        ". Retain them with `clean_objects = FALSE` or use `save_objects = TRUE`.",
+        call. = FALSE
+      )
+    }
+    invalid <- !vapply(
+      gnrh_list,
+      inherits,
+      logical(1),
+      what = "Seurat"
+    )
+    if (any(invalid)) {
+      stop(
+        "Invalid processed object(s): ",
+        paste(names(gnrh_list)[invalid], collapse = ", "),
+        call. = FALSE
+      )
+    }
+    # ========================================================================= #
+    # Required GnRH metadata
+    # ========================================================================= #
+    required_gnrh <- c(
+      "gnrh_status",
+      "gnrh_class",
+      "gnrh_stage"
+    )
+    for (id in names(gnrh_list)) {
+      md <- gnrh_list[[id]][[]]
+      missing <- setdiff(required_gnrh, colnames(md))
+      if (length(missing)) {
+        stop(
+          "Dataset `", id, "` is missing: ",
+          paste(missing, collapse = ", "),
+          call. = FALSE
+        )
+      }
+    }
+    observed_classes <- unique(unlist(
+      lapply(
+        gnrh_list,
+        function(object) unique(as.character(object[[]]$gnrh_class))
+      ),
+      use.names = FALSE
+    ))
+    observed_classes <- observed_classes[
+      !is.na(observed_classes) & nzchar(observed_classes)
+    ]
+    missing_positive_classes <- setdiff(positive_classes, observed_classes)
+    if (length(missing_positive_classes)) {
+      warning(
+        "Positive class(es) not observed in this collection: ",
+        paste(missing_positive_classes, collapse = ", "),
+        ". Observed classes: ",
+        paste(sort(observed_classes), collapse = ", "),
+        call. = FALSE
+      )
+    }
+    # ========================================================================= #
+    # Validation marker panel
+    # ========================================================================= #
+    if (is.null(validation_markers)) {
+      validation_markers <- unique(c(
+        "GNRH1",
+        "FEZF1","ISL1","OTX2","SIX3","SIX6","ECEL1",
+        "ANOS1","PROKR2","NSMF","ROBO3","SEMA3C","SEMA3F","CXCR4",
+        "KISS1R","GNRHR","DOC2B","PTPRN","HCN1",
+        "PCSK1","PCSK2","CHGA","CHGB","CPE","SCG2","SCG5","VGF"
+      ))
+    }
+    validation_markers <- unique(as.character(validation_markers))
+    # ========================================================================= #
+    # Input summary
+    # ========================================================================= #
+    input_summary <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
         tibble::tibble(
           id = id,
-
-          n_cells =
-            nrow(x),
-
-          pct_dataset =
-            100 *
-            nrow(x) /
-            nrow(md),
-
-          pct_GNRH1_detected =
-            if (
-              "gnrh_raw" %in%
-              colnames(x)
-            ) {
-
-              100 *
-                mean(
-                  x$gnrh_raw > 0,
-                  na.rm = TRUE
-                )
-
-            } else {
-
-              NA_real_
-            },
-
-          median_GNRH1 =
-            get_median(
-              "gnrh_raw"
-            ),
-
-          median_support =
-            get_median(
-              "gnrh_support_score"
-            ),
-
-          median_identity_primary =
-            get_median(
-              "gnrh_identity_primary_hits"
-            ),
-
-          median_core =
-            get_median(
-              "gnrh_core_hits"
-            ),
-
-          median_neuro =
-            get_median(
-              "gnrh_neuro_hits"
-            ),
-
-          median_knn =
-            get_median(
-              "gnrh_knn"
-            ),
-
-          median_alternative =
-            get_median(
-              "gnrh_alternative_score"
-            )
+          n_cells = ncol(object),
+          n_features = nrow(object)
         )
       }
     ) |>
-      dplyr::left_join(
-        dataset_metadata,
-        by = "id"
-      ) |>
+      dplyr::left_join(dataset_metadata, by = "id") |>
+      dplyr::select(
+        .data$id,
+        .data$label,
+        .data$species,
+        .data$n_cells,
+        .data$n_features
+      )
+    # ========================================================================= #
+    # Detection
+    # ========================================================================= #
+    detection <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
+        md <- object[[]]
+        class <- as.character(md$gnrh_class)
+        status <- as.character(md$gnrh_status)
+        total <- nrow(md)
+        direct <- sum(class == "direct", na.rm = TRUE)
+        transcriptomic <- sum(class == "transcriptomic", na.rm = TRUE)
+        supported <- sum(class == "supported", na.rm = TRUE)
+        positive_class <- sum(class %in% positive_classes, na.rm = TRUE)
+        positive_status <- sum(status == "pos", na.rm = TRUE)
+        direct_signal <- count_true(md, "gnrh_direct_signal")
+        direct_supported <- count_true(md, "gnrh_direct_supported")
+        direct_isolated <- count_true(md, "gnrh_direct_isolated")
+        reference_positive <- count_true(md, "gnrh_reference_positive")
+        confident <- count_true(md, "gnrh_confident")
+        candidate_column <- if ("gnrh_transcriptomic_candidate" %in% colnames(md)) {
+          "gnrh_transcriptomic_candidate"
+        } else if ("gnrh_dropout_candidate" %in% colnames(md)) {
+          "gnrh_dropout_candidate"
+        } else {
+          NULL
+        }
+        transcriptomic_candidates <- if (!is.null(candidate_column)) {
+          count_true(md, candidate_column)
+        } else {
+          NA_integer_
+        }
+        tibble::tibble(
+          id = id,
+          n_cells = total,
+          direct = direct,
+          transcriptomic = transcriptomic,
+          supported = supported,
+          gnrh_pos = positive_status,
+          positive_by_class = positive_class,
+          direct_signal = direct_signal,
+          direct_supported = direct_supported,
+          direct_isolated = direct_isolated,
+          reference_positive = reference_positive,
+          transcriptomic_candidates = transcriptomic_candidates,
+          gnrh_confident = confident,
+          pct_gnrh = if (total > 0L) 100 * positive_status / total else NA_real_,
+          pct_direct = if (positive_status > 0L) 100 * direct / positive_status else NA_real_,
+          pct_transcriptomic = if (positive_status > 0L) 100 * transcriptomic / positive_status else NA_real_,
+          pct_supported = if (positive_status > 0L) 100 * supported / positive_status else NA_real_,
+          pct_confident = if (positive_status > 0L && !is.na(confident)) 100 * confident / positive_status else NA_real_,
+          pct_direct_isolated = if (!is.na(direct_signal) && direct_signal > 0L && !is.na(direct_isolated)) {
+            100 * direct_isolated / direct_signal
+          } else {
+            NA_real_
+          },
+          pct_transcriptomic_candidates = if (!is.na(transcriptomic_candidates) && total > 0L) {
+            100 * transcriptomic_candidates / total
+          } else {
+            NA_real_
+          }
+        )
+      }
+    ) |>
+      dplyr::left_join(dataset_metadata, by = "id") |>
       dplyr::select(
         .data$id,
         .data$label,
         .data$species,
         dplyr::everything()
       )
-
-  } else {
-
-    dropout_candidates <- tibble::tibble()
-  }
-
-
-  # =========================================================================== #
-  # Status-class consistency
-  # =========================================================================== #
-
-  log("Checking status/class consistency")
-
-  status_class <- purrr::imap_dfr(
-    gnrh_list,
-    function(object, id) {
-
-      object[[]] |>
-        tibble::as_tibble() |>
-        dplyr::mutate(
-          gnrh_status = as.character(
-            .data$gnrh_status
-          ),
-          gnrh_class = as.character(
-            .data$gnrh_class
-          )
-        ) |>
-        dplyr::count(
-          .data$gnrh_status,
-          .data$gnrh_class,
-          name = "n_cells"
-        ) |>
-        dplyr::mutate(
+    # ========================================================================= #
+    # Transcriptomic candidates
+    # ========================================================================= #
+    transcriptomic_candidates <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
+        md <- object[[]]
+        column <- if ("gnrh_transcriptomic_candidate" %in% colnames(md)) {
+          "gnrh_transcriptomic_candidate"
+        } else if ("gnrh_dropout_candidate" %in% colnames(md)) {
+          "gnrh_dropout_candidate"
+        } else {
+          return(tibble::tibble())
+        }
+        x <- md[
+          md[[column]] %in% TRUE,
+          ,
+          drop = FALSE
+        ]
+        median_col <- function(column) {
+          if (!column %in% colnames(x) || !nrow(x)) return(NA_real_)
+          safe_median(x[[column]])
+        }
+        tibble::tibble(
           id = id,
-          pct_cells =
-            100 *
-            .data$n_cells /
-            sum(.data$n_cells)
+          n_cells = nrow(x),
+          pct_dataset = if (nrow(md)) 100 * nrow(x) / nrow(md) else NA_real_,
+          pct_GNRH1_detected = if (nrow(x) && "gnrh_raw" %in% colnames(x)) {
+            100 * mean(x$gnrh_raw > 0, na.rm = TRUE)
+          } else {
+            0
+          },
+          median_GNRH1 = median_col("gnrh_raw"),
+          median_support = median_col("gnrh_support_score_raw"),
+          median_identity_primary = median_col("gnrh_identity_primary_hits"),
+          median_core = median_col("gnrh_core_hits"),
+          median_neuro = median_col("gnrh_neuro_hits"),
+          median_knn = median_col("gnrh_knn"),
+          median_alternative = median_col("gnrh_alternative_score")
         )
-    }
-  ) |>
-    dplyr::left_join(
-      dataset_metadata,
-      by = "id"
-    ) |>
-    dplyr::select(
-      .data$id,
-      .data$label,
-      .data$species,
-      .data$gnrh_status,
-      .data$gnrh_class,
-      .data$n_cells,
-      .data$pct_cells
-    ) |>
-    dplyr::arrange(
-      .data$id,
-      dplyr::desc(
-        .data$n_cells
-      )
+      }
     )
-
-
-  # =========================================================================== #
-  # Classification consistency checks
-  # =========================================================================== #
-
-  classification_consistency <- purrr::imap_dfr(
-    gnrh_list,
-    function(object, id) {
-
-      md <- object[[]]
-
-      class <- as.character(
-        md$gnrh_class
-      )
-
-      status <- as.character(
-        md$gnrh_status
-      )
-
-      raw <-
-        if (
-          "gnrh_raw" %in%
-          colnames(md)
-        ) {
-          md$gnrh_raw
+    transcriptomic_candidates <- join_metadata(
+      transcriptomic_candidates,
+      dataset_metadata
+    )
+    # ========================================================================= #
+    # Status / class consistency
+    # ========================================================================= #
+    status_class <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
+        object[[]] |>
+          tibble::as_tibble() |>
+          dplyr::transmute(
+            gnrh_status = as.character(.data$gnrh_status),
+            gnrh_class = as.character(.data$gnrh_class)
+          ) |>
+          dplyr::count(
+            .data$gnrh_status,
+            .data$gnrh_class,
+            name = "n_cells"
+          ) |>
+          dplyr::mutate(
+            id = id,
+            pct_cells = 100 * .data$n_cells / sum(.data$n_cells)
+          )
+      }
+    )
+    status_class <- join_metadata(status_class, dataset_metadata)
+    # ========================================================================= #
+    # Logical consistency
+    # ========================================================================= #
+    classification_consistency <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
+        md <- object[[]]
+        status <- as.character(md$gnrh_status)
+        class <- as.character(md$gnrh_class)
+        raw <- if ("gnrh_raw" %in% colnames(md)) {
+          suppressWarnings(as.numeric(md$gnrh_raw))
         } else {
           rep(NA_real_, nrow(md))
         }
-
-      dropout <-
-        if (
-          "gnrh_dropout_candidate" %in%
-          colnames(md)
-        ) {
+        candidate <- if ("gnrh_transcriptomic_candidate" %in% colnames(md)) {
+          md$gnrh_transcriptomic_candidate %in% TRUE
+        } else if ("gnrh_dropout_candidate" %in% colnames(md)) {
           md$gnrh_dropout_candidate %in% TRUE
         } else {
           rep(FALSE, nrow(md))
         }
-
-      tibble::tibble(
-        id = id,
-
-        n_positive_without_GNRH1 =
-          sum(
-            status == "pos" &
-              raw <= 0,
-            na.rm = TRUE
-          ),
-
-        n_negative_positive_class =
-          sum(
-            status == "neg" &
-              class %in%
-              positive_classes,
-            na.rm = TRUE
-          ),
-
-        n_positive_negative_class =
-          sum(
-            status == "pos" &
-              !class %in%
-              positive_classes,
-            na.rm = TRUE
-          ),
-
-        n_dropout_called_positive =
-          sum(
-            dropout &
-              status == "pos",
-            na.rm = TRUE
-          )
-      )
-    }
-  ) |>
-    dplyr::left_join(
-      dataset_metadata,
-      by = "id"
-    ) |>
-    dplyr::select(
-      .data$id,
-      .data$label,
-      .data$species,
-      dplyr::everything()
-    )
-
-  # =========================================================================== #
-  # Score validation
-  # =========================================================================== #
-
-  log("Summarizing GnRH evidence scores")
-
-  candidate_score_columns <- c(
-    "gnrh_score",
-    "gnrh_support_score",
-
-    "gnrh_identity_score",
-    "gnrh_migration_score",
-    "gnrh_neuro_score",
-    "gnrh_hormone_score",
-    "gnrh_guidance_score",
-    "gnrh_alternative_score",
-
-    "gnrh_identity_primary_hits",
-    "gnrh_identity_supportive_hits",
-    "gnrh_core_hits",
-
-    "gnrh_migration_primary_hits",
-    "gnrh_migration_supportive_hits",
-    "gnrh_mig_hits",
-
-    "gnrh_neuro_primary_hits",
-    "gnrh_neuro_supportive_hits",
-    "gnrh_neuro_hits",
-
-    "gnrh_migration_core_hits",
-
-    "gnrh_migrating_score",
-    "gnrh_mature_score",
-    "gnrh_secreting_score",
-
-    "gnrh_knn"
-  )
-
-  available_score_columns <- Reduce(
-    intersect,
-    lapply(
-      gnrh_list,
-      function(object) {
-        colnames(
-          object[[]]
-        )
-      }
-    )
-  )
-
-  score_columns <- intersect(
-    candidate_score_columns,
-    available_score_columns
-  )
-
-  if (length(score_columns) > 0L) {
-
-    scores <- purrr::imap_dfr(
-      gnrh_list,
-      function(object, id) {
-
-        object[[]] |>
-          tibble::as_tibble() |>
-          dplyr::mutate(
-            gnrh_class = as.character(
-              .data$gnrh_class
-            )
-          ) |>
-          dplyr::filter(
-            .data$gnrh_class %in%
-              positive_classes
-          ) |>
-          dplyr::group_by(
-            .data$gnrh_class
-          ) |>
-          dplyr::summarise(
-            n_cells = dplyr::n(),
-
-            dplyr::across(
-              dplyr::all_of(
-                score_columns
-              ),
-              list(
-                median = ~ stats::median(
-                  .x,
-                  na.rm = TRUE
-                ),
-                q25 = ~ stats::quantile(
-                  .x,
-                  0.25,
-                  na.rm = TRUE,
-                  names = FALSE
-                ),
-                q75 = ~ stats::quantile(
-                  .x,
-                  0.75,
-                  na.rm = TRUE,
-                  names = FALSE
-                )
-              )
-            ),
-
-            .groups = "drop"
-          ) |>
-          dplyr::mutate(
-            id = id
-          )
-      }
-    ) |>
-      dplyr::left_join(
-        dataset_metadata,
-        by = "id"
-      ) |>
-      dplyr::select(
-        .data$id,
-        .data$label,
-        .data$species,
-        .data$gnrh_class,
-        dplyr::everything()
-      )
-
-  } else {
-
-    scores <- tibble::tibble()
-  }
-
-
-  # =========================================================================== #
-  # Stage distribution
-  # =========================================================================== #
-
-  log("Validating developmental stages")
-
-  stages <- purrr::imap_dfr(
-    gnrh_list,
-    function(object, id) {
-
-      x <- object[[]] |>
-        tibble::as_tibble() |>
-        dplyr::mutate(
-          gnrh_class = as.character(
-            .data$gnrh_class
-          ),
-          gnrh_stage = as.character(
-            .data$gnrh_stage
-          )
-        ) |>
-        dplyr::filter(
-          .data$gnrh_class %in%
-            positive_classes,
-          !is.na(.data$gnrh_stage),
-          .data$gnrh_stage != "non-gnrh"
-        )
-
-      if (nrow(x) == 0L) {
-        return(
-          tibble::tibble()
-        )
-      }
-
-      x |>
-        dplyr::count(
-          .data$gnrh_stage,
-          name = "n_cells"
-        ) |>
-        dplyr::mutate(
-          id = id,
-          pct_positive =
-            100 *
-            .data$n_cells /
-            sum(.data$n_cells)
-        )
-    }
-  ) |>
-    dplyr::left_join(
-      dataset_metadata,
-      by = "id"
-    ) |>
-    dplyr::select(
-      .data$id,
-      .data$label,
-      .data$species,
-      .data$gnrh_stage,
-      .data$n_cells,
-      .data$pct_positive
-    ) |>
-    dplyr::arrange(
-      .data$id,
-      dplyr::desc(
-        .data$n_cells
-      )
-    )
-
-
-  # =========================================================================== #
-  # Stage by GnRH detection class
-  # =========================================================================== #
-
-  stage_class <- purrr::imap_dfr(
-    gnrh_list,
-    function(object, id) {
-
-      x <- object[[]] |>
-        tibble::as_tibble() |>
-        dplyr::mutate(
-          gnrh_class = as.character(
-            .data$gnrh_class
-          ),
-          gnrh_stage = as.character(
-            .data$gnrh_stage
-          )
-        ) |>
-        dplyr::filter(
-          .data$gnrh_class %in%
-            positive_classes,
-          !is.na(.data$gnrh_stage),
-          .data$gnrh_stage != "non-gnrh"
-        )
-
-      if (nrow(x) == 0L) {
-        return(
-          tibble::tibble()
-        )
-      }
-
-      x |>
-        dplyr::count(
-          .data$gnrh_class,
-          .data$gnrh_stage,
-          name = "n_cells"
-        ) |>
-        dplyr::group_by(
-          .data$gnrh_class
-        ) |>
-        dplyr::mutate(
-          pct_class =
-            100 *
-            .data$n_cells /
-            sum(.data$n_cells)
-        ) |>
-        dplyr::ungroup() |>
-        dplyr::mutate(
-          id = id
-        )
-    }
-  ) |>
-    dplyr::left_join(
-      dataset_metadata,
-      by = "id"
-    ) |>
-    dplyr::select(
-      .data$id,
-      .data$label,
-      .data$species,
-      .data$gnrh_class,
-      .data$gnrh_stage,
-      .data$n_cells,
-      .data$pct_class
-    )
-
-
-  # =========================================================================== #
-  # Stage refinement summary
-  # =========================================================================== #
-
-  refinement_required <- c(
-    "gnrh_stage_raw",
-    "gnrh_stage_reassigned",
-    "gnrh_stage_reason"
-  )
-
-  has_refinement <- vapply(
-    gnrh_list,
-    function(object) {
-
-      all(
-        refinement_required %in%
-          colnames(
-            object[[]]
-          )
-      )
-    },
-    logical(1)
-  )
-
-  if (any(has_refinement)) {
-
-    stage_refinement <- purrr::imap_dfr(
-      gnrh_list[has_refinement],
-      function(object, id) {
-
-        md <- object[[]] |>
-          tibble::as_tibble() |>
-          dplyr::filter(
-            .data$gnrh_status == "pos"
-          )
-
-        n_positive <- nrow(md)
-
-        n_reassigned <- sum(
-          md$gnrh_stage_reassigned,
-          na.rm = TRUE
-        )
-
-        n_migration_filtered <- sum(
-          as.character(
-            md$gnrh_stage_reason
-          ) == "migration_core_filter",
-          na.rm = TRUE
-        )
-
+        expected_positive_class <- class %in% positive_classes
         tibble::tibble(
           id = id,
-
-          n_positive =
-            n_positive,
-
-          n_reassigned =
-            n_reassigned,
-
-          pct_reassigned =
-            if (n_positive > 0L) {
-              100 *
-                n_reassigned /
-                n_positive
-            } else {
-              NA_real_
-            },
-
-          n_migration_filtered =
-            n_migration_filtered
+          n_status_class_discordant_positive = sum(
+            status == "pos" & !expected_positive_class,
+            na.rm = TRUE
+          ),
+          n_status_class_discordant_negative = sum(
+            status == "neg" & expected_positive_class,
+            na.rm = TRUE
+          ),
+          n_unexplained_positive_without_GNRH1 = sum(
+            status == "pos" &
+              is.finite(raw) &
+              raw <= 0 &
+              !candidate,
+            na.rm = TRUE
+          ),
+          n_expected_transcriptomic_positive = sum(
+            status == "pos" & candidate,
+            na.rm = TRUE
+          ),
+          n_direct_without_GNRH1 = sum(
+            class == "direct" &
+              is.finite(raw) &
+              raw <= 0,
+            na.rm = TRUE
+          )
         )
       }
-    ) |>
-      dplyr::left_join(
-        dataset_metadata,
-        by = "id"
-      ) |>
-      dplyr::select(
-        .data$id,
-        .data$label,
-        .data$species,
-        dplyr::everything()
+    )
+    classification_consistency <- join_metadata(
+      classification_consistency,
+      dataset_metadata
+    )
+    # ========================================================================= #
+    # Evidence scores
+    # ========================================================================= #
+    candidate_score_columns <- unique(c(
+      "gnrh_score",
+      "gnrh_score_raw",
+      "gnrh_support_score",
+      "gnrh_support_score_raw",
+      "gnrh_identity_score",
+      "gnrh_migration_score",
+      "gnrh_neuro_score",
+      "gnrh_hormone_score",
+      "gnrh_guidance_score",
+      "gnrh_alternative_score",
+      "gnrh_identity_primary_hits",
+      "gnrh_identity_supportive_hits",
+      "gnrh_core_hits",
+      "gnrh_migration_primary_hits",
+      "gnrh_migration_supportive_hits",
+      "gnrh_mig_hits",
+      "gnrh_neuro_primary_hits",
+      "gnrh_neuro_supportive_hits",
+      "gnrh_neuro_hits",
+      "gnrh_migration_core_hits",
+      "gnrh_stage_identity_score",
+      "gnrh_stage_migrating_score",
+      "gnrh_stage_mature_score",
+      "gnrh_knn"
+    ))
+    available_columns <- Reduce(
+      intersect,
+      lapply(
+        gnrh_list,
+        function(object) colnames(object[[]])
       )
-
-    stage_reassignment <- purrr::imap_dfr(
-      gnrh_list[has_refinement],
+    )
+    score_columns <- intersect(
+      candidate_score_columns,
+      available_columns
+    )
+    scores <- if (length(score_columns)) {
+      purrr::imap_dfr(
+        gnrh_list,
+        function(object, id) {
+          object[[]] |>
+            tibble::as_tibble() |>
+            dplyr::mutate(
+              gnrh_class = as.character(.data$gnrh_class)
+            ) |>
+            dplyr::filter(
+              .data$gnrh_class %in% positive_classes
+            ) |>
+            dplyr::group_by(
+              .data$gnrh_class
+            ) |>
+            dplyr::summarise(
+              n_cells = dplyr::n(),
+              dplyr::across(
+                dplyr::all_of(score_columns),
+                list(
+                  median = ~ safe_median(.x),
+                  q25 = ~ safe_quantile(.x, 0.25),
+                  q75 = ~ safe_quantile(.x, 0.75)
+                )
+              ),
+              .groups = "drop"
+            ) |>
+            dplyr::mutate(id = id)
+        }
+      )
+    } else {
+      tibble::tibble()
+    }
+    scores <- join_metadata(scores, dataset_metadata)
+    # ========================================================================= #
+    # Developmental stages
+    # ========================================================================= #
+    stages <- purrr::imap_dfr(
+      gnrh_list,
       function(object, id) {
-
-        object[[]] |>
+        x <- object[[]] |>
           tibble::as_tibble() |>
-          dplyr::filter(
-            .data$gnrh_status == "pos"
-          ) |>
           dplyr::mutate(
-            gnrh_stage_raw = as.character(
-              .data$gnrh_stage_raw
-            ),
-            gnrh_stage = as.character(
-              .data$gnrh_stage
-            ),
-            gnrh_stage_reason = as.character(
-              .data$gnrh_stage_reason
-            )
+            gnrh_status = as.character(.data$gnrh_status),
+            gnrh_stage = as.character(.data$gnrh_stage)
           ) |>
+          dplyr::filter(
+            .data$gnrh_status == "pos",
+            !is.na(.data$gnrh_stage),
+            .data$gnrh_stage != "non-gnrh"
+          )
+        if (!nrow(x)) return(tibble::tibble())
+        x |>
           dplyr::count(
-            .data$gnrh_stage_raw,
             .data$gnrh_stage,
-            .data$gnrh_stage_reason,
             name = "n_cells"
           ) |>
           dplyr::mutate(
-            id = id
+            id = id,
+            pct_positive = 100 * .data$n_cells / sum(.data$n_cells)
           )
       }
-    ) |>
-      dplyr::left_join(
-        dataset_metadata,
-        by = "id"
-      ) |>
-      dplyr::select(
-        .data$id,
-        .data$label,
-        .data$species,
-        .data$gnrh_stage_raw,
-        .data$gnrh_stage,
-        .data$gnrh_stage_reason,
-        .data$n_cells
-      )
-
-  } else {
-
+    )
+    stages <- join_metadata(stages, dataset_metadata)
+    stage_class <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
+        x <- object[[]] |>
+          tibble::as_tibble() |>
+          dplyr::mutate(
+            gnrh_status = as.character(.data$gnrh_status),
+            gnrh_class = as.character(.data$gnrh_class),
+            gnrh_stage = as.character(.data$gnrh_stage)
+          ) |>
+          dplyr::filter(
+            .data$gnrh_status == "pos",
+            !is.na(.data$gnrh_stage),
+            .data$gnrh_stage != "non-gnrh"
+          )
+        if (!nrow(x)) return(tibble::tibble())
+        x |>
+          dplyr::count(
+            .data$gnrh_class,
+            .data$gnrh_stage,
+            name = "n_cells"
+          ) |>
+          dplyr::group_by(
+            .data$gnrh_class
+          ) |>
+          dplyr::mutate(
+            pct_class = 100 * .data$n_cells / sum(.data$n_cells)
+          ) |>
+          dplyr::ungroup() |>
+          dplyr::mutate(id = id)
+      }
+    )
+    stage_class <- join_metadata(stage_class, dataset_metadata)
+    # ========================================================================= #
+    # Secretory phenotype
+    # ========================================================================= #
+    secretory <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
+        md <- object[[]]
+        if (!"gnrh_secretory" %in% colnames(md)) {
+          return(tibble::tibble())
+        }
+        x <- md |>
+          tibble::as_tibble() |>
+          dplyr::mutate(
+            gnrh_status = as.character(.data$gnrh_status),
+            gnrh_secretory = as.character(.data$gnrh_secretory)
+          ) |>
+          dplyr::filter(
+            .data$gnrh_status == "pos",
+            !is.na(.data$gnrh_secretory),
+            .data$gnrh_secretory != "non-gnrh"
+          )
+        if (!nrow(x)) return(tibble::tibble())
+        x |>
+          dplyr::count(
+            .data$gnrh_secretory,
+            name = "n_cells"
+          ) |>
+          dplyr::mutate(
+            id = id,
+            pct_positive = 100 * .data$n_cells / sum(.data$n_cells)
+          )
+      }
+    )
+    secretory <- join_metadata(secretory, dataset_metadata)
+    # ========================================================================= #
+    # Stage refinement
+    # ========================================================================= #
+    refinement_required <- c(
+      "gnrh_stage_raw",
+      "gnrh_stage_reassigned",
+      "gnrh_stage_reason"
+    )
+    has_refinement <- vapply(
+      gnrh_list,
+      function(object) {
+        all(refinement_required %in% colnames(object[[]]))
+      },
+      logical(1)
+    )
     stage_refinement <- tibble::tibble()
     stage_reassignment <- tibble::tibble()
-  }
-
-
-  # =========================================================================== #
-  # Migration-core validation
-  # =========================================================================== #
-
-  has_migration_hits <- vapply(
-    gnrh_list,
-    function(object) {
-
-      all(
-        c(
-          "gnrh_migration_core_hits",
-          "gnrh_stage_raw"
-        ) %in%
-          colnames(
-            object[[]]
+    if (any(has_refinement)) {
+      stage_refinement <- purrr::imap_dfr(
+        gnrh_list[has_refinement],
+        function(object, id) {
+          md <- object[[]]
+          positive <- as.character(md$gnrh_status) == "pos"
+          n_positive <- sum(positive, na.rm = TRUE)
+          n_reassigned <- sum(
+            positive & md$gnrh_stage_reassigned %in% TRUE,
+            na.rm = TRUE
           )
-      )
-    },
-    logical(1)
-  )
-
-  if (any(has_migration_hits)) {
-
-    migration_core <- purrr::imap_dfr(
-      gnrh_list[has_migration_hits],
-      function(object, id) {
-
-        x <- object[[]] |>
-          tibble::as_tibble() |>
-          dplyr::mutate(
-            gnrh_stage_raw = as.character(
-              .data$gnrh_stage_raw
-            )
-          ) |>
-          dplyr::filter(
-            .data$gnrh_status == "pos",
-            !is.na(
-              .data$gnrh_stage_raw
-            )
+          n_filtered <- sum(
+            positive &
+              as.character(md$gnrh_stage_reason) == "migration_core_filter",
+            na.rm = TRUE
           )
-
-        if (nrow(x) == 0L) {
-          return(
-            tibble::tibble()
+          tibble::tibble(
+            id = id,
+            n_positive = n_positive,
+            n_reassigned = n_reassigned,
+            pct_reassigned = if (n_positive > 0L) {
+              100 * n_reassigned / n_positive
+            } else {
+              NA_real_
+            },
+            n_migration_filtered = n_filtered
           )
         }
-
-        x |>
-          dplyr::group_by(
-            .data$gnrh_stage_raw
-          ) |>
-          dplyr::summarise(
-            n = dplyr::n(),
-
-            median_hits =
-              stats::median(
-                .data$gnrh_migration_core_hits,
-                na.rm = TRUE
-              ),
-
-            q25_hits =
-              stats::quantile(
-                .data$gnrh_migration_core_hits,
-                0.25,
-                na.rm = TRUE,
-                names = FALSE
-              ),
-
-            q75_hits =
-              stats::quantile(
-                .data$gnrh_migration_core_hits,
-                0.75,
-                na.rm = TRUE,
-                names = FALSE
-              ),
-
-            pct_ge1 =
-              100 *
-              mean(
-                .data$gnrh_migration_core_hits >= 1,
-                na.rm = TRUE
-              ),
-
-            pct_ge2 =
-              100 *
-              mean(
-                .data$gnrh_migration_core_hits >= 2,
-                na.rm = TRUE
-              ),
-
-            pct_ge3 =
-              100 *
-              mean(
-                .data$gnrh_migration_core_hits >= 3,
-                na.rm = TRUE
-              ),
-
-            .groups = "drop"
-          ) |>
-          dplyr::mutate(
-            id = id
-          )
-      }
-    ) |>
-      dplyr::left_join(
-        dataset_metadata,
-        by = "id"
-      ) |>
-      dplyr::select(
-        .data$id,
-        .data$label,
-        .data$species,
-        .data$gnrh_stage_raw,
-        .data$n,
-        .data$median_hits,
-        .data$q25_hits,
-        .data$q75_hits,
-        .data$pct_ge1,
-        .data$pct_ge2,
-        .data$pct_ge3
       )
-
-  } else {
-
+      stage_refinement <- join_metadata(
+        stage_refinement,
+        dataset_metadata
+      )
+      stage_reassignment <- purrr::imap_dfr(
+        gnrh_list[has_refinement],
+        function(object, id) {
+          object[[]] |>
+            tibble::as_tibble() |>
+            dplyr::filter(
+              as.character(.data$gnrh_status) == "pos"
+            ) |>
+            dplyr::transmute(
+              id = id,
+              gnrh_stage_raw = as.character(.data$gnrh_stage_raw),
+              gnrh_stage = as.character(.data$gnrh_stage),
+              gnrh_stage_reason = as.character(.data$gnrh_stage_reason)
+            ) |>
+            dplyr::count(
+              .data$id,
+              .data$gnrh_stage_raw,
+              .data$gnrh_stage,
+              .data$gnrh_stage_reason,
+              name = "n_cells"
+            )
+        }
+      )
+      stage_reassignment <- join_metadata(
+        stage_reassignment,
+        dataset_metadata
+      )
+    }
+    # ========================================================================= #
+    # Migration refinement
+    # ========================================================================= #
+    migration_required <- c(
+      "gnrh_stage_raw",
+      "gnrh_stage",
+      "gnrh_migration_core_hits"
+    )
+    has_migration <- vapply(
+      gnrh_list,
+      function(object) {
+        all(migration_required %in% colnames(object[[]]))
+      },
+      logical(1)
+    )
     migration_core <- tibble::tibble()
-  }
-
-
-  # =========================================================================== #
-  # Migration refinement validation
-  # =========================================================================== #
-
-  has_migration_refinement <- vapply(
-    gnrh_list,
-    function(object) {
-
-      all(
-        c(
-          "gnrh_stage_raw",
-          "gnrh_stage",
-          "gnrh_stage_reason",
-          "gnrh_migration_core_hits"
-        ) %in%
-          colnames(
-            object[[]]
-          )
-      )
-    },
-    logical(1)
-  )
-
-  if (any(has_migration_refinement)) {
-
-    migration_refinement <- purrr::imap_dfr(
-      gnrh_list[has_migration_refinement],
-      function(object, id) {
-
-        x <- object[[]] |>
-          tibble::as_tibble() |>
-          dplyr::mutate(
-            gnrh_stage_raw = as.character(
-              .data$gnrh_stage_raw
-            ),
-            gnrh_stage = as.character(
-              .data$gnrh_stage
-            ),
-            gnrh_stage_reason = as.character(
-              .data$gnrh_stage_reason
-            )
-          ) |>
-          dplyr::filter(
-            .data$gnrh_status == "pos",
-            .data$gnrh_stage_raw == "migrating"
-          ) |>
-          dplyr::mutate(
-            migration_outcome = dplyr::case_when(
-              .data$gnrh_stage == "migrating" ~
-                "retained_migrating",
-
-              .data$gnrh_stage != "migrating" ~
-                "reassigned",
-
-              TRUE ~
-                NA_character_
-            )
-          )
-
-        if (nrow(x) == 0L) {
-          return(
-            tibble::tibble()
-          )
-        }
-
-        x |>
-          dplyr::group_by(
-            .data$migration_outcome,
-            .data$gnrh_stage
-          ) |>
-          dplyr::summarise(
-            n_cells = dplyr::n(),
-
-            median_hits =
-              stats::median(
-                .data$gnrh_migration_core_hits,
-                na.rm = TRUE
-              ),
-
-            q25_hits =
-              stats::quantile(
-                .data$gnrh_migration_core_hits,
-                0.25,
-                na.rm = TRUE,
-                names = FALSE
-              ),
-
-            q75_hits =
-              stats::quantile(
-                .data$gnrh_migration_core_hits,
-                0.75,
-                na.rm = TRUE,
-                names = FALSE
-              ),
-
-            mean_hits =
-              mean(
-                .data$gnrh_migration_core_hits,
-                na.rm = TRUE
-              ),
-
-            pct_zero =
-              100 *
-              mean(
-                .data$gnrh_migration_core_hits == 0,
-                na.rm = TRUE
-              ),
-
-            pct_ge1 =
-              100 *
-              mean(
-                .data$gnrh_migration_core_hits >= 1,
-                na.rm = TRUE
-              ),
-
-            pct_ge2 =
-              100 *
-              mean(
-                .data$gnrh_migration_core_hits >= 2,
-                na.rm = TRUE
-              ),
-
-            pct_ge3 =
-              100 *
-              mean(
-                .data$gnrh_migration_core_hits >= 3,
-                na.rm = TRUE
-              ),
-
-            .groups = "drop"
-          ) |>
-          dplyr::mutate(
-            id = id
-          )
-      }
-    ) |>
-      dplyr::left_join(
-        dataset_metadata,
-        by = "id"
-      ) |>
-      dplyr::select(
-        .data$id,
-        .data$label,
-        .data$species,
-        .data$migration_outcome,
-        .data$gnrh_stage,
-        .data$n_cells,
-        .data$median_hits,
-        .data$q25_hits,
-        .data$q75_hits,
-        .data$mean_hits,
-        .data$pct_zero,
-        .data$pct_ge1,
-        .data$pct_ge2,
-        .data$pct_ge3
-      ) |>
-      dplyr::arrange(
-        .data$id,
-        .data$migration_outcome,
-        .data$gnrh_stage
-      )
-
-
-    # ------------------------------------------------------------------------- #
-    # Dataset-level migration refinement summary
-    # ------------------------------------------------------------------------- #
-
-    migration_refinement_summary <- migration_refinement |>
-      dplyr::group_by(
-        .data$id,
-        .data$label,
-        .data$species
-      ) |>
-      dplyr::summarise(
-        mean_hits_retained = {
-          idx <- .data$migration_outcome == "retained_migrating"
-
-          if (any(idx)) {
-            stats::weighted.mean(
-              .data$mean_hits[idx],
-              .data$n_cells[idx],
-              na.rm = TRUE
-            )
-          } else {
-            NA_real_
-          }
-        },
-
-        n_raw_migrating = sum(
-          .data$n_cells,
-          na.rm = TRUE
-        ),
-
-        n_retained = sum(
-          .data$n_cells[
-            .data$migration_outcome == "retained_migrating"
-          ],
-          na.rm = TRUE
-        ),
-
-        n_reassigned = sum(
-          .data$n_cells[
-            .data$migration_outcome == "reassigned"
-          ],
-          na.rm = TRUE
-        ),
-
-        n_to_identity = sum(
-          .data$n_cells[
-            .data$migration_outcome == "reassigned" &
-              .data$gnrh_stage == "identity"
-          ],
-          na.rm = TRUE
-        ),
-
-        n_to_mature = sum(
-          .data$n_cells[
-            .data$migration_outcome == "reassigned" &
-              .data$gnrh_stage == "mature"
-          ],
-          na.rm = TRUE
-        ),
-
-        n_to_secreting = sum(
-          .data$n_cells[
-            .data$migration_outcome == "reassigned" &
-              .data$gnrh_stage == "secreting"
-          ],
-          na.rm = TRUE
-        ),
-
-        pct_retained =
-          if (n_raw_migrating > 0L) {
-            100 * n_retained / n_raw_migrating
-          } else {
-            NA_real_
-          },
-
-        pct_reassigned =
-          if (n_raw_migrating > 0L) {
-            100 * n_reassigned / n_raw_migrating
-          } else {
-            NA_real_
-          },
-
-        pct_to_identity =
-          if (n_reassigned > 0L) {
-            100 * n_to_identity / n_reassigned
-          } else {
-            NA_real_
-          },
-
-        pct_to_mature =
-          if (n_reassigned > 0L) {
-            100 * n_to_mature / n_reassigned
-          } else {
-            NA_real_
-          },
-
-        pct_to_secreting =
-          if (n_reassigned > 0L) {
-            100 * n_to_secreting / n_reassigned
-          } else {
-            NA_real_
-          },
-
-        .groups = "drop"
-      ) |>
-      dplyr::select(
-        .data$id,
-        .data$label,
-        .data$species,
-        .data$n_raw_migrating,
-        .data$n_retained,
-        .data$n_reassigned,
-        .data$pct_retained,
-        .data$pct_reassigned,
-        .data$n_to_identity,
-        .data$n_to_mature,
-        .data$n_to_secreting,
-        .data$pct_to_identity,
-        .data$pct_to_mature,
-        .data$pct_to_secreting,
-        .data$mean_hits_retained
-      ) |>
-      dplyr::arrange(
-        dplyr::desc(
-          .data$pct_reassigned
-        )
-      )
-
-  } else {
-
     migration_refinement <- tibble::tibble()
     migration_refinement_summary <- tibble::tibble()
-  }
-
-
-  # =========================================================================== #
-  # Independent biological marker validation
-  # =========================================================================== #
-
-  log("Summarizing biological marker expression")
-
-  summarise_marker_expression <- function(
-    object,
-    id
-  ) {
-
-    md <- object[[]]
-
-    cells <- rownames(md)[
-      as.character(
-        md$gnrh_class
-      ) %in%
-        positive_classes
-    ]
-
-    if (length(cells) == 0L) {
-      return(
-        tibble::tibble()
+    if (any(has_migration)) {
+      migration_core <- purrr::imap_dfr(
+        gnrh_list[has_migration],
+        function(object, id) {
+          object[[]] |>
+            tibble::as_tibble() |>
+            dplyr::filter(
+              as.character(.data$gnrh_status) == "pos"
+            ) |>
+            dplyr::mutate(
+              gnrh_stage_raw = as.character(.data$gnrh_stage_raw)
+            ) |>
+            dplyr::group_by(
+              .data$gnrh_stage_raw
+            ) |>
+            dplyr::summarise(
+              n = dplyr::n(),
+              median_hits = safe_median(.data$gnrh_migration_core_hits),
+              q25_hits = safe_quantile(.data$gnrh_migration_core_hits, 0.25),
+              q75_hits = safe_quantile(.data$gnrh_migration_core_hits, 0.75),
+              pct_ge1 = 100 * mean(.data$gnrh_migration_core_hits >= 1, na.rm = TRUE),
+              pct_ge2 = 100 * mean(.data$gnrh_migration_core_hits >= 2, na.rm = TRUE),
+              pct_ge3 = 100 * mean(.data$gnrh_migration_core_hits >= 3, na.rm = TRUE),
+              .groups = "drop"
+            ) |>
+            dplyr::mutate(id = id)
+        }
       )
-    }
-
-    if (!assay %in% names(object@assays)) {
-
-      warning(
-        "Assay `",
-        assay,
-        "` not found in dataset `",
-        id,
-        "`; skipping biological marker validation.",
-        call. = FALSE
+      migration_core <- join_metadata(
+        migration_core,
+        dataset_metadata
       )
-
-      return(
-        tibble::tibble()
+      migration_refinement <- purrr::imap_dfr(
+        gnrh_list[has_migration],
+        function(object, id) {
+          x <- object[[]] |>
+            tibble::as_tibble() |>
+            dplyr::mutate(
+              gnrh_status = as.character(.data$gnrh_status),
+              gnrh_stage_raw = as.character(.data$gnrh_stage_raw),
+              gnrh_stage = as.character(.data$gnrh_stage)
+            ) |>
+            dplyr::filter(
+              .data$gnrh_status == "pos",
+              .data$gnrh_stage_raw == "migrating"
+            ) |>
+            dplyr::mutate(
+              migration_outcome = ifelse(
+                .data$gnrh_stage == "migrating",
+                "retained_migrating",
+                "reassigned"
+              )
+            )
+          if (!nrow(x)) return(tibble::tibble())
+          x |>
+            dplyr::group_by(
+              .data$migration_outcome,
+              .data$gnrh_stage
+            ) |>
+            dplyr::summarise(
+              n_cells = dplyr::n(),
+              median_hits = safe_median(.data$gnrh_migration_core_hits),
+              mean_hits = mean(.data$gnrh_migration_core_hits, na.rm = TRUE),
+              pct_zero = 100 * mean(.data$gnrh_migration_core_hits == 0, na.rm = TRUE),
+              pct_ge1 = 100 * mean(.data$gnrh_migration_core_hits >= 1, na.rm = TRUE),
+              pct_ge2 = 100 * mean(.data$gnrh_migration_core_hits >= 2, na.rm = TRUE),
+              pct_ge3 = 100 * mean(.data$gnrh_migration_core_hits >= 3, na.rm = TRUE),
+              .groups = "drop"
+            ) |>
+            dplyr::mutate(id = id)
+        }
       )
-    }
-
-    genes <- intersect(
-      validation_markers,
-      rownames(
-        object[[assay]]
+      migration_refinement <- join_metadata(
+        migration_refinement,
+        dataset_metadata
       )
-    )
-
-    if (length(genes) == 0L) {
-      return(
-        tibble::tibble()
-      )
-    }
-
-    mat <- tryCatch(
-      SeuratObject::LayerData(
-        object = object,
-        assay = assay,
-        layer = layer
-      ),
-      error = function(e) {
-
-        warning(
-          "Unable to retrieve layer `",
-          layer,
-          "` from assay `",
-          assay,
-          "` in dataset `",
-          id,
-          "`: ",
-          conditionMessage(e),
-          call. = FALSE
-        )
-
-        NULL
+      if (nrow(migration_refinement)) {
+        migration_refinement_summary <- migration_refinement |>
+          dplyr::group_by(
+            .data$id,
+            .data$label,
+            .data$species
+          ) |>
+          dplyr::summarise(
+            n_raw_migrating = sum(.data$n_cells, na.rm = TRUE),
+            n_retained = sum(
+              .data$n_cells[.data$migration_outcome == "retained_migrating"],
+              na.rm = TRUE
+            ),
+            n_reassigned = sum(
+              .data$n_cells[.data$migration_outcome == "reassigned"],
+              na.rm = TRUE
+            ),
+            n_to_identity = sum(
+              .data$n_cells[
+                .data$migration_outcome == "reassigned" &
+                  .data$gnrh_stage == "identity"
+              ],
+              na.rm = TRUE
+            ),
+            n_to_mature = sum(
+              .data$n_cells[
+                .data$migration_outcome == "reassigned" &
+                  .data$gnrh_stage == "mature"
+              ],
+              na.rm = TRUE
+            ),
+            .groups = "drop"
+          ) |>
+          dplyr::mutate(
+            pct_retained = dplyr::if_else(
+              .data$n_raw_migrating > 0,
+              100 * .data$n_retained / .data$n_raw_migrating,
+              NA_real_
+            ),
+            pct_reassigned = dplyr::if_else(
+              .data$n_raw_migrating > 0,
+              100 * .data$n_reassigned / .data$n_raw_migrating,
+              NA_real_
+            )
+          )
       }
-    )
-
-    if (is.null(mat)) {
-      return(
-        tibble::tibble()
-      )
     }
-
-    available_cells <- intersect(
-      cells,
-      colnames(mat)
-    )
-
-    if (length(available_cells) == 0L) {
-      return(
-        tibble::tibble()
-      )
-    }
-
-    available_genes <- intersect(
-      genes,
-      rownames(mat)
-    )
-
-    if (length(available_genes) == 0L) {
-      return(
-        tibble::tibble()
-      )
-    }
-
-    mat <- mat[
-      available_genes,
-      available_cells,
-      drop = FALSE
-    ]
-
-    classes <- as.character(
-      md[
-        available_cells,
-        "gnrh_class",
-        drop = TRUE
-      ]
-    )
-
-    purrr::map_dfr(
-      positive_classes,
-      function(cl) {
-
-        idx <- which(
-          classes == cl
+    # ========================================================================= #
+    # Biological marker validation
+    # ========================================================================= #
+    biological_markers <- purrr::imap_dfr(
+      gnrh_list,
+      function(object, id) {
+        md <- object[[]]
+        cells <- rownames(md)[
+          as.character(md$gnrh_status) == "pos"
+        ]
+        if (!length(cells)) return(tibble::tibble())
+        expr <- tryCatch(
+          .get_expr(
+            object,
+            assay = assay,
+            layer = layer
+          ),
+          error = function(e) NULL
         )
-
-        if (length(idx) == 0L) {
-          return(
-            tibble::tibble()
+        if (is.null(expr)) return(tibble::tibble())
+        matched <- .match_genes(
+          validation_markers,
+          rownames(expr)
+        )
+        if (!length(matched)) return(tibble::tibble())
+        cells <- intersect(cells, colnames(expr))
+        if (!length(cells)) return(tibble::tibble())
+        classes <- as.character(
+          md[cells, "gnrh_class", drop = TRUE]
+        )
+        observed_positive_classes <- intersect(
+          positive_classes,
+          unique(classes)
+        )
+        purrr::map_dfr(
+          observed_positive_classes,
+          function(cl) {
+            idx <- classes == cl
+            if (!any(idx)) return(tibble::tibble())
+            x <- expr[
+              matched,
+              cells[idx],
+              drop = FALSE
+            ]
+            tibble::tibble(
+              id = id,
+            gnrh_class = cl,
+            gene = rownames(x),
+            avg_expression = Matrix::rowMeans(x),
+            pct_expressing = 100 * Matrix::rowMeans(x > 0)
           )
         }
-
-        x <- mat[
-          ,
-          idx,
-          drop = FALSE
-        ]
-
-        tibble::tibble(
-          id = id,
-
-          gnrh_class = cl,
-
-          gene =
-            rownames(x),
-
-          avg_expression =
-            Matrix::rowMeans(x),
-
-          pct_expressing =
-            100 *
-            Matrix::rowSums(
-              x > 0
-            ) /
-            ncol(x)
-        )
-      }
-    )
-  }
-
-  biological_markers <- purrr::imap_dfr(
-    gnrh_list,
-    summarise_marker_expression
-  )
-
-  if (nrow(biological_markers) > 0L) {
-
-    biological_markers <- biological_markers |>
-      dplyr::left_join(
-        dataset_metadata,
-        by = "id"
-      ) |>
-      dplyr::select(
-        .data$id,
-        .data$label,
-        .data$species,
-        .data$gnrh_class,
-        .data$gene,
-        .data$avg_expression,
-        .data$pct_expressing
       )
-
-  } else {
-
-    biological_markers <- tibble::tibble()
-  }
-
-
-  # =========================================================================== #
-  # Export
-  # =========================================================================== #
-
+    }
+  )
+  biological_markers <- join_metadata(
+    biological_markers,
+    dataset_metadata
+  )
+  # ========================================================================= #
+  # Validation outputs
+  # ========================================================================= #
   validation_tables <- list(
     input_summary = input_summary,
     detection = detection,
-    dropout_candidates = dropout_candidates,
+    transcriptomic_candidates = transcriptomic_candidates,
     classification_consistency = classification_consistency,
     status_class = status_class,
     scores = scores,
     stages = stages,
     stage_class = stage_class,
+    secretory = secretory,
     stage_refinement = stage_refinement,
     stage_reassignment = stage_reassignment,
     migration_core = migration_core,
@@ -3002,185 +2380,126 @@ validate_gnrh_collection <- function(
     migration_refinement_summary = migration_refinement_summary,
     biological_markers = biological_markers
   )
-
+  # ========================================================================= #
+  # Write outputs
+  # ========================================================================= #
   if (isTRUE(write_output)) {
-
-    if (
-      is.null(output_dir) ||
-      length(output_dir) != 1L ||
-      is.na(output_dir) ||
-      !nzchar(output_dir)
-    ) {
-      stop(
-        "`output_dir` must be a valid directory when ",
-        "`write_output = TRUE`.",
-        call. = FALSE
-      )
-    }
-
     dir.create(
       output_dir,
       recursive = TRUE,
       showWarnings = FALSE
     )
-
     purrr::iwalk(
       validation_tables,
       function(x, name) {
-
-        if (
-          is.data.frame(x) &&
-          ncol(x) > 0L
-        ) {
-
+        if (is.data.frame(x) && ncol(x)) {
           readr::write_csv(
             x,
-            file.path(
-              output_dir,
-              paste0(
-                name,
-                ".csv"
-              )
-            )
+            file.path(output_dir, paste0(name, ".csv"))
           )
         }
       }
     )
   }
-
-
-  # =========================================================================== #
-  # Final summary
-  # =========================================================================== #
-
-  total_cells <- sum(
-    detection$n_cells,
-    na.rm = TRUE
+  # ========================================================================= #
+  # Console summary
+  # ========================================================================= #
+  total_cells <- sum(detection$n_cells, na.rm = TRUE)
+  total_positive <- sum(detection$gnrh_pos, na.rm = TRUE)
+  has_candidate_counts <- any(
+    is.finite(detection$transcriptomic_candidates)
   )
-
-  total_positive <- sum(
-    detection$gnrh_pos,
-    na.rm = TRUE
-  )
-
-  total_dropout_candidates <- sum(
-    detection$dropout_candidates,
-    na.rm = TRUE
-  )
-
-  log(
-    "Validated ",
-    length(gnrh_list),
-    " datasets; ",
-    format(
-      total_cells,
-      big.mark = ","
-    ),
-    " cells; ",
-    format(
-      total_positive,
-      big.mark = ","
-    ),
-    " GnRH-positive cells."
-  )
-
-  log(
-    "GNRH1-negative transcriptomic candidates: ",
-    format(
-      total_dropout_candidates,
-      big.mark = ","
-    ),
-    " (diagnostic only; not counted as GnRH-positive)."
-  )
-
-  if (nrow(stage_refinement) > 0L) {
-
-    total_reassigned <- sum(
-      stage_refinement$n_reassigned,
-      na.rm = TRUE
-    )
-
-    log(
-      "Developmental-stage refinements: ",
-      format(
-        total_reassigned,
-        big.mark = ","
-      ),
-      " cells."
-    )
+  total_candidates <- if (has_candidate_counts) {
+    sum(detection$transcriptomic_candidates, na.rm = TRUE)
+  } else {
+    NA_integer_
   }
-
-  if (nrow(migration_refinement_summary) > 0L) {
-
-    total_raw_migrating <- sum(
-      migration_refinement_summary$n_raw_migrating,
-      na.rm = TRUE
-    )
-
-    total_migration_reassigned <- sum(
-      migration_refinement_summary$n_reassigned,
-      na.rm = TRUE
-    )
-
-    pct_migration_reassigned <-
-      if (total_raw_migrating > 0L) {
-        100 *
-          total_migration_reassigned /
-          total_raw_migrating
-      } else {
-        NA_real_
-      }
-
+  log(
+    sprintf(
+      "Validated %d datasets | %s cells | %s GnRH-positive",
+      length(gnrh_list),
+      format(total_cells, big.mark = ",", trim = TRUE),
+      format(total_positive, big.mark = ",", trim = TRUE)
+    ),
+    type = "info"
+  )
+  if (is.finite(total_candidates)) {
     log(
-      "Migration refinement: ",
-      format(
-        total_migration_reassigned,
-        big.mark = ","
-      ),
-      " / ",
-      format(
-        total_raw_migrating,
-        big.mark = ","
-      ),
-      " raw migrating cells reassigned (",
       sprintf(
-        "%.2f",
-        pct_migration_reassigned
+        "Transcriptomic candidates: %s",
+        format(total_candidates, big.mark = ",", trim = TRUE)
       ),
-      "%)."
+      type = "info"
     )
   }
-
-  log(
-    "==== GNRH COLLECTION VALIDATION DONE ===="
+  # ========================================================================= #
+  # Consistency summary
+  # ========================================================================= #
+  violation_columns <- intersect(
+    c(
+      "n_status_class_discordant_positive",
+      "n_status_class_discordant_negative",
+      "n_unexplained_positive_without_GNRH1",
+      "n_direct_without_GNRH1"
+    ),
+    colnames(classification_consistency)
   )
-
-
-  # =========================================================================== #
+  bad_consistency <- if (length(violation_columns)) {
+    rowSums(
+      as.data.frame(
+        classification_consistency[
+          ,
+          violation_columns,
+          drop = FALSE
+        ]
+      ),
+      na.rm = TRUE
+    )
+  } else {
+    rep(0, nrow(classification_consistency))
+  }
+  if (any(bad_consistency > 0)) {
+    log(
+      "Classification consistency violations detected.",
+      type = "warn"
+    )
+  } else {
+    log(
+      "Classification consistency checks passed.",
+      type = "done",
+      duration = 0
+    )
+  }
+  # ========================================================================= #
   # Return
-  # =========================================================================== #
-
+  # ========================================================================= #
   result <- c(
     list(
-      datasets =
-        dataset_metadata
+      datasets = dataset_metadata
     ),
     validation_tables,
     list(
-      output_dir =
-        if (isTRUE(write_output)) {
-          normalizePath(
-            output_dir,
-            mustWork = FALSE
-          )
-        } else {
-          NULL
-        }
+      parameters = list(
+        positive_classes = positive_classes,
+        assay = assay,
+        layer = layer,
+        validation_markers = validation_markers
+      ),
+      output_dir = if (isTRUE(write_output)) {
+        normalizePath(
+          output_dir,
+          mustWork = FALSE
+        )
+      } else {
+        NULL
+      }
     )
   )
-
   structure(
     result,
     class = "gnrh_validation"
   )
 }
+
+
+

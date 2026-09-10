@@ -7,22 +7,13 @@
 extract_gnrh_run_info(object, dataset_name = NULL)
 }
 \arguments{
-\item{object}{A Seurat object containing
-\code{object@misc$gnrh$run_info}.}
+\item{object}{A Seurat object processed with \code{\link{run_gnrh}}.}
 
-\item{dataset_name}{Optional dataset name. If \code{NULL},
-\code{"dataset"} is used.}
+\item{dataset_name}{Optional dataset name.}
 }
 \value{
-A data frame containing dataset size, GnRH detection counts,
-runtime values in seconds, and formatted runtime strings.
+One-row data frame containing dataset and GnRHcell run statistics.
 }
 \description{
-Extracts runtime, dataset size, and detection summary statistics
-from a Seurat object processed with \code{\link{run_gnrh}}.
-}
-\seealso{
-\code{\link{run_gnrh}},
-\code{\link{detect_gnrh}},
-\code{\link{stage_gnrh}}
+Extract GnRHcell run information
 }

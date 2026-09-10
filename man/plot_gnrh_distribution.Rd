@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_distribution}
 \alias{plot_gnrh_distribution}
-\title{Plot GnRHcell metadata distributions}
+\title{Plot gnrhcell metadata distributions}
 \usage{
 plot_gnrh_distribution(
   object,
@@ -69,5 +69,5 @@ to the number of samples, or a standard ggplot2 legend position.}
 A ggplot object.
 }
 \description{
-Plot GnRHcell metadata distributions
+Plot gnrhcell metadata distributions
 }

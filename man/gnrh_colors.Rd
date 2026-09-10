@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{gnrh_colors}
 \alias{gnrh_colors}
-\title{GnRHcell color palettes}
+\title{Color palettes}
 \usage{
 gnrh_colors(type = c("status", "confident", "class", "stage", "secretory"))
 }
@@ -13,5 +13,5 @@ gnrh_colors(type = c("status", "confident", "class", "stage", "secretory"))
 Named character vector.
 }
 \description{
-GnRHcell color palettes
+Color palettes
 }

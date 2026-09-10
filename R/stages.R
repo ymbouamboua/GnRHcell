@@ -1,20 +1,21 @@
 #' Assign dominant developmental stage
 #'
-#' Internal helper that assigns each cell to the developmental stage with the
-#' highest module score.
+#' Internal helper assigning the dominant developmental state from curated
+#' GnRH developmental-program scores.
 #'
-#' Developmental stages are restricted to \code{identity},
-#' \code{migrating}, and \code{mature}. Migration assignments are additionally
-#' validated using migration-core marker evidence.
+#' Raw assignments are based on the highest score among \code{identity},
+#' \code{migrating}, and \code{mature}. Migrating assignments can optionally
+#' be rejected when insufficient migration-core evidence is present.
 #'
-#' @param scores Numeric matrix or data frame of per-cell developmental stage
-#'   scores, with stages in columns.
-#' @param migration_core_hits Optional integer vector containing the number of
-#'   expressed migration-core markers per cell.
-#' @param min_migration_hits Minimum number of migration-core hits required to
-#'   retain a raw \code{migrating} assignment. Default is \code{2L}.
+#' @param scores Numeric matrix or data frame containing developmental-stage
+#'   scores in columns.
+#' @param migration_core_hits Optional integer vector containing migration-core
+#'   marker hits.
+#' @param min_migration_hits Minimum migration-core hits required to retain a
+#'   migrating assignment.
 #'
-#' @return Character vector containing developmental stage labels.
+#' @return A list containing final stage, raw stage, dominant score,
+#'   second-best score, score margin, and migration-filter status.
 #'
 #' @keywords internal
 #' @noRd
@@ -23,196 +24,209 @@ assign_stage <- function(
     migration_core_hits = NULL,
     min_migration_hits = 2L
 ) {
-
   scores <- as.matrix(scores)
 
-  required_stages <- c(
+  required <- c(
     "identity",
     "migrating",
     "mature"
   )
 
-  missing_stages <- setdiff(
-    required_stages,
+  missing <- setdiff(
+    required,
     colnames(scores)
   )
 
-  if (length(missing_stages) > 0L) {
+  if (length(missing)) {
     stop(
-      "Missing developmental stage score(s): ",
-      paste(
-        missing_stages,
-        collapse = ", "
-      ),
+      "Missing developmental-stage score(s): ",
+      paste(missing, collapse = ", "),
       call. = FALSE
     )
   }
 
   scores <- scores[
     ,
-    required_stages,
+    required,
     drop = FALSE
   ]
 
-  # --------------------------------------------------------------------------- #
-  # Initial assignment
-  # --------------------------------------------------------------------------- #
+  if (!nrow(scores)) {
+    return(
+      list(
+        stage = character(0),
+        raw_stage = character(0),
+        top_score = numeric(0),
+        second_score = numeric(0),
+        margin = numeric(0),
+        migration_filtered = logical(0)
+      )
+    )
+  }
 
-  stage <- colnames(scores)[
-    max.col(
-      scores,
-      ties.method = "first"
+  finite <- is.finite(scores)
+
+  scores_work <- scores
+  scores_work[!finite] <- -Inf
+
+  no_information <- rowSums(finite) == 0L
+
+  top_index <- max.col(
+    scores_work,
+    ties.method = "first"
+  )
+
+  raw_stage <- colnames(scores_work)[
+    top_index
+  ]
+
+  raw_stage[
+    no_information
+  ] <- NA_character_
+
+  top_score <- scores_work[
+    cbind(
+      seq_len(nrow(scores_work)),
+      top_index
     )
   ]
 
-  if (is.null(migration_core_hits)) {
-    return(stage)
-  }
+  second_score <- vapply(
+    seq_len(nrow(scores_work)),
+    function(i) {
+      x <- sort(
+        scores_work[i, ],
+        decreasing = TRUE
+      )
 
-  if (
-    length(migration_core_hits) !=
-    nrow(scores)
-  ) {
-    stop(
-      "`migration_core_hits` must have one value per cell.",
-      call. = FALSE
+      if (
+        length(x) < 2L ||
+        !is.finite(x[[2L]])
+      ) {
+        return(NA_real_)
+      }
+
+      x[[2L]]
+    },
+    numeric(1)
+  )
+
+  top_score[
+    no_information
+  ] <- NA_real_
+
+  margin <- top_score - second_score
+
+  stage <- raw_stage
+
+  migration_filtered <- rep(
+    FALSE,
+    nrow(scores_work)
+  )
+
+  if (!is.null(migration_core_hits)) {
+    if (
+      length(migration_core_hits) !=
+      nrow(scores_work)
+    ) {
+      stop(
+        "`migration_core_hits` must contain one value per cell.",
+        call. = FALSE
+      )
+    }
+
+    migration_core_hits <- suppressWarnings(
+      as.numeric(
+        migration_core_hits
+      )
     )
-  }
 
-  # --------------------------------------------------------------------------- #
-  # Validate migrating assignments
-  # --------------------------------------------------------------------------- #
+    migration_core_hits[
+      !is.finite(migration_core_hits)
+    ] <- 0
 
-  weak_migration <-
-    stage == "migrating" &
-    migration_core_hits < min_migration_hits
+    migration_filtered <-
+      !is.na(stage) &
+      stage == "migrating" &
+      migration_core_hits <
+      min_migration_hits
 
-  if (any(weak_migration)) {
+    if (any(migration_filtered)) {
+      alternative <- scores_work[
+        migration_filtered,
+        c(
+          "identity",
+          "mature"
+        ),
+        drop = FALSE
+      ]
 
-    alternatives <- scores[
-      weak_migration,
-      c(
-        "identity",
-        "mature"
-      ),
-      drop = FALSE
-    ]
-
-    stage[
-      weak_migration
-    ] <- colnames(alternatives)[
-      max.col(
-        alternatives,
+      alternative_index <- max.col(
+        alternative,
         ties.method = "first"
       )
-    ]
+
+      stage[
+        migration_filtered
+      ] <- colnames(alternative)[
+        alternative_index
+      ]
+    }
   }
 
-  stage
+  list(
+    stage = stage,
+    raw_stage = raw_stage,
+    top_score = top_score,
+    second_score = second_score,
+    margin = margin,
+    migration_filtered = migration_filtered
+  )
 }
-
-
 
 
 #' Stage GnRH lineage cells
 #'
-#' Assign developmental states to GnRH-lineage cells using biologically
-#' informed transcriptional programs.
+#' Assigns developmental states to GnRH-positive cells using curated
+#' transcriptional programs representing lineage identity, migration, and
+#' neuroendocrine maturation.
 #'
-#' Developmental staging is based on three mutually exclusive states:
-#' \itemize{
-#'   \item \code{identity}: lineage specification and early GnRH identity;
-#'   \item \code{migrating}: migration and axon-guidance programs; and
-#'   \item \code{mature}: neuroendocrine maturation.
-#' }
+#' Developmental stage and secretory machinery are modeled independently.
 #'
-#' Secretory machinery is evaluated independently from developmental stage.
-#' This allows cells to retain a developmental annotation such as
-#' \code{migrating} or \code{mature} while independently receiving evidence
-#' for a neuroendocrine secretory transcriptional program.
-#'
-#' A raw developmental stage is first assigned from the highest developmental
-#' module score. Raw \code{migrating} assignments are then validated using a
-#' curated migration-core marker set. Cells lacking sufficient migration-core
-#' evidence are reassigned to the highest-scoring alternative developmental
-#' stage.
-#'
-#' Secretory support requires expression of at least one core secretory marker
-#' together with either an additional core marker or sufficient supportive
-#' secretory evidence. The resulting annotation is classified as
-#' \code{limited} or \code{supported}.
-#'
-#' Cells classified as GnRH-negative by \code{\link{detect_gnrh}} are labeled
-#' \code{non-gnrh} in both developmental-stage and secretory annotations.
-#'
-#' @param object A Seurat object containing single-cell RNA-seq data.
-#' @param assay Assay used for developmental and secretory module scoring.
-#'   Default is \code{"RNA"}.
+#' @param object A Seurat object previously processed with
+#'   \code{\link{detect_gnrh}}.
+#' @param assay Assay used for developmental and secretory scoring.
 #' @param layer Expression layer used for module scoring.
-#'   Default is \code{"data"}.
-#' @param min_migration_hits Minimum number of expressed migration-core
-#'   markers required to retain a raw \code{migrating} assignment.
-#'   Default is \code{2L}.
-#' @param min_secretory_core_hits Minimum number of core secretory markers
-#'   required before secretory support can be assigned.
-#'   Default is \code{1L}.
-#' @param min_secretory_supportive_hits Minimum number of supportive secretory
-#'   markers required when only one core secretory marker is detected.
-#'   Default is \code{2L}.
-#' @param verbose Logical. Retained for API consistency. Progress reporting is
-#'   normally handled by \code{\link{run_gnrh}}.
+#' @param min_migration_hits Minimum migration-core hits required to retain a
+#'   migrating assignment.
+#' @param min_secretory_core_hits Minimum core secretory marker hits.
+#' @param min_secretory_supportive_hits Minimum supportive secretory hits.
+#' @param expression_weight Weight assigned to normalized module expression.
+#' @param detection_weight Weight assigned to module detection fraction.
+#' @param stage_margin Minimum difference between best and second-best
+#'   developmental score required for \code{gnrh_stage_confident = TRUE}.
+#' @param verbose Print progress messages.
 #'
-#' @return A Seurat object containing developmental stage assignments,
-#' developmental scores, migration-core evidence, and independent secretory
-#' transcriptional support.
-#'
-#' Added metadata include:
-#' \describe{
-#'   \item{\code{gnrh_stage_raw}}{
-#'   Developmental stage assigned directly from the maximum developmental
-#'   module score.}
-#'   \item{\code{gnrh_stage}}{
-#'   Final developmental stage after migration-core validation and masking
-#'   of GnRH-negative cells.}
-#'   \item{\code{gnrh_stage_reassigned}}{
-#'   Logical indicator specifying whether the raw developmental stage was
-#'   reassigned.}
-#'   \item{\code{gnrh_stage_reason}}{
-#'   Reason for the final developmental-stage assignment.}
-#'   \item{\code{gnrh_migration_core_hits}}{
-#'   Number of expressed migration-core markers detected per cell.}
-#'   \item{\code{gnrh_secretory_core_hits}}{
-#'   Number of expressed core secretory markers detected per cell.}
-#'   \item{\code{gnrh_secretory_supportive_hits}}{
-#'   Number of expressed supportive secretory markers detected per cell.}
-#'   \item{\code{gnrh_secretory_hits}}{
-#'   Total number of core and supportive secretory markers detected.}
-#'   \item{\code{gnrh_secretory}}{
-#'   Independent transcriptional support for secretory machinery, classified
-#'   as \code{limited}, \code{supported}, or \code{non-gnrh}.}
-#' }
+#' @return A Seurat object containing developmental-stage scores,
+#' assignments, confidence metrics, migration evidence, and secretory support.
 #'
 #' @details
-#' Developmental stage and secretory support are intentionally modeled as
-#' separate dimensions. Secretory-program expression therefore does not
-#' replace or override the developmental-stage assignment.
+#' Developmental stage is derived from integrated module activity combining
+#' normalized expression and the fraction of detected module genes.
 #'
-#' A raw \code{migrating} assignment is retained only when at least
-#' \code{min_migration_hits} migration-core markers are detected. Otherwise,
-#' the cell is reassigned to the highest-scoring alternative developmental
-#' state among \code{identity} and \code{mature}.
+#' The continuous developmental-program scores are retained independently from
+#' the categorical dominant-stage assignment.
 #'
-#' Secretory support is assigned when the cell expresses at least
-#' \code{min_secretory_core_hits} core secretory markers and either:
-#' \itemize{
-#'   \item at least two core secretory markers; or
-#'   \item at least \code{min_secretory_supportive_hits} supportive secretory
-#'   markers.
-#' }
+#' \code{gnrh_stage_confident} indicates whether the dominant program exceeds
+#' the second-best program by at least \code{stage_margin}.
 #'
-#' The secretory annotation reflects transcriptional support for
-#' neuroendocrine secretory machinery and should not be interpreted as a
-#' direct measurement of GnRH peptide release.
+#' \code{gnrh_stage_resolution} stores the corresponding categorical
+#' interpretation: \code{"resolved"}, \code{"transitional"}, or
+#' \code{"non-gnrh"}.
+#'
+#' Developmental scores are stored using the \code{gnrh_stage_*} namespace and
+#' therefore do not overwrite detection scores such as
+#' \code{gnrh_identity_score}.
 #'
 #' @seealso
 #' \code{\link{detect_gnrh}},
@@ -226,68 +240,105 @@ stage_gnrh <- function(
     min_migration_hits = 2L,
     min_secretory_core_hits = 1L,
     min_secretory_supportive_hits = 2L,
+    expression_weight = 0.5,
+    detection_weight = 0.5,
+    stage_margin = 0.10,
     verbose = TRUE
 ) {
-
-  stopifnot(
-    inherits(
-      object,
-      "Seurat"
-    )
-  )
-
-  # --------------------------------------------------------------------------- #
-  # Validate arguments
-  # --------------------------------------------------------------------------- #
-
-  if (
-    length(min_migration_hits) != 1L ||
-    is.na(min_migration_hits) ||
-    min_migration_hits < 0
-  ) {
+  if (!inherits(object, "Seurat")) {
     stop(
-      "`min_migration_hits` must be a single non-negative integer.",
+      "`object` must be a Seurat object.",
       call. = FALSE
     )
   }
 
+  log <- .msg(verbose)
+
+  validate_integer <- function(x, name) {
+    if (
+      length(x) != 1L ||
+      is.na(x) ||
+      !is.finite(x) ||
+      x < 0 ||
+      x != floor(x)
+    ) {
+      stop(
+        "`",
+        name,
+        "` must be a single non-negative integer.",
+        call. = FALSE
+      )
+    }
+
+    as.integer(x)
+  }
+
+  min_migration_hits <- validate_integer(
+    min_migration_hits,
+    "min_migration_hits"
+  )
+
+  min_secretory_core_hits <- validate_integer(
+    min_secretory_core_hits,
+    "min_secretory_core_hits"
+  )
+
+  min_secretory_supportive_hits <- validate_integer(
+    min_secretory_supportive_hits,
+    "min_secretory_supportive_hits"
+  )
+
   if (
-    length(min_secretory_core_hits) != 1L ||
-    is.na(min_secretory_core_hits) ||
-    min_secretory_core_hits < 0
+    length(stage_margin) != 1L ||
+    !is.finite(stage_margin) ||
+    stage_margin < 0
   ) {
     stop(
-      "`min_secretory_core_hits` must be a single non-negative integer.",
+      "`stage_margin` must be a single non-negative number.",
       call. = FALSE
     )
   }
 
-  if (
-    length(min_secretory_supportive_hits) != 1L ||
-    is.na(min_secretory_supportive_hits) ||
-    min_secretory_supportive_hits < 0
-  ) {
+  # ------------------------------------------------------------------------- #
+  # Input
+  # ------------------------------------------------------------------------- #
+
+  object <- validate_input(
+    object,
+    assay = assay,
+    required_layers = layer,
+    auto_normalize = FALSE,
+    verbose = FALSE
+  )
+
+  md <- object[[]]
+
+  if (!"gnrh_status" %in% colnames(md)) {
     stop(
-      "`min_secretory_supportive_hits` must be a single non-negative integer.",
+      "`gnrh_status` is missing. Run `detect_gnrh()` first.",
       call. = FALSE
     )
   }
 
-  min_migration_hits <- as.integer(
-    min_migration_hits
+  positive <-
+    !is.na(md$gnrh_status) &
+    as.character(md$gnrh_status) == "pos"
+
+  negative <- !positive
+
+  log(
+    sprintf(
+      "Staging %s GnRH-positive cells",
+      format(
+        sum(positive),
+        big.mark = ","
+      )
+    )
   )
 
-  min_secretory_core_hits <- as.integer(
-    min_secretory_core_hits
-  )
-
-  min_secretory_supportive_hits <- as.integer(
-    min_secretory_supportive_hits
-  )
-
-  # --------------------------------------------------------------------------- #
-  # Expression matrix
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Expression
+  # ------------------------------------------------------------------------- #
 
   expr <- .get_expr(
     object,
@@ -295,13 +346,11 @@ stage_gnrh <- function(
     layer = layer
   )
 
-  genes <- rownames(
-    expr
-  )
+  genes <- rownames(expr)
 
-  # --------------------------------------------------------------------------- #
-  # Developmental modules
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Developmental programs
+  # ------------------------------------------------------------------------- #
 
   modules <- .build_stage_modules(
     genes
@@ -313,18 +362,15 @@ stage_gnrh <- function(
     "mature"
   )
 
-  missing_modules <- setdiff(
+  missing <- setdiff(
     required_stages,
     names(modules)
   )
 
-  if (length(missing_modules) > 0L) {
+  if (length(missing)) {
     stop(
-      "Developmental stage modules are incomplete. Missing: ",
-      paste(
-        missing_modules,
-        collapse = ", "
-      ),
+      "Developmental-stage modules are incomplete. Missing: ",
+      paste(missing, collapse = ", "),
       call. = FALSE
     )
   }
@@ -335,58 +381,37 @@ stage_gnrh <- function(
 
   mod <- .score_modules(
     expr = expr,
-    modules = developmental_modules
+    modules = developmental_modules,
+    expression_weight = expression_weight,
+    detection_weight = detection_weight
   )
 
-  scores <- as.data.frame(
-    mod$score
+  expression_scores <- as.data.frame(
+    mod$score,
+    check.names = FALSE
   )
 
-  missing_scores <- setdiff(
-    required_stages,
-    colnames(scores)
+  detection_fractions <- as.data.frame(
+    mod$fraction,
+    check.names = FALSE
   )
 
-  if (length(missing_scores) > 0L) {
-    stop(
-      "Developmental module scores are incomplete. Missing: ",
-      paste(
-        missing_scores,
-        collapse = ", "
-      ),
-      call. = FALSE
-    )
-  }
+  stage_scores <- as.data.frame(
+    mod$integrated,
+    check.names = FALSE
+  )
 
-  # --------------------------------------------------------------------------- #
-  # Raw developmental-stage assignment
-  # --------------------------------------------------------------------------- #
-
-  raw_stage <- colnames(scores)[
-    max.col(
-      as.matrix(
-        scores[
-          ,
-          required_stages,
-          drop = FALSE
-        ]
-      ),
-      ties.method = "first"
-    )
-  ]
-
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
   # Migration-core evidence
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
 
   migration_core <- .build_migration_core(
     genes
   )
 
   migration_core_hits <- if (
-    length(migration_core) > 0L
+    length(migration_core)
   ) {
-
     as.integer(
       Matrix::colSums(
         expr[
@@ -396,25 +421,28 @@ stage_gnrh <- function(
         ] > 0
       )
     )
-
   } else {
-
     integer(
       ncol(expr)
     )
   }
 
-  # --------------------------------------------------------------------------- #
-  # Refined developmental-stage assignment
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Stage assignment
+  # ------------------------------------------------------------------------- #
 
-  stage <- assign_stage(
-    scores = scores,
+  assignment <- assign_stage(
+    scores = stage_scores,
     migration_core_hits = migration_core_hits,
     min_migration_hits = min_migration_hits
   )
 
+  raw_stage <- assignment$raw_stage
+  stage <- assignment$stage
+
   stage_reassigned <-
+    !is.na(raw_stage) &
+    !is.na(stage) &
     raw_stage != stage
 
   stage_reason <- rep(
@@ -422,42 +450,37 @@ stage_gnrh <- function(
     length(stage)
   )
 
-  migration_filtered <-
-    raw_stage == "migrating" &
-    migration_core_hits < min_migration_hits
+  stage_reason[
+    is.na(raw_stage)
+  ] <- "insufficient_stage_signal"
 
   stage_reason[
-    migration_filtered
+    assignment$migration_filtered
   ] <- "migration_core_filter"
 
-  # --------------------------------------------------------------------------- #
-  # GnRH-positive mask
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Stage confidence
+  # ------------------------------------------------------------------------- #
 
-  positive <- if (
-    "gnrh_status" %in%
-    colnames(
-      object[[]]
+  stage_confident <-
+    positive &
+    !is.na(stage) &
+    is.finite(assignment$margin) &
+    assignment$margin >= stage_margin
+
+  stage_resolution <- ifelse(
+    negative,
+    "non-gnrh",
+    ifelse(
+      stage_confident,
+      "resolved",
+      "transitional"
     )
-  ) {
+  )
 
-    as.character(
-      object$gnrh_status
-    ) == "pos"
-
-  } else {
-
-    rep(
-      TRUE,
-      ncol(object)
-    )
-  }
-
-  negative <- !positive
-
-  # --------------------------------------------------------------------------- #
-  # Mask GnRH-negative cells
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Mask negative cells
+  # ------------------------------------------------------------------------- #
 
   stage[
     negative
@@ -467,15 +490,17 @@ stage_gnrh <- function(
     negative
   ] <- FALSE
 
+  stage_confident[
+    negative
+  ] <- FALSE
+
   stage_reason[
     negative
   ] <- "non_gnrh"
 
-  # --------------------------------------------------------------------------- #
-  # Secretory module
-  #
-  # Secretory activity is evaluated independently from developmental stage.
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Secretory program
+  # ------------------------------------------------------------------------- #
 
   secretory_module <- .build_secretory_module(
     genes
@@ -496,14 +521,9 @@ stage_gnrh <- function(
     )
   }
 
-  # --------------------------------------------------------------------------- #
-  # Secretory core hits
-  # --------------------------------------------------------------------------- #
-
   secretory_core_hits <- if (
-    length(secretory_module$core) > 0L
+    length(secretory_module$core)
   ) {
-
     as.integer(
       Matrix::colSums(
         expr[
@@ -513,22 +533,15 @@ stage_gnrh <- function(
         ] > 0
       )
     )
-
   } else {
-
     integer(
       ncol(expr)
     )
   }
 
-  # --------------------------------------------------------------------------- #
-  # Secretory supportive hits
-  # --------------------------------------------------------------------------- #
-
   secretory_supportive_hits <- if (
-    length(secretory_module$supportive) > 0L
+    length(secretory_module$supportive)
   ) {
-
     as.integer(
       Matrix::colSums(
         expr[
@@ -538,38 +551,20 @@ stage_gnrh <- function(
         ] > 0
       )
     )
-
   } else {
-
     integer(
       ncol(expr)
     )
   }
 
-  # --------------------------------------------------------------------------- #
-  # Secretory total hits
-  # --------------------------------------------------------------------------- #
-
   secretory_hits <-
     secretory_core_hits +
     secretory_supportive_hits
 
-  # --------------------------------------------------------------------------- #
-  # Secretory activity
-  #
-  # High secretory activity requires:
-  #
-  # - at least min_secretory_core_hits core markers; and
-  # - either a second core marker or sufficient supportive evidence.
-  #
-  # With the defaults, this means:
-  #
-  # core >= 1 AND (core >= 2 OR supportive >= 2)
-  # --------------------------------------------------------------------------- #
-
   secretory_supported <-
     positive &
-    secretory_core_hits >= min_secretory_core_hits &
+    secretory_core_hits >=
+    min_secretory_core_hits &
     (
       secretory_core_hits >=
         max(
@@ -580,9 +575,19 @@ stage_gnrh <- function(
         min_secretory_supportive_hits
     )
 
-  # --------------------------------------------------------------------------- #
-  # Store developmental-stage assignments
-  # --------------------------------------------------------------------------- #
+  secretory_state <- ifelse(
+    negative,
+    "non-gnrh",
+    ifelse(
+      secretory_supported,
+      "supported",
+      "limited"
+    )
+  )
+
+  # ------------------------------------------------------------------------- #
+  # Metadata: developmental stage
+  # ------------------------------------------------------------------------- #
 
   object$gnrh_stage_raw <- factor(
     raw_stage,
@@ -607,35 +612,68 @@ stage_gnrh <- function(
     levels = c(
       "max_score",
       "migration_core_filter",
+      "insufficient_stage_signal",
       "non_gnrh"
     )
   )
 
-  # --------------------------------------------------------------------------- #
-  # Store developmental scores
-  # --------------------------------------------------------------------------- #
+  object$gnrh_stage_score <-
+    assignment$top_score
+
+  object$gnrh_stage_second_score <-
+    assignment$second_score
+
+  object$gnrh_stage_margin <-
+    assignment$margin
+
+  object$gnrh_stage_confident <-
+    stage_confident
+
+  object$gnrh_stage_resolution <- factor(
+    stage_resolution,
+    levels = c(
+      "resolved",
+      "transitional",
+      "non-gnrh"
+    )
+  )
+
+  # ------------------------------------------------------------------------- #
+  # Metadata: continuous developmental programs
+  # ------------------------------------------------------------------------- #
 
   for (nm in required_stages) {
-
     object[[
       paste0(
-        "gnrh_",
+        "gnrh_stage_",
         nm,
         "_score"
       )
-    ]] <- scores[[nm]]
-  }
+    ]] <- stage_scores[[nm]]
 
-  # --------------------------------------------------------------------------- #
-  # Store migration evidence
-  # --------------------------------------------------------------------------- #
+    object[[
+      paste0(
+        "gnrh_stage_",
+        nm,
+        "_expression"
+      )
+    ]] <- expression_scores[[nm]]
+
+    object[[
+      paste0(
+        "gnrh_stage_",
+        nm,
+        "_fraction"
+      )
+    ]] <- detection_fractions[[nm]]
+  }
 
   object$gnrh_migration_core_hits <-
     migration_core_hits
 
-  # --------------------------------------------------------------------------- #
-  # Store secretory evidence
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Metadata: secretory program
+  # ------------------------------------------------------------------------- #
 
   object$gnrh_secretory_core_hits <-
     secretory_core_hits
@@ -646,16 +684,11 @@ stage_gnrh <- function(
   object$gnrh_secretory_hits <-
     secretory_hits
 
+  object$gnrh_secretory_supported <-
+    secretory_supported
+
   object$gnrh_secretory <- factor(
-    ifelse(
-      negative,
-      "non-gnrh",
-      ifelse(
-        secretory_supported,
-        "supported",
-        "limited"
-      )
-    ),
+    secretory_state,
     levels = c(
       "limited",
       "supported",
@@ -663,9 +696,9 @@ stage_gnrh <- function(
     )
   )
 
-  # --------------------------------------------------------------------------- #
-  # Store staging metadata
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Stored information
+  # ------------------------------------------------------------------------- #
 
   object@misc$gnrh_stage_modules <-
     developmental_modules
@@ -679,11 +712,42 @@ stage_gnrh <- function(
   object@misc$gnrh_stage_parameters <- list(
     assay = assay,
     layer = layer,
-    min_migration_hits = min_migration_hits,
+
+    expression_weight =
+      expression_weight,
+
+    detection_weight =
+      detection_weight,
+
+    stage_margin =
+      stage_margin,
+
+    min_migration_hits =
+      min_migration_hits,
+
     min_secretory_core_hits =
       min_secretory_core_hits,
+
     min_secretory_supportive_hits =
       min_secretory_supportive_hits
+  )
+
+  if (is.null(object@misc$gnrh)) {
+    object@misc$gnrh <- list()
+  }
+
+  object@misc$gnrh$stage <- list(
+    modules =
+      developmental_modules,
+
+    migration_core =
+      migration_core,
+
+    secretory_module =
+      secretory_module,
+
+    parameters =
+      object@misc$gnrh_stage_parameters
   )
 
   object

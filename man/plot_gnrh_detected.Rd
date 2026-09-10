@@ -8,8 +8,9 @@ plot_gnrh_detected(
   files = NULL,
   dir = file.path("results", "tables"),
   pattern = "_gnrh_run_info\\\\.tsv$",
-  x.ang = 45,
   txtsize = 10,
+  label.size = 3.5,
+  digits = 2,
   debug = FALSE
 )
 }
@@ -20,9 +21,11 @@ plot_gnrh_detected(
 
 \item{pattern}{File-selection regular expression.}
 
-\item{x.ang}{X-axis label angle.}
-
 \item{txtsize}{Base text size.}
+
+\item{label.size}{Text size for bar annotations.}
+
+\item{digits}{Number of decimal places shown for GnRH-positive percentages.}
 
 \item{debug}{Print the imported summary columns.}
 }
@@ -30,5 +33,6 @@ plot_gnrh_detected(
 A ggplot object.
 }
 \description{
-Plot detected GnRH-positive cells across datasets
+Plot the total number of cells analyzed in each dataset and annotate each
+bar with the number and percentage of GnRH-positive cells detected.
 }

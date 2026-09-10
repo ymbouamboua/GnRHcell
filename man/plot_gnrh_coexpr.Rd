@@ -2,22 +2,56 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_coexpr}
 \alias{plot_gnrh_coexpr}
-\title{Plot GnRH coexpression markers}
+\title{Plot GNRH1-associated markers}
 \usage{
-plot_gnrh_coexpr(df, coexp_cutoff = 0.25, txtsize = 10, style = "bw")
+plot_gnrh_coexpr(
+  df,
+  coexp_cutoff = 0.1,
+  top_n = 40L,
+  txtsize = 10,
+  style = "bw",
+  coexpr_col = NULL,
+  score_col = NULL,
+  exclude_gnrh = TRUE,
+  gnrh_gene = "GNRH1",
+  point.size = c(1.2, 5),
+  title = "GNRH1-associated markers",
+  subtitle = NULL,
+  legend = TRUE
+)
 }
 \arguments{
-\item{df}{Marker table containing \code{gene}, \code{coexpr}, \code{score}, and \code{p_val_adj}.}
+\item{df}{GnRH marker table.}
 
 \item{coexp_cutoff}{Minimum GNRH1 co-expression value.}
 
+\item{top_n}{Maximum number of genes displayed. Use \code{NULL} to display
+all genes passing \code{coexp_cutoff}.}
+
 \item{txtsize}{Base text size.}
 
-\item{style}{Theme style.}
+\item{style}{Plot style.}
+
+\item{coexpr_col}{Optional co-expression column.}
+
+\item{score_col}{Optional marker-score column.}
+
+\item{exclude_gnrh}{Logical. Exclude GNRH1 itself from the plot.}
+
+\item{gnrh_gene}{GnRH gene name.}
+
+\item{point.size}{Point-size range.}
+
+\item{title}{Plot title.}
+
+\item{subtitle}{Optional plot subtitle.}
+
+\item{legend}{Logical. Display legends.}
 }
 \value{
 A ggplot object.
 }
 \description{
-Plot GnRH coexpression markers
+Visualize the strongest GNRH1-associated markers using co-expression,
+differential-expression significance, and marker score.
 }

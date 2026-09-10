@@ -50,6 +50,7 @@ reference:
       - find_gnrh_stage_markers
       - gnrh_stage_modules
       - gnrh_stage_gene_references
+      - gnrh_secretory_marker_module
       - build_gene_sets
       - gnrh_gene_upset
       - gnrh_marker_programs

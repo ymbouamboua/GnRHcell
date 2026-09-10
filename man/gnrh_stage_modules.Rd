@@ -4,61 +4,24 @@
 \alias{gnrh_stage_modules}
 \title{Default GnRH developmental marker programs}
 \usage{
-gnrh_stage_modules()
+gnrh_stage_modules(include_secretory = FALSE)
+}
+\arguments{
+\item{include_secretory}{Logical. Include a \code{secretory} module for
+backward compatibility. Default is \code{FALSE}.}
 }
 \value{
-A named list containing four character vectors:
-\describe{
-\item{identity}{Developmental identity and specification genes.}
-\item{migrating}{Migration and guidance-associated genes.}
-\item{mature}{Markers of differentiated GnRH neurons.}
-\item{secreting}{Genes involved in secretory function.}
-}
+Named list of uppercase gene symbols.
 }
 \description{
-Returns the curated developmental gene modules used by
-\code{gnrh_marker_programs()} to classify candidate GnRH markers
-into major developmental programs.
+Returns curated gene programs representing major developmental states of
+the GnRH neuronal lineage.
 }
 \details{
-The modules represent four key biological stages of the GnRH
-neuronal lineage:
-
-\itemize{
-\item \strong{identity}: specification and developmental identity
-genes.
-\item \strong{migrating}: genes involved in neuronal migration and
-axon guidance.
-\item \strong{mature}: markers associated with differentiated GnRH
-neurons.
-\item \strong{secreting}: genes involved in neuropeptide processing
-and secretion.
-}
-
-All genes are returned in uppercase to facilitate cross-species
-comparisons and marker matching.
-
-These modules were manually curated from the GnRH developmental
-literature and are intended for exploratory marker discovery rather
-than strict cell-state annotation.
-
-Users may modify the returned gene sets and provide a customized
-module list to \code{gnrh_marker_programs()}.
-}
-\examples{
-modules <- gnrh_stage_modules()
-
-names(modules)
-
-modules$identity
-
-length(modules$migrating)
-
-custom_modules <- modules
-custom_modules$identity <- unique(
-  c(custom_modules$identity, "FEZF2")
-)
-
+Developmental stage and secretory phenotype are intentionally separated.
+The developmental programs are \code{identity}, \code{migrating}, and
+\code{mature}. Secretory machinery is provided separately by
+\code{\link{gnrh_secretory_marker_module}}.
 }
 \references{
 Wray S. Development of gonadotropin-releasing hormone-1 neurons.
@@ -81,6 +44,7 @@ Li Q et al. Expression of genes for kisspeptin, neurokinin B and
 dynorphin in the hypothalamus. Front Endocrinol. 2020.
 }
 \seealso{
-\code{\link{gnrh_marker_programs}}
+\code{\link{gnrh_secretory_marker_module}},
+\code{\link{gnrh_marker_programs}},
 \code{\link{gnrh_stage_gene_references}}
 }

@@ -50,6 +50,8 @@
 #' @return A list containing classification vectors, diagnostic subclasses,
 #'   adaptive thresholds, rules, and rule summaries.
 #'
+#' Classify candidate GnRH cells
+#'
 #' @keywords internal
 #' @noRd
 .classify <- function(
@@ -63,224 +65,102 @@
     min_counts = 500,
     supported_q = 0.60,
     candidate_q = 0.95,
+    min_reference_cells = 20L,
     expr_thr,
     knn = NULL,
     alternative_score = NULL,
+    alternative_strong = NULL,
     max_alternative = 0.75,
     identity_strong,
     identity_moderate,
     independent_support
 ) {
+  n <- length(raw)
 
-  # --------------------------------------------------------------------------- #
-  # Input checks
-  # --------------------------------------------------------------------------- #
-
-  n <- length(score)
-
-  required_vectors <- list(
-    raw = raw,
-    norm = norm,
-    score = score,
-    support_score = support_score,
-    lib = lib,
-    identity_strong = identity_strong,
+  required <- list(
+    raw = raw, norm = norm, score = score, support_score = support_score,
+    lib = lib, identity_strong = identity_strong,
     identity_moderate = identity_moderate,
     independent_support = independent_support
   )
 
-  bad_length <- vapply(
-    required_vectors,
-    length,
-    integer(1)
-  ) != n
+  if (any(vapply(required, length, integer(1)) != n))
+    stop("Classification vectors must have identical lengths.", call. = FALSE)
 
-  if (any(bad_length)) {
-    stop(
-      paste0(
-        "raw, norm, score, support_score, lib, identity_strong, ",
-        "identity_moderate, and independent_support must have ",
-        "identical lengths."
-      ),
-      call. = FALSE
-    )
+  for (nm in c("supported_q", "candidate_q")) {
+    x <- get(nm)
+    if (length(x) != 1L || !is.finite(x) || x < 0 || x > 1)
+      stop(sprintf("`%s` must be between 0 and 1.", nm), call. = FALSE)
   }
 
-  if (
-    length(supported_q) != 1L ||
-    !is.finite(supported_q) ||
-    supported_q < 0 ||
-    supported_q > 1
-  ) {
-    stop(
-      "`supported_q` must be a single number between 0 and 1.",
-      call. = FALSE
-    )
-  }
+  if (candidate_q < supported_q)
+    stop("`candidate_q` must be >= `supported_q`.", call. = FALSE)
 
-  if (
-    length(candidate_q) != 1L ||
-    !is.finite(candidate_q) ||
-    candidate_q < 0 ||
-    candidate_q > 1
-  ) {
-    stop(
-      "`candidate_q` must be a single number between 0 and 1.",
-      call. = FALSE
-    )
-  }
+  min_reference_cells <- as.integer(min_reference_cells)
 
-  if (candidate_q < supported_q) {
-    stop(
-      "`candidate_q` must be greater than or equal to `supported_q`.",
-      call. = FALSE
-    )
-  }
+  if (!is.finite(min_reference_cells) || min_reference_cells < 1L)
+    stop("`min_reference_cells` must be >= 1.", call. = FALSE)
 
-  required_hits <- c(
-    "core",
-    "mig",
-    "neuro"
-  )
+  required_hits <- c("core", "mig", "neuro")
+  missing_hits <- setdiff(required_hits, names(hits))
 
-  missing_hits <- setdiff(
-    required_hits,
-    names(hits)
-  )
+  if (length(missing_hits))
+    stop("Missing marker-hit vectors: ",
+         paste(missing_hits, collapse = ", "), call. = FALSE)
 
-  if (length(missing_hits) > 0L) {
-    stop(
-      "Missing marker-hit vectors: ",
-      paste(
-        missing_hits,
-        collapse = ", "
-      ),
-      call. = FALSE
-    )
-  }
+  if (any(vapply(hits, length, integer(1)) != n))
+    stop("All marker-hit vectors must have length `n`.", call. = FALSE)
 
-  hit_lengths <- vapply(
-    hits,
-    length,
-    integer(1)
-  )
-
-  if (any(hit_lengths != n)) {
-    stop(
-      "All marker-hit vectors must have the same length as `score`.",
-      call. = FALSE
-    )
-  }
-
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
   # Basic evidence
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
 
-  lib_ok <-
-    is.finite(lib) &
-    lib >= min_counts
+  lib_ok <- is.finite(lib) & lib >= min_counts
+  umi_any <- is.finite(raw) & raw > 0
+  umi_ok <- is.finite(raw) & raw >= min_umi
+  umi_low <- is.finite(raw) & raw > 0 & raw < min_umi
 
-  umi_any <-
-    is.finite(raw) &
-    raw > 0
+  expr_ok <- is.finite(norm) & norm >= expr_thr
+  support_score_ok <- is.finite(support_score)
 
-  umi_ok <-
-    is.finite(raw) &
-    raw >= min_umi
+  identity_strong <- !is.na(identity_strong) & identity_strong
+  identity_moderate <- !is.na(identity_moderate) & identity_moderate
+  independent_support <- !is.na(independent_support) & independent_support
 
-  expr_ok <-
-    is.finite(norm) &
-    norm >= expr_thr
+  # ------------------------------------------------------------------------- #
+  # kNN identity support
+  # ------------------------------------------------------------------------- #
 
-  support_score_ok <-
-    is.finite(support_score)
+  if (is.null(knn)) knn <- rep(0, n)
 
-  identity_strong <-
-    !is.na(identity_strong) &
-    identity_strong
+  if (length(knn) != n)
+    stop("`knn` must have length `n`.", call. = FALSE)
 
-  identity_moderate <-
-    !is.na(identity_moderate) &
-    identity_moderate
-
-  independent_support <-
-    !is.na(independent_support) &
-    independent_support
-
-  # --------------------------------------------------------------------------- #
-  # Neighborhood support
-  # --------------------------------------------------------------------------- #
-
-  if (is.null(knn)) {
-
-    knn <- rep(
-      0,
-      n
-    )
-
-  } else if (length(knn) != n) {
-
-    stop(
-      "`knn` must have the same length as `score`.",
-      call. = FALSE
-    )
-  }
-
-  knn[
-    !is.finite(knn)
-  ] <- 0
+  knn[!is.finite(knn)] <- 0
+  knn <- pmin(pmax(knn, 0), 1)
 
   knn_support_thr <- 0.05
   knn_strong_thr <- 0.15
 
-  knn_ok <-
-    knn > knn_support_thr
+  knn_ok <- knn > knn_support_thr
+  knn_strong <- knn > knn_strong_thr
 
-  knn_strong <-
-    knn > knn_strong_thr
-
-  # --------------------------------------------------------------------------- #
-  # Marker support
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Marker evidence
+  # ------------------------------------------------------------------------- #
 
   core_hits <- hits$core
   mig_hits <- hits$mig
 
-  identity_primary_hits <- if (
-    "identity_primary" %in% names(hits)
-  ) {
-    hits$identity_primary
-  } else {
-    rep(0L, n)
-  }
+  identity_primary_hits <- hits$identity_primary %||% integer(n)
+  neuro_primary_hits <- hits$neuro_primary %||% integer(n)
+  neuro_supportive_hits <- hits$neuro_supportive %||% integer(n)
 
-  neuro_primary_hits <- if (
-    "neuro_primary" %in% names(hits)
-  ) {
-    hits$neuro_primary
-  } else {
-    rep(0L, n)
-  }
+  core_supported <- core_hits >= 2L
+  core_strong <- core_hits >= 3L
 
-  neuro_supportive_hits <- if (
-    "neuro_supportive" %in% names(hits)
-  ) {
-    hits$neuro_supportive
-  } else {
-    rep(0L, n)
-  }
-
-  core_supported <-
-    core_hits >= 2L
-
-  core_strong <-
-    core_hits >= 3L
-
-  migration_supported <-
-    mig_hits >= 1L
-
-  migration_strong <-
-    mig_hits >= 2L
+  migration_supported <- mig_hits >= 1L
+  migration_strong <- mig_hits >= 2L
 
   neuro_supported <-
     neuro_primary_hits >= 1L |
@@ -288,50 +168,42 @@
 
   neuro_strong <-
     neuro_primary_hits >= 2L |
-    (
-      neuro_primary_hits >= 1L &
-        neuro_supportive_hits >= 2L
-    )
+    (neuro_primary_hits >= 1L & neuro_supportive_hits >= 2L)
 
-  primary_identity <-
-    identity_primary_hits >= 1L
+  primary_identity <- identity_primary_hits >= 1L
+  strong_primary_identity <- identity_primary_hits >= 2L
 
-  strong_primary_identity <-
-    identity_primary_hits >= 2L
+  # ------------------------------------------------------------------------- #
+  # Alternative identities
+  # ------------------------------------------------------------------------- #
 
-  # --------------------------------------------------------------------------- #
-  # Alternative neuronal identities
-  # --------------------------------------------------------------------------- #
+  if (is.null(alternative_score))
+    alternative_score <- rep(0, n)
 
-  if (is.null(alternative_score)) {
+  if (length(alternative_score) != n)
+    stop("`alternative_score` must have length `n`.", call. = FALSE)
 
-    alternative_score <- rep(
-      0,
-      n
-    )
+  alternative_score[!is.finite(alternative_score)] <- 0
 
-  } else if (length(alternative_score) != n) {
+  if (is.null(alternative_strong))
+    alternative_strong <- alternative_score > max_alternative
 
-    stop(
-      "`alternative_score` must have the same length as `score`.",
-      call. = FALSE
-    )
-  }
+  if (length(alternative_strong) != n)
+    stop("`alternative_strong` must have length `n`.", call. = FALSE)
 
-  alternative_score[
-    !is.finite(alternative_score)
-  ] <- 0
+  alternative_strong <-
+    !is.na(alternative_strong) &
+    alternative_strong
 
   alternative_low <-
+    !alternative_strong &
     alternative_score <= max_alternative
 
-  # --------------------------------------------------------------------------- #
-  # Route 1: direct GNRH1 detection
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Route 1: direct detection
+  # ------------------------------------------------------------------------- #
 
-  direct_signal <-
-    lib_ok &
-    umi_ok
+  direct_signal <- lib_ok & umi_ok
 
   direct_supported <-
     direct_signal &
@@ -341,68 +213,57 @@
     direct_signal &
     !identity_moderate
 
-  # A positive direct call requires both GNRH1 signal and orthogonal identity
-  # evidence. This prevents ambient/off-target GNRH1 signal in non-neural
-  # tissues from being interpreted as a GnRH neuron.
   direct <- direct_supported
 
-  # --------------------------------------------------------------------------- #
-  # Reference transcriptomic support
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # High-specificity calibration population
+  # ------------------------------------------------------------------------- #
 
-  reference_support <- support_score[
+  reference_positive <-
     direct_signal &
-      support_score_ok
-  ]
+    identity_strong &
+    independent_support
 
-  finite_support <- support_score[
-    support_score_ok
-  ]
+  reference_support <-
+    support_score[
+      reference_positive &
+        support_score_ok
+    ]
 
-  # --------------------------------------------------------------------------- #
+  reference_n <- length(reference_support)
+
+  # ------------------------------------------------------------------------- #
   # Supported threshold
-  # --------------------------------------------------------------------------- #
+  #
+  # No global-cell fallback: without enough trusted reference cells,
+  # supported calls are disabled.
+  # ------------------------------------------------------------------------- #
 
-  if (length(reference_support) >= 20L) {
-
-    supported_thr <- as.numeric(
-      stats::quantile(
-        reference_support,
-        probs = supported_q,
-        na.rm = TRUE,
-        names = FALSE
-      )
-    )
-
-  } else if (length(finite_support) > 0L) {
-
-    supported_thr <- as.numeric(
-      stats::quantile(
-        finite_support,
-        probs = 0.90,
-        na.rm = TRUE,
-        names = FALSE
-      )
-    )
-
+  supported_thr <- if (reference_n >= min_reference_cells) {
+    as.numeric(stats::quantile(
+      reference_support,
+      probs = supported_q,
+      na.rm = TRUE,
+      names = FALSE
+    ))
   } else {
-
-    supported_thr <- Inf
+    Inf
   }
 
   support_supported <-
     support_score_ok &
     support_score >= supported_thr
 
-  # --------------------------------------------------------------------------- #
-  # Route 2: detectable but sub-threshold GNRH1
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Route 2: low-UMI GNRH1
+  #
+  # Normalized GNRH1 is retained diagnostically but not used as a required
+  # gate because one UMI is diluted in high-depth libraries.
+  # ------------------------------------------------------------------------- #
 
   supported_candidate <-
     lib_ok &
-    umi_any &
-    !umi_ok &
-    expr_ok &
+    umi_low &
     identity_moderate &
     independent_support
 
@@ -410,35 +271,28 @@
     supported_candidate &
     support_supported
 
-  # --------------------------------------------------------------------------- #
-  # Transcriptomic dropout candidate
+  # ------------------------------------------------------------------------- #
+  # GNRH1-negative transcriptomic candidate
   #
-  # IMPORTANT:
-  # These cells remain GnRH-negative because GNRH1 is not detected.
-  # This flag is diagnostic only.
-  # --------------------------------------------------------------------------- #
+  # Diagnostic only.
+  # ------------------------------------------------------------------------- #
 
-  if (length(reference_support) >= 20L) {
-
-    candidate_thr <- as.numeric(
-      stats::quantile(
-        reference_support,
-        probs = candidate_q,
-        na.rm = TRUE,
-        names = FALSE
-      )
-    )
-
+  candidate_thr <- if (reference_n >= min_reference_cells) {
+    as.numeric(stats::quantile(
+      reference_support,
+      probs = candidate_q,
+      na.rm = TRUE,
+      names = FALSE
+    ))
   } else {
-
-    candidate_thr <- Inf
+    Inf
   }
 
   candidate_support <-
     support_score_ok &
     support_score >= candidate_thr
 
-  dropout_candidate <-
+  transcriptomic_candidate <-
     lib_ok &
     !umi_any &
     identity_strong &
@@ -448,46 +302,30 @@
     alternative_low &
     candidate_support
 
-  # --------------------------------------------------------------------------- #
-  # Final classification
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Final classes
+  # ------------------------------------------------------------------------- #
 
-  cls <- rep(
-    "neg",
-    n
-  )
+  cls <- rep("neg", n)
+  cls[supported] <- "supported"
+  cls[direct] <- "direct"
 
-  cls[
-    supported
-  ] <- "supported"
+  status <- ifelse(cls == "neg", "neg", "pos")
+  keep <- cls != "neg"
 
-  cls[
-    direct
-  ] <- "direct"
-
-  status <- ifelse(
-    cls == "neg",
-    "neg",
-    "pos"
-  )
-
-  keep <-
-    cls != "neg"
-
-  # --------------------------------------------------------------------------- #
-  # Diagnostic rules
-  # --------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------- #
+  # Diagnostics
+  # ------------------------------------------------------------------------- #
 
   rules <- data.frame(
     library_ok = lib_ok,
-
     gnrh_detected = umi_any,
     gnrh_min_umi = umi_ok,
+    gnrh_low_umi = umi_low,
     gnrh_expr_high = expr_ok,
 
     primary_identity = primary_identity,
     strong_primary_identity = strong_primary_identity,
-
     identity_moderate = identity_moderate,
     identity_strong = identity_strong,
     independent_support = independent_support,
@@ -505,36 +343,28 @@
     knn_strong = knn_strong,
 
     alternative_low = alternative_low,
+    alternative_strong = alternative_strong,
 
+    reference_positive = reference_positive,
     support_supported = support_supported,
 
-    direct = direct,
     direct_signal = direct_signal,
     direct_supported = direct_supported,
     direct_isolated = direct_isolated,
+    direct = direct,
 
     supported_candidate = supported_candidate,
     supported = supported,
 
-    dropout_candidate = dropout_candidate,
-
+    transcriptomic_candidate = transcriptomic_candidate,
     stringsAsFactors = FALSE
   )
 
   rule_summary <- vapply(
     rules,
-    function(x) {
-      sum(
-        x,
-        na.rm = TRUE
-      )
-    },
+    function(x) sum(x, na.rm = TRUE),
     integer(1)
   )
-
-  # --------------------------------------------------------------------------- #
-  # Return
-  # --------------------------------------------------------------------------- #
 
   list(
     status = status,
@@ -545,11 +375,15 @@
     direct_supported = direct_supported,
     direct_isolated = direct_isolated,
 
-    dropout_candidate = dropout_candidate,
+    transcriptomic_candidate = transcriptomic_candidate,
 
-    # Backward-compatible generic threshold.
+    # Backward compatibility
+    dropout_candidate = transcriptomic_candidate,
+
+    reference_positive = reference_positive,
+    reference_n = reference_n,
+
     thr = supported_thr,
-
     supported_thr = supported_thr,
     candidate_thr = candidate_thr,
 

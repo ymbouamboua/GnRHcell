@@ -2,14 +2,15 @@
 % Please edit documentation in R/marker-programs.R
 \name{gnrh_stage_gene_references}
 \alias{gnrh_stage_gene_references}
-\title{GnRH developmental marker gene references}
+\title{GnRH developmental and functional marker gene references}
 \usage{
 gnrh_stage_gene_references()
 }
 \value{
-A data frame with gene, program, evidence_class, and references.
+Data frame containing gene, program, dimension, evidence class,
+and reference information.
 }
 \description{
-Returns a gene-level reference table for the curated developmental
-programs used by \code{\link{gnrh_stage_modules}}.
+Returns a gene-level reference table describing curated GnRH developmental
+and secretory programs.
 }

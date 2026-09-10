@@ -2,7 +2,7 @@
 % Please edit documentation in R/markers.R
 \name{gnrh_markers}
 \alias{gnrh_markers}
-\title{Detect positive GnRH lineage markers}
+\title{Discover and rank GnRH-associated marker genes}
 \usage{
 gnrh_markers(
   object,
@@ -12,50 +12,197 @@ gnrh_markers(
   assay = NULL,
   layer = "data",
   methods = "wilcox",
-  coexpr.method = "spearman",
-  min_pct = 0.01,
-  min_fc = 0.25,
+  coexpr.method = "pearson",
+  program_col = NULL,
+  association_mode = c("combined", "auto", "coexpression", "codetection", "program"),
+  min_pct = 0.005,
+  min_fc = 0.1,
   max_padj = 0.05,
-  coexpr_min = 0.15,
-  min_detect = 3,
+  coexpr_min = NULL,
+  codetect_min_or = NULL,
+  codetect_max_fdr = NULL,
+  program_min = NULL,
+  min_detect = 2L,
+  exclude_gnrh = TRUE,
   verbose = TRUE,
   ...
 )
 }
 \arguments{
-\item{object}{Seurat object}
+\item{object}{A Seurat object.}
 
-\item{group.by}{Metadata column}
+\item{group.by}{Character scalar giving the metadata column defining target
+and comparison groups. Default is \code{"gnrh_status"}.}
 
-\item{ident.1}{Positive group}
+\item{ident.1}{Character vector defining the target identity or identities.
+Default is \code{"pos"}.}
 
-\item{ident.2}{Optional comparison group}
+\item{ident.2}{Optional character vector defining the comparison identity or
+identities. If \code{NULL}, all cells not belonging to \code{ident.1} are
+used as the comparison group.}
 
-\item{assay}{Assay}
+\item{assay}{Optional character scalar giving the assay used for differential
+expression and association calculations. If \code{NULL}, the default
+Seurat assay is used.}
 
-\item{layer}{Layer}
+\item{layer}{Character scalar giving the expression layer used for
+specificity and association calculations. Default is \code{"data"}.}
 
-\item{methods}{DE methods}
+\item{methods}{Character vector of differential-expression methods passed to
+\code{Seurat::FindMarkers()}. Default is \code{"wilcox"}.}
 
-\item{coexpr.method}{Correlation method}
+\item{coexpr.method}{Character scalar giving the correlation method used for
+quantitative GnRH co-expression and program association. One of
+\code{"pearson"} or \code{"spearman"}. Default is \code{"pearson"}.}
 
-\item{min_pct}{Minimum detection fraction}
+\item{program_col}{Optional character scalar giving a metadata column
+containing a GnRH transcriptional-program score. If \code{NULL} and
+\code{"gnrh_identity_score"} exists, that column is used automatically.}
 
-\item{min_fc}{Minimum log2FC}
+\item{association_mode}{Character scalar specifying how GnRH association is
+incorporated into marker ranking. One of \code{"combined"},
+\code{"auto"}, \code{"coexpression"}, \code{"codetection"}, or
+\code{"program"}. Default is \code{"combined"}.}
 
-\item{max_padj}{Maximum adjusted p-value}
+\item{min_pct}{Minimum detection fraction in the target population required
+for candidate retention. Default is \code{0.005}.}
 
-\item{coexpr_min}{Minimum coexpression}
+\item{min_fc}{Minimum average log2 fold change required for candidate
+retention. Default is \code{0.10}.}
 
-\item{min_detect}{Minimum detected cells}
+\item{max_padj}{Maximum adjusted P value allowed for candidate markers.
+Default is \code{0.05}.}
 
-\item{verbose}{Print progress}
+\item{coexpr_min}{Optional minimum correlation with GnRH expression required
+for marker retention.}
+
+\item{codetect_min_or}{Optional minimum odds ratio for binary co-detection
+with the GnRH transcript.}
+
+\item{codetect_max_fdr}{Optional maximum FDR for GnRH co-detection
+enrichment.}
+
+\item{program_min}{Optional minimum correlation with the GnRH transcriptional
+program.}
+
+\item{min_detect}{Minimum number of cells in which a gene must be detected
+before marker evaluation. Default is \code{2L}.}
+
+\item{exclude_gnrh}{Logical. Whether to exclude the GnRH reference gene
+itself from the returned marker table. Default is \code{TRUE}.}
+
+\item{verbose}{Logical. Whether to print progress messages.}
 
 \item{...}{Additional arguments passed to \code{Seurat::FindMarkers()}.}
 }
 \value{
-Ranked marker table
+A data frame of ranked GnRH-associated marker genes. The returned
+table may contain:
+\describe{
+\item{\code{gene}}{Gene symbol.}
+\item{\code{avg_log2FC}}{Average log2 fold change across DE methods.}
+\item{\code{p_val_adj}}{Best adjusted P value across DE methods.}
+\item{\code{method_support}}{Number of DE methods supporting the gene.}
+\item{\code{pct.1}, \code{pct.2}}{Detection fractions in target and
+comparison cells.}
+\item{\code{specificity}}{Detection difference
+\code{pct.1 - pct.2}.}
+\item{\code{phenotype_or}}{Detection odds ratio for target versus
+comparison cells.}
+\item{\code{phenotype_log2or}}{Log2 phenotype odds ratio.}
+\item{\code{phenotype_delta}}{Difference in detection frequency between
+target and comparison cells.}
+\item{\code{phenotype_p}, \code{phenotype_fdr}}{Phenotype-association
+significance statistics.}
+\item{\code{coexpr_cor}}{Correlation between candidate-gene and GnRH
+expression within target cells.}
+\item{\code{codetect_or}}{Odds ratio for binary co-detection with the GnRH
+transcript.}
+\item{\code{codetect_log2or}}{Log2 co-detection odds ratio.}
+\item{\code{codetect_p}, \code{codetect_fdr}}{Co-detection significance
+statistics.}
+\item{\code{program_cor}}{Correlation with the GnRH transcriptional
+program when available.}
+\item{\code{association_score}}{Scaled GnRH-association score used to
+refine marker ranking.}
+\item{\code{marker_score}}{Final marker-ranking score.}
+}
 }
 \description{
-Detect positive GnRH lineage markers
+Identifies genes enriched in a target GnRH population relative to a
+comparison population and ranks them using differential expression,
+detection specificity, GnRH co-expression, GnRH co-detection, and optional
+correlation with a GnRH transcriptional program.
 }
+\details{
+Differential-expression results from all requested \code{methods} are first
+aggregated by gene. Candidate genes are then filtered using minimum
+detection, fold change, target-cell detection frequency, and adjusted
+P value before the more computationally intensive association metrics are
+calculated.
+
+Quantitative co-expression measures correlation between each candidate gene
+and the GnRH reference transcript within target cells. Binary co-detection
+evaluates whether candidate-gene detection is enriched in cells in which the
+GnRH transcript is detected. When \code{program_col} is available,
+candidate-gene expression can additionally be correlated with the GnRH
+transcriptional-program score.
+
+With \code{association_mode = "combined"}, the ranking association score is
+based on scaled co-detection and program association when a program score is
+available, otherwise on co-detection alone. Quantitative co-expression is
+still calculated so that it remains available for downstream diagnostics and
+visualization.
+
+With \code{association_mode = "auto"}, the function evaluates the information
+content of the GnRH transcript. Low-information expression profiles favor
+co-detection or combined scoring, whereas sufficiently variable GnRH
+expression favors quantitative co-expression.
+
+Pearson correlation is the default because it permits efficient matrix-based
+calculation on large single-cell datasets. Spearman correlation is supported
+but requires rank transformation and is therefore more computationally
+expensive.
+
+The final marker score combines positive fold change, target-cell
+specificity, target detection frequency, statistical significance, method
+support, and the selected GnRH association score.
+}
+\examples{
+\dontrun{
+markers <- gnrh_markers(
+  object = wang,
+  group.by = "gnrh_status",
+  ident.1 = "pos"
+)
+
+head(markers)
+
+markers <- gnrh_markers(
+  object = wang,
+  group.by = "gnrh_status",
+  ident.1 = "pos",
+  association_mode = "combined",
+  coexpr.method = "pearson"
+)
+
+strict <- gnrh_markers(
+  object = wang,
+  ident.1 = "pos",
+  min_fc = 0.5,
+  min_pct = 0.1,
+  codetect_min_or = 2
+)
+}
+
+}
+\seealso{
+\code{\link{find_gnrh_genes}},
+\code{\link{find_gnrh_stage_markers}},
+\code{\link{run_gnrh}}
+
+Other marker discovery: 
+\code{\link{find_gnrh_genes}()},
+\code{\link{find_gnrh_stage_markers}()}
+}
+\concept{marker discovery}

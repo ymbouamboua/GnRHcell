@@ -16,6 +16,7 @@ detect_gnrh(
   mad_factor = 2,
   supported_q = 0.6,
   candidate_q = 0.95,
+  min_reference_cells = 20L,
   scale_factor = 10000,
   max_alternative = 0.75,
   verbose = TRUE
@@ -52,6 +53,10 @@ Default is 0.60.}
 \item{candidate_q}{Quantile of the direct-cell transcriptomic support
 distribution used only to flag GNRH1-negative transcriptomic candidates.
 These cells are never classified as GnRH-positive. Default is 0.95.}
+
+\item{min_reference_cells}{Minimum number of direct-signal cells required
+to construct empirical reference distributions used for detection
+thresholds. Default is \code{20L}.}
 
 \item{scale_factor}{Library normalization scale factor. Default is 10000.}
 
@@ -117,4 +122,6 @@ whereas \code{gnrh_support_score} deliberately excludes direct
 \code{\link{gnrh_diagnostics}},
 \code{\link{stage_gnrh}},
 \code{\link{run_gnrh}}
+
+Detect GnRH neurons from single-cell RNA-seq data
 }

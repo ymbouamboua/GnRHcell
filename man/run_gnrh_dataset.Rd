@@ -12,53 +12,52 @@ run_gnrh_dataset(
   reduction = "umap",
   output_dir,
   run_markers = TRUE,
-  clean_object = TRUE
+  run_figures = TRUE,
+  run_report = TRUE,
+  detect_args = list(),
+  stage_args = list(),
+  diagnostic_args = list(),
+  marker_args = list(),
+  clean_object = TRUE,
+  verbose = TRUE
 )
 }
 \arguments{
-\item{object}{A Seurat object containing the dataset to analyze.}
+\item{object}{A Seurat object.}
 
-\item{dataset_id}{Character scalar giving a short unique identifier for the
-dataset. This identifier is used in output file names and directories.}
+\item{dataset_id}{Short unique dataset identifier.}
 
-\item{dataset_label}{Character scalar giving a human-readable dataset name.}
+\item{dataset_label}{Human-readable dataset label.}
 
-\item{split_by}{Character scalar giving the metadata column used to split
-GnRH distributions. If unavailable, common alternatives such as
-\code{"orig.ident"}, \code{"sample"}, and \code{"library_id"} are considered.}
+\item{split_by}{Metadata column used for grouped summaries.}
 
-\item{reduction}{Character scalar giving the dimensional reduction used for
-embedding plots. Default is \code{"umap"}.}
+\item{reduction}{Dimensional reduction used for embedding plots.}
 
-\item{output_dir}{Character scalar giving the root output directory.}
+\item{output_dir}{Root output directory.}
 
-\item{run_markers}{Logical. Whether to identify GnRH-associated markers and
-generate marker-based plots. Default is \code{TRUE}.}
+\item{run_markers}{Run marker discovery.}
 
-\item{clean_object}{Logical. Whether to trigger garbage collection after
-processing the dataset. Default is \code{TRUE}.}
+\item{run_figures}{Generate essential GnRH figures.}
+
+\item{run_report}{Generate GnRHcell diagnostic report.}
+
+\item{detect_args}{Named list passed to \code{\link{detect_gnrh}}.}
+
+\item{stage_args}{Named list passed to \code{\link{stage_gnrh}}.}
+
+\item{diagnostic_args}{Named list passed to \code{\link{gnrh_diagnostics}}.}
+
+\item{marker_args}{Named list passed to \code{\link{gnrh_markers}}.}
+
+\item{clean_object}{Trigger garbage collection after analysis.}
+
+\item{verbose}{Print progress messages.}
 }
 \value{
-A named list containing:
-\describe{
-\item{object}{The processed Seurat object.}
-\item{run_info}{Dataset-level GnRHcell run information.}
-\item{markers}{GnRH marker results, or \code{NULL} when marker analysis was
-disabled.}
-\item{reduction}{The dimensional reduction used for plotting.}
-\item{split_by}{The metadata column used for distribution plots, or
-\code{NULL}.}
-}
+Named dataset-level result list.
 }
 \description{
-Runs the GnRHcell workflow on a Seurat object and generates dataset-level
-diagnostic plots, embeddings, feature plots, distribution plots, marker
-tables, co-expression plots, and marker networks.
-}
-\details{
-The function is primarily used internally by \code{\link[=run_gnrh_collection]{run_gnrh_collection()}} but
-can also be called directly for individual datasets.
-}
-\seealso{
-\code{\link[=run_gnrh_collection]{run_gnrh_collection()}}, \code{\link[=run_gnrh]{run_gnrh()}}
+Runs GnRH detection, developmental staging, diagnostics, essential
+visualization, marker discovery, marker co-expression, and marker-network
+analysis for one Seurat dataset.
 }

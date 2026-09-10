@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{gnrh_report}
 \alias{gnrh_report}
-\title{Generate a publication-ready GnRHcell diagnostic report}
+\title{Generate a publication-ready gnrhcell diagnostic report}
 \usage{
 gnrh_report(
   object,

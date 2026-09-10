@@ -10,7 +10,7 @@ find_gnrh_stage_markers(
   stages = c("identity", "migrating", "mature"),
   class_col = "gnrh_class",
   positive_classes = c("direct", "supported"),
-  exclude_stages = c("non-gnrh", "secreting"),
+  exclude_stages = "non-gnrh",
   assay = NULL,
   layer = "data",
   test_use = "wilcox",
@@ -31,103 +31,146 @@ find_gnrh_stage_markers(
 )
 }
 \arguments{
-\item{object}{A Seurat object processed with \code{run_gnrh()}.}
+\item{object}{A Seurat object processed with GnRHcell and containing
+developmental-stage metadata.}
 
-\item{stage_col}{Metadata column containing developmental stages.}
+\item{stage_col}{Character scalar giving the metadata column containing GnRH
+developmental-stage labels. Default is \code{"gnrh_stage"}.}
 
-\item{stages}{Stages to test. By default, \code{identity}, \code{migrating}, and
-\code{mature} are tested when present.}
+\item{stages}{Character vector giving the stages to compare. Default is
+\code{c("identity", "migrating", "mature")}.}
 
-\item{class_col}{Metadata column defining GnRH detection classes. Set to
-\code{NULL} to select cells using \code{stage_col} alone.}
+\item{class_col}{Optional character scalar giving the GnRH detection-class
+metadata column. When supplied, only cells whose class belongs to
+\code{positive_classes} are retained. Default is \code{"gnrh_class"}.}
 
-\item{positive_classes}{Detection classes considered GnRH-lineage positive.}
+\item{positive_classes}{Character vector defining GnRH-positive classes.
+Default is \code{c("direct", "supported")}.}
 
-\item{exclude_stages}{Stage values excluded from all comparisons.}
+\item{exclude_stages}{Character vector of stage labels excluded before
+analysis. Default is \code{"non-gnrh"}.}
 
-\item{assay}{Assay used for differential expression.}
+\item{assay}{Optional character scalar giving the assay used for
+differential expression. If \code{NULL}, the default Seurat assay is used.}
 
-\item{layer}{Normalized-expression layer used for donor concordance.}
+\item{layer}{Character scalar giving the expression layer used for
+donor-level concordance calculations. Default is \code{"data"}.}
 
-\item{test_use}{Differential-expression test passed to
-\code{Seurat::FindMarkers()}.}
+\item{test_use}{Character scalar giving the differential-expression method
+passed to \code{Seurat::FindMarkers()}. Default is \code{"wilcox"}.}
 
-\item{min_cells}{Minimum number of cells required in both the target stage
-and its reference group.}
+\item{min_cells}{Minimum number of selected cells required in each analyzed
+developmental stage. Default is \code{10L}.}
 
-\item{min_pct}{Minimum expression fraction passed to \code{FindMarkers()}.}
+\item{min_pct}{Minimum fraction of cells expressing a gene passed to
+\code{Seurat::FindMarkers()}. Default is \code{0.10}.}
 
-\item{min_log2fc}{Minimum positive average log2 fold change.}
+\item{min_log2fc}{Minimum positive average log2 fold change required for a
+final candidate marker. Default is \code{0.25}.}
 
-\item{max_padj}{Maximum adjusted p-value.}
+\item{max_padj}{Maximum adjusted P value allowed for candidate markers.
+Default is \code{0.05}.}
 
-\item{min_specificity}{Minimum \code{pct.1 - pct.2} detection difference.}
+\item{min_specificity}{Minimum detection-frequency difference
+\code{pct.1 - pct.2} required for candidate retention.
+Default is \code{0.05}.}
 
-\item{donor_col}{Optional biological replicate column. When supplied, the
-direction of the stage effect is evaluated independently within donors.}
+\item{donor_col}{Optional character scalar identifying biological donors,
+samples, or replicates.}
 
-\item{min_cells_donor}{Minimum cells required in both comparison groups for
-a donor to be evaluable for a stage.}
+\item{min_cells_donor}{Minimum number of cells required in both the target
+stage and donor-specific reference population for a donor to be evaluable.
+Default is \code{3L}.}
 
 \item{min_donor_support}{Minimum fraction of evaluable donors in which the
-mean normalized expression effect is positive.}
+target stage shows higher mean expression than its donor-specific
+reference. Default is \code{0.60}.}
 
 \item{min_donors}{Minimum number of evaluable donors required before donor
-support is used as a candidate filter.}
+reproducibility is used as a candidate filter. Default is \code{2L}.}
 
-\item{max_cells_per_ident}{Optional maximum cells sampled from each identity
-by \code{FindMarkers()}. Useful for very large atlases.}
+\item{max_cells_per_ident}{Maximum number of cells sampled per identity by
+\code{Seurat::FindMarkers()}. Default is \code{Inf}.}
 
-\item{exclude_pattern}{Optional regular expression for genes to exclude from
-the candidate table, for example mitochondrial or ribosomal genes.}
+\item{exclude_pattern}{Optional regular expression identifying genes to
+exclude from the final candidate table.}
 
-\item{seed}{Random seed used by differential-expression subsampling.}
+\item{seed}{Integer random seed used for differential-expression
+subsampling. Default is \code{1234L}.}
 
-\item{verbose}{Display progress messages.}
+\item{verbose}{Logical. Whether to print progress messages.}
 
 \item{...}{Additional arguments passed to \code{Seurat::FindMarkers()}.}
 }
 \value{
 A named list containing:
 \describe{
-\item{candidates}{Filtered and ranked stage-specific markers.}
-\item{markers}{Complete positive marker results for all tested stages.}
-\item{donor_effects}{Long table of within-donor mean-expression effects.}
-\item{stage_counts}{Numbers of selected cells per stage.}
-\item{cells}{Cell barcodes used in the analysis.}
-\item{parameters}{Principal analysis parameters.}
+\item{\code{candidates}}{Filtered and ranked stage-specific candidate
+markers.}
+\item{\code{markers}}{Complete positive marker results from all
+stage-versus-rest comparisons before final candidate filtering.}
+\item{\code{donor_effects}}{Long-format donor-level expression and
+detection effects.}
+\item{\code{stage_counts}}{Number of selected cells in each analyzed
+developmental stage.}
+\item{\code{cells}}{Cell barcodes included in the analysis.}
+\item{\code{parameters}}{Principal marker-discovery parameters.}
 }
 }
 \description{
-Finds genes enriched in each GnRH developmental stage relative to the other
-GnRH-positive stages. Unlike \code{gnrh_markers()}, this function does not require
-correlation or co-detection with \code{GNRH1}, because those filters favor general
-GnRH-lineage genes rather than stage-specific programs.
+Identifies genes enriched in each GnRH developmental stage relative to the
+other selected GnRH stages using one-versus-rest differential-expression
+testing, detection specificity, statistical significance, and optional
+donor-level reproducibility.
 }
 \details{
-Each stage is tested against the union of the other selected GnRH stages
-(one-versus-rest). The reported \code{specificity} is \code{pct.1 - pct.2}. The ranking
-score combines positive fold change, detection specificity, statistical
-significance, and—when available—donor concordance.
+Each requested developmental stage is compared against the union of the
+other retained stages. Only positive markers are returned by
+\code{Seurat::FindMarkers()}.
 
-Cell-level differential expression is useful for marker discovery but does
-not replace a replicate-aware pseudobulk analysis for formal inference.
-\code{donor_support} should therefore be used to prioritize reproducible markers,
-while final publication claims should be confirmed with pseudobulk counts.
+Marker specificity is defined as:
+\deqn{specificity = pct.1 - pct.2}
+where \code{pct.1} is the detection fraction in the target stage and
+\code{pct.2} is the detection fraction in the other GnRH stages.
+
+When \code{donor_col} is supplied, donors are considered evaluable only when
+at least \code{min_cells_donor} target cells and \code{min_cells_donor}
+reference cells are available. Mean-expression and detection-frequency
+differences are then calculated independently within each donor.
+
+Donor support is the fraction of evaluable donors with a positive
+target-versus-reference mean-expression difference. Candidates with at least
+\code{min_donors} evaluable donors must satisfy
+\code{min_donor_support}. Genes with insufficient donor information are
+retained.
+
+The final ranking score combines fold change, detection specificity,
+target-stage detection frequency, statistical significance, and donor
+support:
+\deqn{
+max(logFC,0) \times max(specificity,0) \times
+sqrt(pct.1) \times significance \times donor\ weight
+}
+
+Cell-level differential-expression testing is intended primarily for marker
+discovery and prioritization. Replicate-aware pseudobulk analysis is
+preferable for formal differential-expression inference when biological
+replicates are available.
 }
 \examples{
 \dontrun{
 stage_markers <- find_gnrh_stage_markers(
   object = wang,
-  stage_col = "gnrh_stage",
-  donor_col = "orig.ident",
-  stages = c("identity", "migrating", "mature")
+  donor_col = "orig.ident"
 )
 
 head(stage_markers$candidates)
-subset(stage_markers$candidates, stage == "migrating")
 
-# Faster discovery in a very large atlas
+migrating <- subset(
+  stage_markers$candidates,
+  stage == "migrating"
+)
+
 stage_markers <- find_gnrh_stage_markers(
   object = human_hypomap,
   donor_col = "orig.ident",
@@ -137,9 +180,12 @@ stage_markers <- find_gnrh_stage_markers(
 
 }
 \seealso{
-\code{gnrh_markers()}, \code{find_gnrh_genes()}
+\code{\link{gnrh_markers}},
+\code{\link{find_gnrh_genes}},
+\code{\link{stage_gnrh}}
 
 Other marker discovery: 
-\code{\link{find_gnrh_genes}()}
+\code{\link{find_gnrh_genes}()},
+\code{\link{gnrh_markers}()}
 }
 \concept{marker discovery}

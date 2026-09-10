@@ -11,54 +11,58 @@ plot_gnrh_dataset_specific_markers(
   score_col = NULL,
   dataset_names = names(files),
   gene_case = c("upper", "asis"),
-  top_n_per_dataset = 20,
-  max_datasets = 2,
+  top_n_per_dataset = NULL,
+  max_datasets = 2L,
+  min_target_score = NULL,
+  exclude_genes = NULL,
   scale_rows = TRUE,
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   show_column_names = TRUE,
-  fontsize_row = 7,
-  fontsize_col = 9,
+  fontsize_row = NULL,
+  fontsize_col = NULL,
   fontsize_legend = 10,
   filename = NULL,
-  width = 8,
-  height = 10
+  width = NULL,
+  height = NULL
 )
 }
 \arguments{
-\item{files}{Named character vector of GnRH marker TSV filenames or paths.
-Names are used as dataset labels unless \code{dataset_names} is supplied.}
+\item{files}{Named marker TSV filenames or paths.}
 
 \item{dir}{Directory prepended to relative file paths.}
 
 \item{gene_col}{Gene-symbol column.}
 
-\item{score_col}{Score column. \code{NULL} selects the first available column from
-\code{score_candidates} independently for each table.}
+\item{score_col}{Optional score column used in every dataset.}
 
 \item{dataset_names}{Optional dataset labels.}
 
-\item{gene_case}{Standardize genes to uppercase or preserve their case.}
+\item{gene_case}{Standardize genes to uppercase or preserve original case.}
 
-\item{top_n_per_dataset}{Maximum markers selected for each dataset.}
+\item{top_n_per_dataset}{Maximum markers selected per dataset. If
+\code{NULL}, automatically adapted to dataset number.}
 
-\item{max_datasets}{Maximum datasets supporting a dataset-specific marker.}
+\item{max_datasets}{Maximum number of datasets supporting a marker.}
 
-\item{scale_rows}{Row-standardize scores before plotting.}
+\item{min_target_score}{Optional minimum raw target-dataset score.}
+
+\item{exclude_genes}{Optional genes excluded from visualization.}
+
+\item{scale_rows}{Row-standardize marker scores.}
 
 \item{cluster_rows, cluster_columns}{Cluster heatmap rows or columns.}
 
 \item{show_column_names}{Show dataset labels.}
 
-\item{fontsize_row, fontsize_col, fontsize_legend}{Text sizes.}
+\item{fontsize_row, fontsize_col, fontsize_legend}{Font sizes.}
 
-\item{filename}{Optional PDF filename. Nothing is written when \code{NULL}.}
+\item{filename}{Optional PDF or PNG filename.}
 
-\item{width, height}{PDF dimensions.}
+\item{width, height}{Optional figure dimensions in inches.}
 }
 \value{
-A list with \code{heatmap}, matrices, specificity scores, and
-\code{specific_table}.
+List containing heatmap, score matrices, and specificity table.
 }
 \description{
 Plot dataset-specific GnRH markers

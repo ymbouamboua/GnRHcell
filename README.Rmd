@@ -6,6 +6,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -14,6 +15,7 @@ knitr::opts_chunk$set(
   fig.width = 8,
   fig.height = 6
 )
+
 ```
 
 <div align="center">
@@ -32,12 +34,13 @@ knitr::opts_chunk$set(
 `GnRHcell` is an R package for identifying and characterizing rare gonadotropin-releasing hormone (GnRH) neurons in single-cell transcriptomic datasets. It combines `GNRH1` expression with lineage, migration, neuroendocrine, neighborhood, and alternative-program evidence in a Seurat-compatible workflow.
 
 The central principle is to **avoid relying on `GNRH1` expression alone**.
-Orthogonal biological evidence supports dropout rescue, confidence
-classification, and developmental-stage inference.
+A positive call requires direct or detectable subthreshold `GNRH1` signal plus
+independent GnRH-identity evidence. `GNRH1`-negative transcriptomic profiles
+remain diagnostic candidates and are never counted as GnRH-positive cells.
 
 The package provides:
 
-- GnRH-cell detection with direct, supported, and dropout-rescue evidence;
+- GnRH-cell detection with direct and transcriptomically supported evidence;
 - confidence classification and diagnostic scoring;
 - developmental staging and stage refinement;
 - GnRH-lineage and stage-specific marker discovery;
@@ -53,22 +56,28 @@ Documentation: [ymbouamboua.github.io/GnRHcell](https://ymbouamboua.github.io/Gn
 Install the development version from GitHub with `pak`:
 
 ```{r installation-pak}
+
 # install.packages("pak")
 pak::pak("ymbouamboua/GnRHcell")
+
 ```
 
 Alternatively, use `remotes`:
 
 ```{r installation-remotes}
+
 # install.packages("remotes")
 remotes::install_github("ymbouamboua/GnRHcell")
+
 ```
 
 Load the package:
 
 ```{r load-package}
+
 library(GnRHcell)
 library(Seurat)
+
 ```
 
 ## Quick start
@@ -76,12 +85,15 @@ library(Seurat)
 `run_gnrh()` performs detection, developmental staging, and diagnostics and returns the updated Seurat object.
 
 ```{r quick-start}
+
 # `obj` should contain normalized expression data.
 # A dimensional reduction is recommended for visualization.
 obj <- run_gnrh(obj)
+
 ```
 
-Observed log for the bundled `hpsc` object:
+The default summary is deliberately concise. Observed log for the bundled
+`hpsc` object:
 
 ```text
 [GNRH] ==== STARTING GnRHcell PIPELINE ====
@@ -95,49 +107,50 @@ Observed log for the bundled `hpsc` object:
 [STEP] [3/3] Running diagnostics
 [DONE] Diagnostics complete. Duration: 0.0s
 [INFO] PIPELINE SUMMARY
-[INFO] Status:
-[INFO]   neg: 1743
-[INFO]   pos: 657
-[INFO] Stage:
-[INFO]   identity: 341
-[INFO]   migrating: 118
-[INFO]   mature: 198
-[INFO]   non-gnrh: 1743
-[INFO] Secretory:
-[INFO]   limited: 118
-[INFO]   supported: 539
-[INFO]   non-gnrh: 1743
+[INFO]   Cells: 2,400 | GnRH+: 527 (22.0%) | high confidence: 273
+[INFO]   Evidence: direct 522 | transcriptomic 5 | isolated GNRH1 signal 135
+[INFO]   Stage: identity 309 | migrating 62 | mature 156
+[INFO]   Stage resolution: resolved 417 (79.1%) | transitional 110 (20.9%)
 [DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s
 ```
+
+Use `summary_level = "detailed"` for the complete diagnostic summary or
+`summary_level = "none"` for silent batch processing.
 
 Inspect the principal outputs:
 
 ```{r inspect-results}
+
 table(obj$gnrh_status, useNA = "ifany")
 table(obj$gnrh_class, useNA = "ifany")
 table(obj$gnrh_confident, useNA = "ifany")
 table(obj$gnrh_stage, useNA = "ifany")
+
 ```
 
 Result:
 
 | Output | Category | Cells |
 |---|---|---:|
-| Status | `neg` | 1,743 |
-| Status | `pos` | 657 |
-| Stage | `identity` | 341 |
-| Stage | `migrating` | 118 |
-| Stage | `mature` | 198 |
-| Stage | `non-gnrh` | 1,743 |
+| Status | `neg` | 1,873 |
+| Status | `pos` | 527 |
+| Class | `direct` | 522 |
+| Class | `supported` | 5 |
+| Stage | `identity` | 309 |
+| Stage | `migrating` | 62 |
+| Stage | `mature` | 156 |
+| Stage | `non-gnrh` | 1,873 |
 
 The most frequently used metadata columns include:
 
 ```{r inspect-metadata}
+
 grep(
   "^gnrh_",
   colnames(obj[[]]),
   value = TRUE
 )
+
 ```
 
 Important output groups are:
@@ -145,14 +158,44 @@ Important output groups are:
 | Output | Typical values or interpretation |
 |---|---|
 | `gnrh_status` | Binary detection status: `neg`, `pos` |
-| `gnrh_class` | Detection evidence: `neg`, `dropout_rescue`, `supported`, `direct` |
+| `gnrh_class` | Detection evidence: `neg`, `supported`, `direct` |
 | `gnrh_confident` | High-confidence detection flag |
-| `gnrh_stage` | `non-gnrh`, `identity`, `migrating`, `mature`, `secreting` |
+| `gnrh_direct_signal` | Detectable direct `GNRH1` signal |
+| `gnrh_direct_supported` | Direct signal with independent identity support |
+| `gnrh_direct_isolated` | Direct signal without sufficient identity support |
+| `gnrh_stage` | `non-gnrh`, `identity`, `migrating`, `mature` |
+| `gnrh_stage_resolution` | `non-gnrh`, `transitional`, `resolved` |
 | `gnrh_score` | Composite GnRH detection score |
 | `gnrh_support_score` | Supporting lineage and biological evidence |
 | `gnrh_identity_score` | Identity-stage evidence |
 | `gnrh_migrating_score` | Migration-stage evidence |
 | `gnrh_mature_score` | Maturation-stage evidence |
+
+## Biological evidence model
+
+GnRHcell separates **detection**, **confidence**, and **developmental staging**.
+This prevents mature neuroendocrine genes from becoming prerequisites for
+detecting immature or migrating GnRH neurons.
+
+| Evidence tier | Representative genes | Role in GnRHcell |
+|---|---|---|
+| Identity primary | `FEZF1`, `ISL1`, `SIX6`, `ECEL1` | One hit can support direct `GNRH1` signal |
+| Identity supportive | `OTX2`, `SIX3`, `DLX1`, `DLX2`, `DLX5`, `DLX6`, `PBX3`, `ARX`, `FOXG1` | Two hits can support direct `GNRH1` signal |
+| Contextual identity | `RBFOX1`, `MYT1L`, `BCL11B` | Interpretation and diagnostics; does not change the validated detection gate |
+| Migration | `PROKR2`, `NSMF`, `ROBO3`, semaphorin/plexin, netrin and adhesion genes | Developmental staging after detection |
+| Neuroendocrine | `KISS1R`, `GNRHR`, `PCSK1`, `PCSK2`, granin and vesicle genes | Maturation and secretory support after detection |
+
+The curated programs synthesize evidence from human fetal GnRH neurons,
+hPSC-derived GnRH differentiation and developmental transcriptomics. In
+particular, `ISL1`, `SIX6`, `DLX5` and `ECEL1` are supported by human fetal GnRH
+data; `RELN`, `SEMA3C`, `RBFOX1`, `PLXNA2`, `SCN2A`, `TAC1`, `MYT1L` and
+`BCL11B` provide contextual developmental evidence; and the hPSC trajectory
+supports `GAD2`, `DLX1/2/5`, `SIX3`, `ARX` and `FOXG1`. See
+[Zouaghi et al. (2025)](https://www.thno.org/v15p3673.htm),
+[Lund et al. (2020)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7075073/) and
+[Wang et al. (2022)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9806769/).
+Genes describing the migratory environment are biological context, not proof
+of GnRH-cell identity.
 
 ## Results at a glance
 
@@ -162,11 +205,11 @@ hypothalamic references.
 
 | Demo dataset | Cells | GnRH detected | Identity | Migrating | Mature |
 |---|---:|---:|---:|---:|---:|
-| hPSC-derived GnRH | 2,400 | 657 | 341 | 118 | 198 |
-| Human fetal nose | 2,125 | 125 | 57 | 58 | 10 |
-| Human median eminence | 2,161 | 161 | 42 | 25 | 94 |
-| Mouse HypoMap | 2,174 | 174 | 10 | 0 | 164 |
-| Human HypoMap | 2,400 | 400 | 27 | 105 | 268 |
+| hPSC-derived GnRH | 2,400 | 527 | 309 | 62 | 156 |
+| Human fetal nose | 2,125 | 45 | 24 | 14 | 7 |
+| Human median eminence | 2,161 | 108 | 19 | 5 | 84 |
+| Mouse HypoMap | 2,174 | 130 | 10 | 0 | 120 |
+| Human HypoMap | 2,400 | 213 | 2 | 34 | 177 |
 
 > **Interpretation.** These demo objects were intentionally sampled to retain
 > GnRH-relevant cells. Counts and percentages describe only the bundled objects;
@@ -217,6 +260,7 @@ dataset, original processing details, access conditions, and reuse terms.
 Because these objects are stored as `.rds` files, load them with `readRDS()` rather than `data()`:
 
 ```{r load-reference-data}
+
 load_gnrh_data <- function(name) {
   available <- c(
     "hpsc",
@@ -242,6 +286,7 @@ load_gnrh_data <- function(name) {
 
 hpsc <- load_gnrh_data("hpsc")
 hpsc
+
 ```
 
 ```text
@@ -253,9 +298,11 @@ Active assay: RNA (33538 features, 2000 variable features)
 ```
 
 
+
 Load all reference datasets when sufficient memory is available:
 
 ```{r load-all-reference-data}
+
 dataset_ids <- c(
   "hpsc",
   "hudeca_nose",
@@ -268,6 +315,7 @@ reference_objects <- setNames(
   lapply(dataset_ids, load_gnrh_data),
   dataset_ids
 )
+
 ```
 
 For memory-constrained analyses, load and process one object at a time.
@@ -277,6 +325,7 @@ For memory-constrained analyses, load and process one object at a time.
 ### Embeddings
 
 ```{r embedding-status-stage, fig.width=8, fig.height=6}
+
 plot_gnrh_embedding(
   hpsc,
   group_by = "gnrh_status",
@@ -291,6 +340,7 @@ plot_gnrh_embedding(
   percentage = TRUE,
   cols = gnrh_colors("stage")
 )
+
 ```
 
 Result from the bundled `hpsc` object:
@@ -308,6 +358,7 @@ Large datasets are rasterized automatically when appropriate.
 `plot_gnrh_feature()` supports direct feature names and GnRHcell presets.
 
 ```{r feature-presets}
+
 plot_gnrh_feature(
   hpsc,
   preset = "core",
@@ -330,6 +381,7 @@ plot_gnrh_feature(
   reduction = "umap",
   ncol = 3
 )
+
 ```
 
 Core-feature result:
@@ -343,11 +395,13 @@ Core-feature result:
 Plot arbitrary genes or metadata fields:
 
 ```{r custom-features}
+
 plot_gnrh_feature(
   hpsc,
   features = c("GNRH1", "FEZF1", "ISL1", "DCX"),
   ncol = 4
 )
+
 ```
 
 <div align="center">
@@ -361,6 +415,7 @@ plot_gnrh_feature(
 ### Dot plots
 
 ```{r dot-plot, fig.width=9, fig.height=4}
+
 plot_gnrh_dot(
   hpsc,
   features = c(
@@ -372,6 +427,7 @@ plot_gnrh_dot(
   dot.outline = TRUE,
   th.cols = "RdYlBu"
 )
+
 ```
 
 Result:
@@ -385,6 +441,7 @@ Result:
 ### Distributions
 
 ```{r distribution, fig.width=4, fig.height=4}
+
 plot_gnrh_distribution(
   hpsc,
   group.by = "gnrh_stage",
@@ -397,6 +454,7 @@ plot_gnrh_distribution(
   x.ang = 45,
   legend.position = "right"
 )
+
 ```
 
 Result:
@@ -410,16 +468,20 @@ Result:
 ### Diagnostic report
 
 ```{r diagnostic-report,fig.width=14, fig.height=7.5}
+
 hpsc <- run_gnrh(hpsc)
 
 report <- gnrh_report(
   hpsc,
-  roc_mode = "internal",
-  style = "bw"
+  roc_mode = "auto",
+  style = "bw",
+  mode = "dark"
 )
 
 report
+
 ```
+
 
 Compact internal diagnostic result:
 
@@ -434,6 +496,7 @@ Internal ROC curves describe score discrimination against classifications produc
 When an independent manual or reference annotation is available:
 
 ```{r external-validation-report,fig.width=14, fig.height=7.5}
+
 report <- gnrh_report(
   hpsc,
   truth = "gnrh_class",
@@ -441,7 +504,9 @@ report <- gnrh_report(
   roc_mode = "external",
   style = "bw"
 )
+
 report
+
 ```
 
 <div align="center">
@@ -453,6 +518,7 @@ report
 Export a vector report:
 
 ```{r export-report}
+
 ggplot2::ggsave(
   "gnrh_diagnostic_report.pdf",
   report,
@@ -462,6 +528,7 @@ ggplot2::ggsave(
   device = grDevices::cairo_pdf,
   bg = "white"
 )
+
 ```
 
 ## GnRH-lineage marker discovery
@@ -469,6 +536,7 @@ ggplot2::ggsave(
 `find_gnrh_genes()` identifies genes enriched in GnRH-positive cells relative to biologically matched controls and ranks them using differential expression, specificity, `GNRH1` co-detection, and donor recurrence.
 
 ```{r lineage-markers}
+
 genes <- find_gnrh_genes(
   object = hpsc,
   annotation_col = "ann2",
@@ -480,6 +548,7 @@ genes <- find_gnrh_genes(
 
 head(genes$candidates, 20)
 genes$donor_cells
+
 ```
 
 
@@ -509,17 +578,20 @@ Choose `annotation_col` and `control_ident` according to the metadata and biolog
 ### Co-expression and gene networks
 
 ```{r marker-visualization, fig.width=10, fig.height=5}
-p1=plot_gnrh_coexpr(
+
+p1 = plot_gnrh_coexpr(
   genes$markers,
   coexp_cutoff = 0.30
 )
 
-p2=plot_network(
+p2 = plot_network(
   genes$markers,
   top_n = 40,
   threshold = 0.10
 )
+
 p1+p2
+
 ```
 
 Result:
@@ -535,6 +607,7 @@ Result:
 `find_gnrh_stage_markers()` compares each selected developmental stage with the other GnRH-positive stages. It does not require coexpression with `GNRH1`, avoiding enrichment for general GnRH-lineage markers.
 
 ```{r stage-markers}
+
 stage_markers <- find_gnrh_stage_markers(
   object = hpsc,
   stage_col = "gnrh_stage",
@@ -548,6 +621,7 @@ stage_markers <- find_gnrh_stage_markers(
 
 stage_markers$stage_counts
 head(stage_markers$candidates, 20)
+
 ```
 
 Top stage-associated results in the `hpsc` demo:
@@ -566,7 +640,9 @@ Top stage-associated results in the `hpsc` demo:
 
 
 ```{r}
+
 library(dplyr)
+
 top <- stage_markers$candidates %>% 
   group_by(stage) %>% 
   top_n(n = 5, wt = avg_log2FC)
@@ -579,6 +655,7 @@ plot_gnrh_dot(
   th.cols = "RdYlBu",
   title = "GnRH developmental programs"
 )
+
 ```
 
 <div align="center">
@@ -593,6 +670,7 @@ The complete result is available in
 Retrieve the top markers per stage:
 
 ```{r top-stage-markers}
+
 top_stage_markers <- stage_markers$candidates |>
   dplyr::group_by(.data$stage) |>
   dplyr::slice_max(
@@ -603,6 +681,7 @@ top_stage_markers <- stage_markers$candidates |>
   dplyr::ungroup()
 
 top_stage_markers
+
 ```
 
 Cell-level differential expression is intended for marker discovery. Replicate-aware pseudobulk testing is recommended before making formal population-level claims.
@@ -614,6 +693,7 @@ Cell-level differential expression is intended for marker discovery. Replicate-a
 Each row defines an independent Seurat dataset:
 
 ```{r collection-configuration}
+
 datasets <- data.frame(
   id = c(
     "hpsc",
@@ -664,6 +744,7 @@ datasets <- data.frame(
     "umap"
   )
 )
+
 ```
 
 For installed package data, replace the paths with calls to `system.file()`.
@@ -671,6 +752,7 @@ For installed package data, replace the paths with calls to `system.file()`.
 ### Validate the configuration
 
 ```{r validate-configuration}
+
 datasets <- prepare_gnrh_datasets(
   datasets,
   check_files = TRUE,
@@ -678,6 +760,7 @@ datasets <- prepare_gnrh_datasets(
 )
 
 datasets
+
 ```
 
 Validation result for the bundled configuration:
@@ -693,6 +776,7 @@ Validation result for the bundled configuration:
 ### Run the collection
 
 ```{r run-collection}
+
 collection <- run_gnrh_collection(
   datasets = datasets,
   output_dir = "gnrh_results",
@@ -712,6 +796,7 @@ comparison$overlap
 comparison$programs
 comparison$gallery$umap_plot
 comparison$gallery$stage_plot
+
 ```
 
 
@@ -723,19 +808,23 @@ kept in memory. With `save_objects = TRUE`, it can load them from the collection
 output directory. The configured reduction is respected, including `umap_scvi`.
 
 ```{r collection-gallery}
+
 collection$comparisons$gallery$summary
 collection$comparisons$gallery$umap_plot
 collection$comparisons$gallery$stage_plot
+
 ```
 
 
 ```{r inspect-collection}
+
 names(collection$results)
 names(collection$comparisons)
 
 collection$comparisons$runtime_plot
 collection$comparisons$detected_plot
 collection$comparisons$programs$summary
+
 ```
 
 The workflow loads datasets sequentially, runs GnRHcell, creates dataset-level outputs, compares markers, and optionally identifies conserved programs.
@@ -743,12 +832,14 @@ The workflow loads datasets sequentially, runs GnRHcell, creates dataset-level o
 For lower memory use:
 
 ```{r memory-efficient-collection}
+
 collection <- run_gnrh_collection(
   datasets = datasets,
   output_dir = "gnrh_results",
   clean_objects = TRUE,
   save_objects = TRUE
 )
+
 ```
 
 ### Validate a collection
@@ -756,12 +847,14 @@ collection <- run_gnrh_collection(
 Processed objects must remain available in the collection when running validation directly:
 
 ```{r validate-collection}
+
 validation <- validate_gnrh_collection(
   collection,
   positive_classes = c("direct", "supported"),
   assay = "RNA",
   layer = "data"
 )
+
 ```
 
 ```text
@@ -773,15 +866,15 @@ Checking status/class consistency
 Summarizing GnRH evidence scores
 Validating developmental stages
 Summarizing biological marker expression
-Validated 5 datasets; 11,260 cells; 1,517 GnRH-positive cells.
-GNRH1-negative transcriptomic candidates: 14 (diagnostic only; not counted as GnRH-positive).
-Developmental-stage refinements: 66 cells.
-Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
+Validated 5 datasets; 11,260 cells; 1,023 GnRH-positive cells.
+GNRH1-negative transcriptomic candidates are reported for diagnosis only and
+are not counted as GnRH-positive.
 ==== GNRH COLLECTION VALIDATION DONE ====
 ```
 
 
 ```{r inspect-validation-results}
+
 validation$detection
 validation$status_class
 validation$scores
@@ -791,17 +884,18 @@ validation$stage_refinement
 validation$stage_reassignment
 validation$migration_core
 validation$biological_markers
+
 ```
 
 Cross-dataset result:
 
 | Dataset | Cells | GnRH detected | Identity | Migrating | Mature |
 |---|---:|---:|---:|---:|---:|
-| hPSC-derived GnRH | 2,400 | 657 | 341 | 118 | 198 |
-| Human fetal nose | 2,125 | 125 | 57 | 58 | 10 |
-| Human median eminence | 2,161 | 161 | 42 | 25 | 94 |
-| Mouse HypoMap | 2,174 | 174 | 10 | 0 | 164 |
-| Human HypoMap | 2,400 | 400 | 27 | 105 | 268 |
+| hPSC-derived GnRH | 2,400 | 527 | 309 | 62 | 156 |
+| Human fetal nose | 2,125 | 45 | 24 | 14 | 7 |
+| Human median eminence | 2,161 | 108 | 19 | 5 | 84 |
+| Mouse HypoMap | 2,174 | 130 | 10 | 0 | 120 |
+| Human HypoMap | 2,400 | 213 | 2 | 34 | 177 |
 
 <div align="center">
 
@@ -819,6 +913,7 @@ Cross-dataset result:
 ### Run one dataset
 
 ```{r run-one-dataset}
+
 result <- run_gnrh_dataset(
   object = hpsc,
   dataset_id = "hpsc",
@@ -831,7 +926,9 @@ result <- run_gnrh_dataset(
 )
 
 result$run_info
+
 head(result$markers)
+
 ```
 
 ```text
@@ -847,18 +944,10 @@ Running GnRHcell: Human hPSC
 [STEP] [3/3] Running diagnostics
 [DONE] Diagnostics complete. Duration: 0.0s
 [INFO] PIPELINE SUMMARY
-[INFO] Status:
-[INFO]   neg: 1743
-[INFO]   pos: 657
-[INFO] Stage:
-[INFO]   identity: 341
-[INFO]   migrating: 118
-[INFO]   mature: 198
-[INFO]   non-gnrh: 1743
-[INFO] Secretory:
-[INFO]   limited: 118
-[INFO]   supported: 539
-[INFO]   non-gnrh: 1743
+[INFO]   Cells: 2,400 | GnRH+: 527 (22.0%) | high confidence: 273
+[INFO]   Evidence: direct 522 | transcriptomic 5 | isolated GNRH1 signal 135
+[INFO]   Stage: identity 309 | migrating 62 | mature 156
+[INFO]   Stage resolution: resolved 417 (79.1%) | transitional 110 (20.9%)
 [DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s
 [INFO] Generating publication-ready GnRH QC report
 [GNRH] GnRH marker discovery
@@ -870,6 +959,7 @@ Running GnRHcell: Human hPSC
 ## Cross-dataset comparisons
 
 ```{r compare-datasets}
+
 comparison <- compare_gnrh_datasets(
   datasets = datasets,
   output_dir = "gnrh_results",
@@ -886,12 +976,14 @@ comparison$gallery
 comparison$gallery$summary
 comparison$gallery$umap_plot
 comparison$gallery$stage_plot
+
 ```
 
 
 Marker programs can also be generated from existing result tables:
 
 ```{r marker-programs}
+
 files <- c(
   "HuDeCa nose" = "gnrh_hudeca_nose_markers.tsv",
   "Human hPSC" = "gnrh_hpsc_markers.tsv",
@@ -909,6 +1001,7 @@ overlap <- gnrh_gene_upset(
   gene_sets = gene_sets,
   outdir = file.path("gnrh_results", "comparisons", "marker_overlap")
 )
+
 ```
 
 
@@ -929,13 +1022,16 @@ The plotting functions require the optional Bioconductor packages
 `ComplexHeatmap` and `circlize`:
 
 ```{r install-marker-heatmap-dependencies}
+
 # install.packages("BiocManager")
 # BiocManager::install(c("ComplexHeatmap", "circlize"))
+
 ```
 
 Use the marker files produced by `run_gnrh_collection()`:
 
 ```{r merge-cross-dataset-marker-scores}
+
 marker_dir <- file.path("gnrh_results", "markers")
 
 marker_files <- stats::setNames(
@@ -956,6 +1052,7 @@ marker_matrix <- merge_gnrh_marker_scores(
 
 marker_matrix[seq_len(min(10L, nrow(marker_matrix))), , drop = FALSE]
 attr(marker_matrix, "score_columns")
+
 ```
 
 When `score_col = NULL`, each table uses the first available column among
@@ -963,13 +1060,14 @@ When `score_col = NULL`, each table uses the first available column among
 heatmaps, specify the same score explicitly when it is present in every table:
 
 ```{r conserved-gnrh-marker-heatmap, fig.width=4, fig.height=3}
+
 conserved_markers <- plot_gnrh_conserved_markers(
   files = marker_files,
   dir = marker_dir,
   score_col = "avg_log2FC",
   min_datasets = 3,
   top_n = 50,
-  scale_rows = F,
+  scale_rows = FALSE,
   cluster_rows = TRUE,
   cluster_columns = FALSE,
   filename = file.path(
@@ -979,28 +1077,8 @@ conserved_markers <- plot_gnrh_conserved_markers(
   )
 )
 
-conserved_markers$conserved
 conserved_markers$heatmap
 
-
-
-conserved_markers <- plot_gnrh_conserved_markers(
-  files = marker_files,
-  dir = marker_dir,
-  score_col = "avg_log2FC",
-  min_datasets = 3,
-  top_n = 50,
-  scale_rows = FALSE,
-  cluster_rows = FALSE,
-  cluster_columns = FALSE,
-  filename = file.path(
-    "gnrh_results",
-    "comparisons",
-    "conserved_gnrh_markers.pdf"
-  )
-)
-
-conserved_markers$heatmap
 ```
 
 <div align="center">
@@ -1016,13 +1094,14 @@ their cross-dataset support and ranked by the difference between their target
 dataset score and the mean score in the other datasets:
 
 ```{r dataset-specific-gnrh-marker-heatmap}
+
 specific_markers <- plot_gnrh_dataset_specific_markers(
   files = marker_files,
   dir = marker_dir,
   score_col = "avg_log2FC",
   top_n_per_dataset = 20,
   max_datasets = 2,
-  scale_rows = F,
+  scale_rows = FALSE,
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   filename = file.path(
@@ -1034,6 +1113,7 @@ specific_markers <- plot_gnrh_dataset_specific_markers(
 
 specific_markers$specific_table
 specific_markers$heatmap
+
 ```
 
 <div align="center">
@@ -1047,6 +1127,7 @@ The returned tables can be filtered or exported independently of the
 heatmaps:
 
 ```{r export-cross-dataset-marker-tables}
+
 utils::write.csv(
   conserved_markers$conserved,
   file.path("gnrh_results", "comparisons", "conserved_gnrh_markers.csv"),
@@ -1058,6 +1139,7 @@ utils::write.csv(
   file.path("gnrh_results", "comparisons", "dataset_specific_gnrh_markers.csv"),
   row.names = FALSE
 )
+
 ```
 
 These score-based heatmaps complement `gnrh_gene_upset()`: the UpSet plot
@@ -1066,6 +1148,7 @@ across datasets.
 
 
 ```{r classify-marker-programs}
+
 marker_dir <- file.path("gnrh_results", "markers")
 
 files <- c(
@@ -1089,17 +1172,20 @@ programs <- gnrh_marker_programs(
   results = overlap,
   outdir = "gnrh_results"
 )
+
 ```
 
 
 Visualize the results:
 
 ```{r marker-program-plots}
+
 plot_gnrh_marker_programs(
   programs,
   table = "high_confidence",
   type = "bar"
 )
+
 ```
 
 <div align="center">
@@ -1190,16 +1276,20 @@ Objects are written to `objects/` only when `save_objects = TRUE`.
 ## Development
 
 ```{r development}
+
 devtools::document()
 devtools::test()
 devtools::check()
 pkgdown::build_site()
+
 ```
 
 Rebuild `README.md` after editing this source file:
 
 ```{r rebuild-readme}
+
 devtools::build_readme()
+
 ```
 
 ## Citation

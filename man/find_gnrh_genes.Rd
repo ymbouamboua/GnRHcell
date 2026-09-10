@@ -10,7 +10,7 @@ find_gnrh_genes(
   positive = "pos",
   negative = "neg",
   confidence_col = NULL,
-  confidence_value = "pos",
+  confidence_value = TRUE,
   annotation_col = "ann1",
   control_ident = "Neuronal",
   donor_col = NULL,
@@ -24,192 +24,150 @@ find_gnrh_genes(
   min_coexpr_pct = 20,
   max_padj = 0.05,
   min_donor_pct = 0.1,
-  min_cells_donor = 3,
+  min_cells_donor = 3L,
+  exclude_transitional_controls = TRUE,
   generic_genes = c("TUBB3", "RBFOX3", "GAPDH", "ACTB", "MALAT1", "GAD1", "GAD2",
     "SLC17A7", "SNAP25", "SYT1"),
-  seed = 1234,
+  seed = 1234L,
   verbose = TRUE
 )
 }
 \arguments{
-\item{object}{A Seurat object containing GnRH classification metadata and
-normalized expression data.}
+\item{object}{A Seurat object containing GnRHcell classifications.}
 
-\item{status_col}{Character. Metadata column containing GnRH-positive and
-GnRH-negative classifications. Default is \code{"gnrh_status"}.}
+\item{status_col}{Character scalar giving the GnRH status metadata column.
+Default is \code{"gnrh_status"}.}
 
-\item{positive}{Character. Value in \code{status_col} identifying
-GnRH-positive cells. Default is \code{"pos"}.}
+\item{positive}{Character vector defining GnRH-positive status labels.
+Default is \code{"pos"}.}
 
-\item{negative}{Character. Value in \code{status_col} identifying
-GnRH-negative cells. Default is \code{"neg"}.}
+\item{negative}{Character vector defining GnRH-negative status labels.
+Default is \code{"neg"}.}
 
-\item{confidence_col}{Optional character. Metadata column used to restrict
-the positive population to confident GnRH calls. If \code{NULL}, no
-confidence filter is applied.}
+\item{confidence_col}{Optional character scalar giving a metadata column used
+to restrict the positive population to confident GnRH cells.}
 
-\item{confidence_value}{Value or values in \code{confidence_col} defining
-confident cells. Default is \code{"pos"}.}
+\item{confidence_value}{Value or values in \code{confidence_col} considered
+confident. Default is \code{TRUE}.}
 
-\item{annotation_col}{Character. Metadata column containing broad cell-type
-annotations used to select matched controls. Default is \code{"ann1"}.}
+\item{annotation_col}{Character scalar giving the broad cell-type annotation
+used to select matched negative controls. Default is \code{"ann1"}.}
 
-\item{control_ident}{Character vector. Values in \code{annotation_col}
-defining the control population. Default is \code{"Neuronal"}.}
+\item{control_ident}{Character vector giving the identities retained as
+matched controls. Default is \code{"Neuronal"}.}
 
-\item{donor_col}{Optional character. Metadata column identifying biological
-donors or samples. If supplied, candidate detection is evaluated
-independently in each donor.}
+\item{donor_col}{Optional character scalar identifying biological donors,
+samples, or replicates.}
 
-\item{assay}{Character. Seurat assay used for marker discovery and
-co-expression analysis. Default is \code{"RNA"}.}
+\item{assay}{Character scalar giving the assay used for differential
+expression. Default is \code{"RNA"}.}
 
-\item{layer}{Character. Assay layer containing normalized expression values.
-Default is \code{"data"}.}
+\item{layer}{Character scalar giving the normalized-expression layer used for
+co-detection and donor-level calculations. Default is \code{"data"}.}
 
-\item{coexpr_gene}{Character. Reference gene used for same-cell
-co-expression analysis. Default is \code{"GNRH1"}.}
+\item{coexpr_gene}{Character scalar giving the GnRH reference gene used for
+same-cell co-detection. Default is \code{"GNRH1"}.}
 
-\item{methods}{Character vector of differential-expression methods passed
-to \code{\link{gnrh_markers}}. Default is \code{"wilcox"}.}
+\item{methods}{Character vector of differential-expression methods passed to
+\code{\link{gnrh_markers}}. Default is \code{"wilcox"}.}
 
-\item{min_fc}{Numeric. Minimum average log2 fold change required for final
-candidates. Default is \code{0.5}.}
+\item{min_fc}{Minimum average log2 fold change required for candidate
+retention. Default is \code{0.5}.}
 
-\item{min_pct}{Numeric. Minimum detection fraction among GnRH-positive cells.
+\item{min_pct}{Minimum fraction of GnRH cells expressing a candidate gene.
 Default is \code{0.20}.}
 
-\item{max_control_pct}{Numeric. Maximum detection fraction allowed among
-control cells. Default is \code{0.10}.}
+\item{max_control_pct}{Maximum fraction of matched control cells expressing
+a candidate gene. Default is \code{0.10}.}
 
-\item{min_coexpr_pct}{Numeric. Minimum percentage of
-\code{coexpr_gene}-positive GnRH cells in which a candidate must be
-detected. Expressed on a 0--100 scale. Default is \code{20}.}
+\item{min_coexpr_pct}{Minimum percentage of GNRH-positive GnRH cells in which
+the candidate gene must be co-detected. Default is \code{20}.}
 
-\item{max_padj}{Numeric. Maximum adjusted p-value allowed for candidate
-markers. Default is \code{0.05}.}
+\item{max_padj}{Maximum adjusted P value allowed for candidate markers.
+Default is \code{0.05}.}
 
-\item{min_donor_pct}{Numeric. Minimum within-donor detection fraction used
-to count a candidate as supported by a donor. Default is \code{0.10}.}
+\item{min_donor_pct}{Minimum within-donor detection fraction required for a
+donor to support a candidate gene. Default is \code{0.10}.}
 
-\item{min_cells_donor}{Integer. Minimum number of selected GnRH cells
-required for a donor to be evaluated. Default is \code{3}.}
+\item{min_cells_donor}{Minimum number of GnRH cells required for a donor to
+be evaluable. Default is \code{3L}.}
+
+\item{exclude_transitional_controls}{Logical. Whether to exclude cells with
+direct isolated GnRH signal, transcriptomic candidate status, dropout
+candidate status, or direct GnRH signal from the matched control
+population. Default is \code{TRUE}.}
 
 \item{generic_genes}{Character vector of generic neuronal, housekeeping, or
 broadly expressed genes excluded from the final candidate table.}
 
-\item{seed}{Integer. Random seed used for differential-expression analysis.
-Default is \code{1234}.}
+\item{seed}{Integer random seed. Default is \code{1234L}.}
 
-\item{verbose}{Logical. Display progress messages. Default is \code{TRUE}.}
+\item{verbose}{Logical. Whether to print progress messages.}
 }
 \value{
 A named list containing:
 \describe{
-\item{\code{candidates}}{
-Filtered and ranked candidate GnRH genes. This table includes
-differential-expression statistics, GnRH-cell and control-cell
-detection fractions, correlation-based co-expression,
-same-cell co-detection counts and percentages, specificity score,
-and donor support when available.
-}
-\item{\code{markers}}{
-The complete marker table returned by \code{\link{gnrh_markers}},
-augmented with same-cell co-detection metrics.
-}
-\item{\code{donor_detection}}{
-A gene-by-donor matrix containing within-donor detection fractions.
-Returns \code{NULL} when \code{donor_col} is not supplied or no donor
-is evaluable.
-}
-\item{\code{donor_cells}}{
-Number of selected GnRH cells per donor, or \code{NULL}.
-}
-\item{\code{gnrh_cells}}{
-Cell barcodes assigned to the GnRH-positive group.
-}
-\item{\code{control_cells}}{
-Cell barcodes assigned to the matched control group.
-}
-\item{\code{parameters}}{
-Main selection thresholds used for the analysis.
-}
+\item{\code{candidates}}{Filtered and ranked candidate GnRH markers.}
+\item{\code{markers}}{Complete marker table returned by
+\code{\link{gnrh_markers}} before the final candidate filters.}
+\item{\code{donor_detection}}{Gene-by-donor matrix of within-donor
+detection fractions when \code{donor_col} is supplied.}
+\item{\code{donor_cells}}{Number of selected GnRH cells per donor.}
+\item{\code{gnrh_cells}}{Cell barcodes assigned to the GnRH population.}
+\item{\code{control_cells}}{Cell barcodes assigned to matched controls.}
+\item{\code{parameters}}{Principal parameters used for marker discovery.}
 }
 }
 \description{
-Identifies genes enriched in GnRH-positive cells relative to matched
-control cells, measures their same-cell co-detection with \code{GNRH1},
-and optionally evaluates their reproducibility across donors.
+Identifies genes enriched in GnRH-positive cells relative to matched negative
+neuronal controls, then prioritizes candidates using expression specificity,
+same-cell co-detection with the GnRH transcript, statistical significance,
+and optional donor-level reproducibility.
 }
 \details{
-This function provides a high-level interface to
-\code{\link{gnrh_markers}}. The latter performs differential-expression
-testing and expression-correlation analysis, while
-\code{find_gnrh_genes} additionally selects matched controls, calculates
-the percentage of \code{GNRH1}-positive cells expressing each marker,
-excludes generic genes, and ranks candidates by specificity and donor
-support.
+GnRH-positive cells are contrasted against negative cells restricted to
+\code{control_ident}. Differential-expression discovery is performed with
+\code{\link{gnrh_markers}} using permissive internal thresholds so that the
+final filters can be applied consistently by this function.
 
-Candidate genes are required to be positively enriched in GnRH cells,
-detected in at least \code{min_pct} of GnRH cells, detected in no more than
-\code{max_control_pct} of matched controls, co-detected with
-\code{coexpr_gene} in at least \code{min_coexpr_pct} percent of reference
-gene-positive cells, and significant at \code{max_padj}.
+Same-cell co-detection is calculated among GnRH cells in which
+\code{coexpr_gene} itself is detected. Candidate genes must satisfy the
+requested fold-change, target detection, control detection, adjusted
+P-value, and co-detection thresholds.
 
-The candidate specificity score is:
-\deqn{
-logFC \times (pct.1 - pct.2) \times log(1 + coexpression\ percentage)
-}
+Candidate specificity is ranked using positive fold change, the difference
+in detection frequency between GnRH and control cells, target-cell detection
+frequency, co-detection with the GnRH transcript, and statistical
+significance.
 
-Correlation-based co-expression and same-cell co-detection measure distinct
-properties. Correlation evaluates coordinated expression variation, whereas
-co-detection records whether both transcripts are detected in the same
-cells. Neither metric alone demonstrates a direct regulatory or molecular
-interaction.
+When \code{donor_col} is supplied, donor support is defined as the fraction
+of evaluable donors in which a candidate is detected in at least
+\code{min_donor_pct} of selected GnRH cells. Donor support modifies the
+final ranking score but is not used as a strict exclusion criterion.
 
-Donor support should be interpreted cautiously when few GnRH cells are
-available. Donors represented by fewer than \code{min_cells_donor} selected
-cells are excluded from donor-level evaluation.
-
-For Seurat v5 objects containing multiple layers for the selected assay,
-layers should be joined with \code{Seurat::JoinLayers()} before calling this
-function.
+The GnRH reference gene itself is excluded from the final candidate table
+because it defines the target lineage rather than representing a newly
+discovered marker.
 }
 \examples{
 \dontrun{
-obj <- Seurat::JoinLayers(obj, assay = "RNA")
-
-result <- find_gnrh_genes(
-  object = obj,
-  status_col = "gnrh_status",
-  positive = "pos",
-  negative = "neg",
-  confidence_col = "gnrh_confident",
-  confidence_value = "pos",
+genes <- find_gnrh_genes(
+  object = wang,
   annotation_col = "ann1",
-  control_ident = "Neuronal",
-  donor_col = "status"
+  control_ident = "Neuron",
+  donor_col = "orig.ident"
 )
 
-head(result$candidates, 20)
-result$donor_cells
-result$donor_detection
-
-# Run without confidence or donor filtering
-result <- find_gnrh_genes(
-  object = obj,
-  annotation_col = "ann1",
-  control_ident = "Neuronal"
-)
+head(genes$candidates)
 }
 
 }
 \seealso{
 \code{\link{gnrh_markers}},
-\code{\link{gnrh_marker_programs}},
-\code{\link{gnrh_stage_modules}}
+\code{\link{find_gnrh_stage_markers}}
 
 Other marker discovery: 
-\code{\link{find_gnrh_stage_markers}()}
+\code{\link{find_gnrh_stage_markers}()},
+\code{\link{gnrh_markers}()}
 }
 \concept{marker discovery}

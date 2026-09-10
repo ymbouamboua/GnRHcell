@@ -11,115 +11,64 @@ stage_gnrh(
   min_migration_hits = 2L,
   min_secretory_core_hits = 1L,
   min_secretory_supportive_hits = 2L,
+  expression_weight = 0.5,
+  detection_weight = 0.5,
+  stage_margin = 0.1,
   verbose = TRUE
 )
 }
 \arguments{
-\item{object}{A Seurat object containing single-cell RNA-seq data.}
+\item{object}{A Seurat object previously processed with
+\code{\link{detect_gnrh}}.}
 
-\item{assay}{Assay used for developmental and secretory module scoring.
-Default is \code{"RNA"}.}
+\item{assay}{Assay used for developmental and secretory scoring.}
 
-\item{layer}{Expression layer used for module scoring.
-Default is \code{"data"}.}
+\item{layer}{Expression layer used for module scoring.}
 
-\item{min_migration_hits}{Minimum number of expressed migration-core
-markers required to retain a raw \code{migrating} assignment.
-Default is \code{2L}.}
+\item{min_migration_hits}{Minimum migration-core hits required to retain a
+migrating assignment.}
 
-\item{min_secretory_core_hits}{Minimum number of core secretory markers
-required before secretory support can be assigned.
-Default is \code{1L}.}
+\item{min_secretory_core_hits}{Minimum core secretory marker hits.}
 
-\item{min_secretory_supportive_hits}{Minimum number of supportive secretory
-markers required when only one core secretory marker is detected.
-Default is \code{2L}.}
+\item{min_secretory_supportive_hits}{Minimum supportive secretory hits.}
 
-\item{verbose}{Logical. Retained for API consistency. Progress reporting is
-normally handled by \code{\link{run_gnrh}}.}
+\item{expression_weight}{Weight assigned to normalized module expression.}
+
+\item{detection_weight}{Weight assigned to module detection fraction.}
+
+\item{stage_margin}{Minimum difference between best and second-best
+developmental score required for \code{gnrh_stage_confident = TRUE}.}
+
+\item{verbose}{Print progress messages.}
 }
 \value{
-A Seurat object containing developmental stage assignments,
-developmental scores, migration-core evidence, and independent secretory
-transcriptional support.
-
-Added metadata include:
-\describe{
-\item{\code{gnrh_stage_raw}}{
-Developmental stage assigned directly from the maximum developmental
-module score.}
-\item{\code{gnrh_stage}}{
-Final developmental stage after migration-core validation and masking
-of GnRH-negative cells.}
-\item{\code{gnrh_stage_reassigned}}{
-Logical indicator specifying whether the raw developmental stage was
-reassigned.}
-\item{\code{gnrh_stage_reason}}{
-Reason for the final developmental-stage assignment.}
-\item{\code{gnrh_migration_core_hits}}{
-Number of expressed migration-core markers detected per cell.}
-\item{\code{gnrh_secretory_core_hits}}{
-Number of expressed core secretory markers detected per cell.}
-\item{\code{gnrh_secretory_supportive_hits}}{
-Number of expressed supportive secretory markers detected per cell.}
-\item{\code{gnrh_secretory_hits}}{
-Total number of core and supportive secretory markers detected.}
-\item{\code{gnrh_secretory}}{
-Independent transcriptional support for secretory machinery, classified
-as \code{limited}, \code{supported}, or \code{non-gnrh}.}
-}
+A Seurat object containing developmental-stage scores,
+assignments, confidence metrics, migration evidence, and secretory support.
 }
 \description{
-Assign developmental states to GnRH-lineage cells using biologically
-informed transcriptional programs.
+Assigns developmental states to GnRH-positive cells using curated
+transcriptional programs representing lineage identity, migration, and
+neuroendocrine maturation.
 }
 \details{
-Developmental staging is based on three mutually exclusive states:
-\itemize{
-\item \code{identity}: lineage specification and early GnRH identity;
-\item \code{migrating}: migration and axon-guidance programs; and
-\item \code{mature}: neuroendocrine maturation.
-}
+Developmental stage and secretory machinery are modeled independently.
 
-Secretory machinery is evaluated independently from developmental stage.
-This allows cells to retain a developmental annotation such as
-\code{migrating} or \code{mature} while independently receiving evidence
-for a neuroendocrine secretory transcriptional program.
+Developmental stage is derived from integrated module activity combining
+normalized expression and the fraction of detected module genes.
 
-A raw developmental stage is first assigned from the highest developmental
-module score. Raw \code{migrating} assignments are then validated using a
-curated migration-core marker set. Cells lacking sufficient migration-core
-evidence are reassigned to the highest-scoring alternative developmental
-stage.
+The continuous developmental-program scores are retained independently from
+the categorical dominant-stage assignment.
 
-Secretory support requires expression of at least one core secretory marker
-together with either an additional core marker or sufficient supportive
-secretory evidence. The resulting annotation is classified as
-\code{limited} or \code{supported}.
+\code{gnrh_stage_confident} indicates whether the dominant program exceeds
+the second-best program by at least \code{stage_margin}.
 
-Cells classified as GnRH-negative by \code{\link{detect_gnrh}} are labeled
-\code{non-gnrh} in both developmental-stage and secretory annotations.
+\code{gnrh_stage_resolution} stores the corresponding categorical
+interpretation: \code{"resolved"}, \code{"transitional"}, or
+\code{"non-gnrh"}.
 
-Developmental stage and secretory support are intentionally modeled as
-separate dimensions. Secretory-program expression therefore does not
-replace or override the developmental-stage assignment.
-
-A raw \code{migrating} assignment is retained only when at least
-\code{min_migration_hits} migration-core markers are detected. Otherwise,
-the cell is reassigned to the highest-scoring alternative developmental
-state among \code{identity} and \code{mature}.
-
-Secretory support is assigned when the cell expresses at least
-\code{min_secretory_core_hits} core secretory markers and either:
-\itemize{
-\item at least two core secretory markers; or
-\item at least \code{min_secretory_supportive_hits} supportive secretory
-markers.
-}
-
-The secretory annotation reflects transcriptional support for
-neuroendocrine secretory machinery and should not be interpreted as a
-direct measurement of GnRH peptide release.
+Developmental scores are stored using the \code{gnrh_stage_*} namespace and
+therefore do not overwrite detection scores such as
+\code{gnrh_identity_score}.
 }
 \seealso{
 \code{\link{detect_gnrh}},

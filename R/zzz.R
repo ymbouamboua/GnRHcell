@@ -1,19 +1,8 @@
-#' GnRHcell package internal imports
+#' GnRHcell: Detection and characterization of GnRH neurons
 #'
-#' @importFrom Matrix rowSums colSums
-#' @importFrom methods as
-#' @importFrom stats na.omit aggregate median sd quantile cor
-#' @importFrom utils head tail
-#'
-#' @importFrom Seurat FindMarkers FindAllMarkers SetIdent WhichCells
-#' @importFrom SeuratObject GetAssayData Assays
-#'
-#' @importFrom ggplot2 ggplot aes geom_point geom_violin
-#' @importFrom patchwork wrap_plots
-#' @importFrom ggrepel geom_text_repel
-#' @importFrom pROC roc
-#'
-#' @importFrom igraph graph_from_data_frame
+#' Tools for detecting rare GnRH neurons in single-cell RNA-seq datasets,
+#' developmental staging, diagnostics, marker discovery, and cross-dataset
+#' comparison.
 #'
 #' @keywords internal
 "_PACKAGE"

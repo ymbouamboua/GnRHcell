@@ -22,12 +22,14 @@ migration, neuroendocrine, neighborhood, and alternative-program
 evidence in a Seurat-compatible workflow.
 
 The central principle is to **avoid relying on `GNRH1` expression
-alone**. Orthogonal biological evidence supports dropout rescue,
-confidence classification, and developmental-stage inference.
+alone**. A positive call requires direct or detectable subthreshold
+`GNRH1` signal plus independent GnRH-identity evidence. `GNRH1`-negative
+transcriptomic profiles remain diagnostic candidates and are never
+counted as GnRH-positive cells.
 
 The package provides:
 
-- GnRH-cell detection with direct, supported, and dropout-rescue
+- GnRH-cell detection with direct and transcriptomically supported
   evidence;
 - confidence classification and diagnostic scoring;
 - developmental staging and stage refinement;
@@ -75,7 +77,8 @@ and returns the updated Seurat object.
 obj <- run_gnrh(obj)
 ```
 
-Observed log for the bundled `hpsc` object:
+The default summary is deliberately concise. Observed log for the
+bundled `hpsc` object:
 
 ``` text
 [GNRH] ==== STARTING GnRHcell PIPELINE ====
@@ -89,20 +92,15 @@ Observed log for the bundled `hpsc` object:
 [STEP] [3/3] Running diagnostics
 [DONE] Diagnostics complete. Duration: 0.0s
 [INFO] PIPELINE SUMMARY
-[INFO] Status:
-[INFO]   neg: 1743
-[INFO]   pos: 657
-[INFO] Stage:
-[INFO]   identity: 341
-[INFO]   migrating: 118
-[INFO]   mature: 198
-[INFO]   non-gnrh: 1743
-[INFO] Secretory:
-[INFO]   limited: 118
-[INFO]   supported: 539
-[INFO]   non-gnrh: 1743
+[INFO]   Cells: 2,400 | GnRH+: 527 (22.0%) | high confidence: 273
+[INFO]   Evidence: direct 522 | transcriptomic 5 | isolated GNRH1 signal 135
+[INFO]   Stage: identity 309 | migrating 62 | mature 156
+[INFO]   Stage resolution: resolved 417 (79.1%) | transitional 110 (20.9%)
 [DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s
 ```
+
+Use `summary_level = "detailed"` for the complete diagnostic summary or
+`summary_level = "none"` for silent batch processing.
 
 Inspect the principal outputs:
 
@@ -117,12 +115,14 @@ Result:
 
 | Output | Category    | Cells |
 |--------|-------------|------:|
-| Status | `neg`       | 1,743 |
-| Status | `pos`       |   657 |
-| Stage  | `identity`  |   341 |
-| Stage  | `migrating` |   118 |
-| Stage  | `mature`    |   198 |
-| Stage  | `non-gnrh`  | 1,743 |
+| Status | `neg`       | 1,873 |
+| Status | `pos`       |   527 |
+| Class  | `direct`    |   522 |
+| Class  | `supported` |     5 |
+| Stage  | `identity`  |   309 |
+| Stage  | `migrating` |    62 |
+| Stage  | `mature`    |   156 |
+| Stage  | `non-gnrh`  | 1,873 |
 
 The most frequently used metadata columns include:
 
@@ -136,17 +136,47 @@ grep(
 
 Important output groups are:
 
-| Output | Typical values or interpretation |
-|----|----|
-| `gnrh_status` | Binary detection status: `neg`, `pos` |
-| `gnrh_class` | Detection evidence: `neg`, `dropout_rescue`, `supported`, `direct` |
-| `gnrh_confident` | High-confidence detection flag |
-| `gnrh_stage` | `non-gnrh`, `identity`, `migrating`, `mature`, `secreting` |
-| `gnrh_score` | Composite GnRH detection score |
-| `gnrh_support_score` | Supporting lineage and biological evidence |
-| `gnrh_identity_score` | Identity-stage evidence |
-| `gnrh_migrating_score` | Migration-stage evidence |
-| `gnrh_mature_score` | Maturation-stage evidence |
+| Output                  | Typical values or interpretation                  |
+|-------------------------|---------------------------------------------------|
+| `gnrh_status`           | Binary detection status: `neg`, `pos`             |
+| `gnrh_class`            | Detection evidence: `neg`, `supported`, `direct`  |
+| `gnrh_confident`        | High-confidence detection flag                    |
+| `gnrh_direct_signal`    | Detectable direct `GNRH1` signal                  |
+| `gnrh_direct_supported` | Direct signal with independent identity support   |
+| `gnrh_direct_isolated`  | Direct signal without sufficient identity support |
+| `gnrh_stage`            | `non-gnrh`, `identity`, `migrating`, `mature`     |
+| `gnrh_stage_resolution` | `non-gnrh`, `transitional`, `resolved`            |
+| `gnrh_score`            | Composite GnRH detection score                    |
+| `gnrh_support_score`    | Supporting lineage and biological evidence        |
+| `gnrh_identity_score`   | Identity-stage evidence                           |
+| `gnrh_migrating_score`  | Migration-stage evidence                          |
+| `gnrh_mature_score`     | Maturation-stage evidence                         |
+
+## Biological evidence model
+
+GnRHcell separates **detection**, **confidence**, and **developmental
+staging**. This prevents mature neuroendocrine genes from becoming
+prerequisites for detecting immature or migrating GnRH neurons.
+
+| Evidence tier | Representative genes | Role in GnRHcell |
+|----|----|----|
+| Identity primary | `FEZF1`, `ISL1`, `SIX6`, `ECEL1` | One hit can support direct `GNRH1` signal |
+| Identity supportive | `OTX2`, `SIX3`, `DLX1`, `DLX2`, `DLX5`, `DLX6`, `PBX3`, `ARX`, `FOXG1` | Two hits can support direct `GNRH1` signal |
+| Contextual identity | `RBFOX1`, `MYT1L`, `BCL11B` | Interpretation and diagnostics; does not change the validated detection gate |
+| Migration | `PROKR2`, `NSMF`, `ROBO3`, semaphorin/plexin, netrin and adhesion genes | Developmental staging after detection |
+| Neuroendocrine | `KISS1R`, `GNRHR`, `PCSK1`, `PCSK2`, granin and vesicle genes | Maturation and secretory support after detection |
+
+The curated programs synthesize evidence from human fetal GnRH neurons,
+hPSC-derived GnRH differentiation and developmental transcriptomics. In
+particular, `ISL1`, `SIX6`, `DLX5` and `ECEL1` are supported by human
+fetal GnRH data; `RELN`, `SEMA3C`, `RBFOX1`, `PLXNA2`, `SCN2A`, `TAC1`,
+`MYT1L` and `BCL11B` provide contextual developmental evidence; and the
+hPSC trajectory supports `GAD2`, `DLX1/2/5`, `SIX3`, `ARX` and `FOXG1`.
+See [Zouaghi et al. (2025)](https://www.thno.org/v15p3673.htm), [Lund et
+al. (2020)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7075073/) and [Wang
+et al. (2022)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9806769/). Genes
+describing the migratory environment are biological context, not proof
+of GnRH-cell identity.
 
 ## Results at a glance
 
@@ -156,11 +186,11 @@ human hypothalamic references.
 
 | Demo dataset          | Cells | GnRH detected | Identity | Migrating | Mature |
 |-----------------------|------:|--------------:|---------:|----------:|-------:|
-| hPSC-derived GnRH     | 2,400 |           657 |      341 |       118 |    198 |
-| Human fetal nose      | 2,125 |           125 |       57 |        58 |     10 |
-| Human median eminence | 2,161 |           161 |       42 |        25 |     94 |
-| Mouse HypoMap         | 2,174 |           174 |       10 |         0 |    164 |
-| Human HypoMap         | 2,400 |           400 |       27 |       105 |    268 |
+| hPSC-derived GnRH     | 2,400 |           527 |      309 |        62 |    156 |
+| Human fetal nose      | 2,125 |            45 |       24 |        14 |      7 |
+| Human median eminence | 2,161 |           108 |       19 |         5 |     84 |
+| Mouse HypoMap         | 2,174 |           130 |       10 |         0 |    120 |
+| Human HypoMap         | 2,400 |           213 |        2 |        34 |    177 |
 
 > **Interpretation.** These demo objects were intentionally sampled to
 > retain GnRH-relevant cells. Counts and percentages describe only the
@@ -410,8 +440,9 @@ hpsc <- run_gnrh(hpsc)
 
 report <- gnrh_report(
   hpsc,
-  roc_mode = "internal",
-  style = "bw"
+  roc_mode = "auto",
+  style = "bw",
+  mode = "dark"
 )
 
 report
@@ -782,10 +813,9 @@ Checking status/class consistency
 Summarizing GnRH evidence scores
 Validating developmental stages
 Summarizing biological marker expression
-Validated 5 datasets; 11,260 cells; 1,517 GnRH-positive cells.
-GNRH1-negative transcriptomic candidates: 14 (diagnostic only; not counted as GnRH-positive).
-Developmental-stage refinements: 66 cells.
-Migration refinement: 66 / 372 raw migrating cells reassigned (17.74%).
+Validated 5 datasets; 11,260 cells; 1,023 GnRH-positive cells.
+GNRH1-negative transcriptomic candidates are reported for diagnosis only and
+are not counted as GnRH-positive.
 ==== GNRH COLLECTION VALIDATION DONE ====
 ```
 
@@ -805,11 +835,11 @@ Cross-dataset result:
 
 | Dataset               | Cells | GnRH detected | Identity | Migrating | Mature |
 |-----------------------|------:|--------------:|---------:|----------:|-------:|
-| hPSC-derived GnRH     | 2,400 |           657 |      341 |       118 |    198 |
-| Human fetal nose      | 2,125 |           125 |       57 |        58 |     10 |
-| Human median eminence | 2,161 |           161 |       42 |        25 |     94 |
-| Mouse HypoMap         | 2,174 |           174 |       10 |         0 |    164 |
-| Human HypoMap         | 2,400 |           400 |       27 |       105 |    268 |
+| hPSC-derived GnRH     | 2,400 |           527 |      309 |        62 |    156 |
+| Human fetal nose      | 2,125 |            45 |       24 |        14 |      7 |
+| Human median eminence | 2,161 |           108 |       19 |         5 |     84 |
+| Mouse HypoMap         | 2,174 |           130 |       10 |         0 |    120 |
+| Human HypoMap         | 2,400 |           213 |        2 |        34 |    177 |
 
 <div align="center">
 
@@ -854,18 +884,10 @@ Running GnRHcell: Human hPSC
 [STEP] [3/3] Running diagnostics
 [DONE] Diagnostics complete. Duration: 0.0s
 [INFO] PIPELINE SUMMARY
-[INFO] Status:
-[INFO]   neg: 1743
-[INFO]   pos: 657
-[INFO] Stage:
-[INFO]   identity: 341
-[INFO]   migrating: 118
-[INFO]   mature: 198
-[INFO]   non-gnrh: 1743
-[INFO] Secretory:
-[INFO]   limited: 118
-[INFO]   supported: 539
-[INFO]   non-gnrh: 1743
+[INFO]   Cells: 2,400 | GnRH+: 527 (22.0%) | high confidence: 273
+[INFO]   Evidence: direct 522 | transcriptomic 5 | isolated GNRH1 signal 135
+[INFO]   Stage: identity 309 | migrating 62 | mature 156
+[INFO]   Stage resolution: resolved 417 (79.1%) | transitional 110 (20.9%)
 [DONE] ==== GnRHcell PIPELINE COMPLETE ==== Duration: 0.6s
 [INFO] Generating publication-ready GnRH QC report
 [GNRH] GnRH marker discovery
@@ -976,29 +998,8 @@ conserved_markers <- plot_gnrh_conserved_markers(
   score_col = "avg_log2FC",
   min_datasets = 3,
   top_n = 50,
-  scale_rows = F,
-  cluster_rows = TRUE,
-  cluster_columns = FALSE,
-  filename = file.path(
-    "gnrh_results",
-    "comparisons",
-    "conserved_gnrh_markers.pdf"
-  )
-)
-
-conserved_markers$conserved
-conserved_markers$heatmap
-
-
-
-conserved_markers <- plot_gnrh_conserved_markers(
-  files = marker_files,
-  dir = marker_dir,
-  score_col = "avg_log2FC",
-  min_datasets = 3,
-  top_n = 50,
   scale_rows = FALSE,
-  cluster_rows = FALSE,
+  cluster_rows = TRUE,
   cluster_columns = FALSE,
   filename = file.path(
     "gnrh_results",
@@ -1029,7 +1030,7 @@ specific_markers <- plot_gnrh_dataset_specific_markers(
   score_col = "avg_log2FC",
   top_n_per_dataset = 20,
   max_datasets = 2,
-  scale_rows = F,
+  scale_rows = FALSE,
   cluster_rows = FALSE,
   cluster_columns = FALSE,
   filename = file.path(

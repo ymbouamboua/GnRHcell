@@ -2,20 +2,53 @@
 % Please edit documentation in R/visualization.R
 \name{plot_network}
 \alias{plot_network}
-\title{GnRH gene similarity network}
+\title{GnRH marker association network}
 \usage{
-plot_network(df, top_n = 25, threshold = 0.4)
+plot_network(
+  df,
+  top_n = 25L,
+  threshold = 0.1,
+  mode = c("auto", "coexpression", "codetection", "phenotype"),
+  score_col = NULL,
+  association_col = NULL,
+  include_gnrh = TRUE,
+  gnrh_gene = "GNRH1",
+  txtsize = 10,
+  style = "void",
+  seed = 1234
+)
 }
 \arguments{
-\item{df}{Marker table containing \code{gene}, \code{coexpr}, and \code{score}.}
+\item{df}{GnRH marker table.}
 
-\item{top_n}{Maximum number of ranked genes included.}
+\item{top_n}{Maximum number of top-ranked marker genes considered.}
 
-\item{threshold}{Minimum co-expression edge weight.}
+\item{threshold}{Minimum edge similarity.}
+
+\item{mode}{Association mode. One of \code{"auto"}, \code{"coexpression"},
+\code{"codetection"}, or \code{"phenotype"}.}
+
+\item{score_col}{Optional column used to scale node size.}
+
+\item{association_col}{Optional association column overriding automatic
+column selection.}
+
+\item{include_gnrh}{Logical. Add GNRH1 as a reference node.}
+
+\item{gnrh_gene}{Name of the GnRH gene.}
+
+\item{txtsize}{Base text size.}
+
+\item{style}{Plot style passed to \code{gnrh_theme()}.}
+
+\item{seed}{Random seed used by the graph layout.}
 }
 \value{
 A ggraph object.
 }
 \description{
-GnRH gene similarity network
+Build a GnRH marker network using co-expression, co-detection, or phenotype
+association evidence. In \code{"auto"} mode, the most informative available
+association metric is selected automatically. GNRH1 can be added as a
+reference hub, and isolated genes are removed.
 }

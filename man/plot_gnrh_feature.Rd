@@ -2,14 +2,14 @@
 % Please edit documentation in R/visualization.R
 \name{plot_gnrh_feature}
 \alias{plot_gnrh_feature}
-\title{Cell Feature Plot for Seurat Objects}
+\title{Plot GnRHcell features}
 \usage{
 plot_gnrh_feature(
   object,
   features = NULL,
   preset = NULL,
   cols = NULL,
-  theme.cols = "gnrh",
+  theme.cols = "Reds",
   rev.cols = FALSE,
   na.col = "lightgray",
   order = FALSE,
@@ -18,7 +18,7 @@ plot_gnrh_feature(
   reduction = NULL,
   na.cutoff = 1e-09,
   raster = NULL,
-  raster.dpi = c(512, 512),
+  raster.dpi = c(2048, 2048),
   split.by = NULL,
   ncol = NULL,
   layer = "data",
@@ -32,68 +32,57 @@ plot_gnrh_feature(
 )
 }
 \arguments{
-\item{object}{A \code{Seurat} object.}
+\item{object}{A Seurat object.}
 
-\item{features}{Character vector of features (genes or metadata columns) to plot.}
+\item{features}{Features or metadata columns.}
 
-\item{preset}{Optional GnRHcell feature preset: \code{"core"}, \code{"modules"},
-\code{"staging"}, or \code{"all"}.}
+\item{preset}{Optional GnRHcell feature preset.}
 
-\item{cols}{Optional character vector of colors for plotting.}
+\item{cols}{Optional colour gradient.}
 
-\item{theme.cols}{Character. Predefined theme color palette (default: \code{"Reds"}). Options include \code{"Reds"}, \code{"Blues"}, etc., or custom list palettes \code{"hotspot"},\code{"rainbow"}, etc.}
+\item{theme.cols}{Palette name.}
 
-\item{rev.cols}{Logical. Reverse the color palette (default: \code{FALSE}).}
+\item{rev.cols}{Reverse palette.}
 
-\item{na.col}{Color for NA or below-cutoff expression values (default: \code{"lightgray"}).}
+\item{na.col}{Colour for missing or censored values.}
 
-\item{order}{Logical. If TRUE, plot high-expression cells on top (default: \code{FALSE}).}
+\item{order}{Plot high values last.}
 
-\item{pt.size}{Numeric. Point size. If NULL, automatically calculated based on number of cells.}
+\item{pt.size}{Point size.}
 
-\item{txtsize}{Numeric. Base font size for plot titles and axis labels (default: 10).}
+\item{txtsize}{Base text size.}
 
-\item{reduction}{Character. Dimensional reduction to use (default: first available in Seurat object).}
+\item{reduction}{Dimensional reduction.}
 
-\item{na.cutoff}{Numeric. Minimum expression value for coloring; below this will be NA if palette requires (default: 1e-9).}
+\item{na.cutoff}{Lower colour-scale cutoff.}
 
-\item{raster}{Logical. If TRUE, rasterize points for faster plotting of large datasets.}
+\item{raster}{Rasterize large plots.}
 
-\item{raster.dpi}{Numeric vector of length 2. DPI for rasterization (default: c(512,512)).}
+\item{raster.dpi}{Raster resolution.}
 
-\item{split.by}{Character. Metadata column to split the plot.}
+\item{split.by}{Optional splitting metadata column.}
 
-\item{ncol}{Numeric. Number of columns when combining multiple plots.}
+\item{ncol}{Number of plot columns.}
 
-\item{layer}{Character. Seurat assay slot to fetch data from (default: \code{"data"}).}
+\item{layer}{Assay layer used when calculating a common legend range.}
 
-\item{label}{Logical. Whether to label clusters (default: FALSE).}
+\item{label}{Label clusters.}
 
-\item{axes}{Logical. Whether to show axes (default: TRUE).}
+\item{axes}{Show axes.}
 
-\item{combine}{Logical. Whether to return a single combined plot (default: TRUE).}
+\item{combine}{Combine plots.}
 
-\item{blend}{Logical. Whether to blend exactly two features (default: FALSE).}
+\item{blend}{Blend exactly two features.}
 
-\item{merge.leg}{Logical. Whether to merge multiple legends into one (default: FALSE).}
+\item{merge.leg}{Use a common colour scale and collect legends.}
 
-\item{style}{Character. ggplot2 theme to apply (default: \code{"classic"}).}
+\item{style}{Plot theme.}
 
-\item{...}{Additional arguments passed to \code{Seurat::FeaturePlot}.}
+\item{...}{Additional arguments passed to \code{Seurat::FeaturePlot()}.}
 }
 \value{
-A \code{ggplot} object (or \code{patchwork} object if multiple features).
+A ggplot, list of ggplots, or patchwork object.
 }
 \description{
-A flexible wrapper around Seurat's \code{FeaturePlot} to visualize gene expression or metadata
-features in a Seurat object. Supports custom color palettes, viridis, and hotspot/rainbow palettes.
-}
-\examples{
-\dontrun{
-path <- system.file("extdata", "hpsc.rds", package = "GnRHcell")
-object <- readRDS(path)
-plot_gnrh_feature(object, features = "GNRH1")
-plot_gnrh_feature(object, preset = "core", ncol = 2)
-}
-
+Visualizes GnRHcell scores, metadata, or genes on a dimensional reduction.
 }

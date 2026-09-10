@@ -6,10 +6,13 @@
 \usage{
 plot_gnrh_marker_programs(
   programs,
-  table = c("summary", "high_confidence", "candidate_table"),
+  table = c("summary", "high_confidence", "candidate_table", "context_specific"),
   type = c("bar", "dot", "tile"),
-  min_genes = 1,
-  mode = "light",
+  min_genes = 1L,
+  require_coexpr = FALSE,
+  top_n = NULL,
+  facet_ncol = NULL,
+  mode = c("light", "dark"),
   txtsize = 12,
   x.ang = 45,
   style = c("bw", "test", "classic", "minimal")
@@ -24,13 +27,20 @@ plot_gnrh_marker_programs(
 
 \item{min_genes}{Minimum genes retained for summary plots.}
 
+\item{require_coexpr}{Retain only markers with co-expression support.}
+
+\item{top_n}{Maximum genes displayed per dataset for gene-level plots.
+If \code{NULL}, automatically adapted to the number of datasets.}
+
+\item{facet_ncol}{Optional number of facet columns.}
+
 \item{mode}{Light or dark display mode.}
 
 \item{txtsize}{Base text size.}
 
 \item{x.ang}{X-axis label angle.}
 
-\item{style}{Theme style: \code{"classic"}, \code{"minimal"}, \code{"bw"}, or \code{"test"}.}
+\item{style}{Plot theme.}
 }
 \value{
 A ggplot object.

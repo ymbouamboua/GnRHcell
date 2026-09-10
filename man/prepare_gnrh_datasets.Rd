@@ -7,20 +7,14 @@
 prepare_gnrh_datasets(datasets, check_files = TRUE, remove_missing = FALSE)
 }
 \arguments{
-\item{datasets}{A data frame or tibble containing dataset configuration
-information.}
+\item{datasets}{Data frame describing datasets to be processed by the
+multi-dataset GnRHcell workflow.}
 
-\item{check_files}{Logical. Whether to warn when dataset files are missing.
-Default is \code{TRUE}.}
+\item{check_files}{Logical. Check whether dataset files exist.}
 
-\item{remove_missing}{Logical. Whether rows corresponding to missing files
-should be removed. Default is \code{FALSE}.}
-}
-\value{
-A tibble containing the standardized dataset configuration and an
-additional logical column named \code{exists}.
+\item{remove_missing}{Logical. Remove datasets whose input files cannot be
+found.}
 }
 \description{
-Validates and standardizes a dataset configuration table before running
-multi-dataset GnRHcell analyses.
+Prepare a GnRHcell dataset configuration table
 }
