@@ -42,7 +42,7 @@ test_that("extended identity module preserves direct-signal specificity", {
 })
 
 
-test_that("developmental stage module remains independently calibrated", {
+test_that("developmental stage module excludes persistent lineage identity", {
   genes <- c(
     "FEZF1", "ISL1", "SIX6", "SIX3", "OTX2", "DLX1", "DLX2",
     "DLX5", "DLX6", "PBX3", "ARX", "FOXG1", "ECEL1", "RASD1",
@@ -51,8 +51,11 @@ test_that("developmental stage module remains independently calibrated", {
 
   modules <- .build_stage_modules(genes)
 
-  expect_true(all(c("RASD1", "RMST") %in% modules$identity))
-  expect_false(any(c("ARX", "FOXG1") %in% modules$identity))
+  expect_true(all(c("FEZF1", "SIX3", "SIX6") %in% modules$early))
+  expect_false(any(
+    c("ISL1", "PBX3", "RASD1", "RMST", "ECEL1", "ARX", "FOXG1") %in%
+      modules$early
+  ))
 })
 
 

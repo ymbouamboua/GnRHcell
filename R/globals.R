@@ -29,7 +29,7 @@ utils::globalVariables(
     "module",
     "count", "group", ".alpha",
     "n_raw_migrating", "n_retained", "n_reassigned",
-    "n_to_identity", "n_to_mature", "n_to_secreting"
+    "n_to_early", "n_to_mature", "n_to_secreting"
   )
 )
 

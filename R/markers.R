@@ -888,7 +888,7 @@ find_gnrh_genes <- function(
 #' @param stage_col Character scalar giving the metadata column containing GnRH
 #'   developmental-stage labels. Default is \code{"gnrh_stage"}.
 #' @param stages Character vector giving the stages to compare. Default is
-#'   \code{c("identity", "migrating", "mature")}.
+#'   \code{c("early", "migrating", "post-migratory", "mature")}.
 #' @param class_col Optional character scalar giving the GnRH detection-class
 #'   metadata column. When supplied, only cells whose class belongs to
 #'   \code{positive_classes} are retained. Default is \code{"gnrh_class"}.
@@ -1010,7 +1010,7 @@ find_gnrh_genes <- function(
 #' @export
 find_gnrh_stage_markers <- function(
     object,stage_col="gnrh_stage",
-    stages=c("identity","migrating","mature"),
+    stages=c("early","migrating","post-migratory","mature"),
     class_col="gnrh_class",
     positive_classes=c("direct","supported"),
     exclude_stages="non-gnrh",

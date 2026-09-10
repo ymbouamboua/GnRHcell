@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{gnrh_gene_upset}
 \alias{gnrh_gene_upset}
-\title{Gene Set Overlap Analysis and Visualization}
+\title{Gene set overlap analysis and visualization}
 \usage{
 gnrh_gene_upset(
   gene_sets,
@@ -16,29 +16,6 @@ gnrh_gene_upset(
   dpi = 600
 )
 }
-\arguments{
-\item{gene_sets}{Named list of gene sets to compare.}
-
-\item{min_size}{Minimum intersection size retained for visualization.}
-
-\item{venn_title}{Plot title.}
-
-\item{outdir}{Optional output directory.}
-
-\item{save_plot}{Logical. Save PDF and PNG.}
-
-\item{max_intersections}{Maximum intersections displayed. If \code{NULL},
-automatically determined from the number of gene sets.}
-
-\item{plot_width}{Optional output width.}
-
-\item{plot_height}{Optional output height.}
-
-\item{dpi}{Raster resolution.}
-}
-\value{
-Named overlap-analysis list.
-}
 \description{
-Gene Set Overlap Analysis and Visualization
+Gene set overlap analysis and visualization
 }

@@ -7,12 +7,12 @@
 extract_gnrh_run_info(object, dataset_name = NULL)
 }
 \arguments{
-\item{object}{A Seurat object processed with \code{\link{run_gnrh}}.}
+\item{object}{A Seurat object processed with \code{run_gnrh()}.}
 
 \item{dataset_name}{Optional dataset name.}
 }
 \value{
-One-row data frame containing dataset and GnRHcell run statistics.
+One-row data frame of GnRHcell run statistics.
 }
 \description{
 Extract GnRHcell run information

@@ -7,44 +7,11 @@
 gnrh_stage_modules(include_secretory = FALSE)
 }
 \arguments{
-\item{include_secretory}{Logical. Include a \code{secretory} module for
-backward compatibility. Default is \code{FALSE}.}
+\item{include_secretory}{Include secretory module for backward compatibility.}
 }
 \value{
-Named list of uppercase gene symbols.
+Named list of developmental gene programs.
 }
 \description{
-Returns curated gene programs representing major developmental states of
-the GnRH neuronal lineage.
-}
-\details{
-Developmental stage and secretory phenotype are intentionally separated.
-The developmental programs are \code{identity}, \code{migrating}, and
-\code{mature}. Secretory machinery is provided separately by
-\code{\link{gnrh_secretory_marker_module}}.
-}
-\references{
-Wray S. Development of gonadotropin-releasing hormone-1 neurons.
-Front Neuroendocrinol. 2010.
-
-Schwanzel-Fukuda M, Pfaff DW. Origin of luteinizing hormone-releasing
-hormone neurons. Nature. 1989.
-
-Stevenson EL, Corella KM, Chung WCJ. Ontogenesis of
-gonadotropin-releasing hormone neurons. Front Endocrinol. 2013.
-
-Cho HJ, Shan Y, Whittington NC, Wray S. Nasal placode development,
-GnRH neuronal migration and Kallmann syndrome. Front Cell Dev Biol. 2019.
-
-Taroc EZM, Prasad A, Lin JM, Forni PE. GnRH-1 neural migration
-from the nose to the brain is independent from Slit2, Robo3 and NELL2.
-Front Cell Neurosci. 2019.
-
-Li Q et al. Expression of genes for kisspeptin, neurokinin B and
-dynorphin in the hypothalamus. Front Endocrinol. 2020.
-}
-\seealso{
-\code{\link{gnrh_secretory_marker_module}},
-\code{\link{gnrh_marker_programs}},
-\code{\link{gnrh_stage_gene_references}}
+Default GnRH developmental marker programs
 }

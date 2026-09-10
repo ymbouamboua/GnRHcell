@@ -14,49 +14,21 @@ gnrh_diagnostics(
 )
 }
 \arguments{
-\item{object}{A Seurat object previously processed with
-\code{\link{detect_gnrh}}.}
+\item{object}{A Seurat object previously processed with \code{detect_gnrh()}.}
 
-\item{truth}{Optional metadata column name or vector containing independent
-binary truth labels.}
+\item{truth}{Optional metadata column name or vector with binary truth labels.}
 
-\item{positive}{Optional value identifying the positive truth class.
-If \code{NULL}, logical truth uses \code{TRUE}; otherwise the second
-observed class is used.}
+\item{positive}{Value identifying the positive truth class.}
 
-\item{predictor}{Metadata column used for threshold validation.
-Default is \code{"gnrh_support_score_raw"}.}
+\item{predictor}{Metadata column used for threshold validation.}
 
-\item{n_thresholds}{Number of thresholds evaluated. Default is 200.}
+\item{n_thresholds}{Number of thresholds evaluated.}
 
-\item{verbose}{Logical. Whether to print progress messages.}
+\item{verbose}{Print progress messages.}
 }
 \value{
-A Seurat object with diagnostic results stored in
-\code{object@misc$gnrh}.
+A Seurat object with diagnostics stored in \code{object@misc$gnrh}.
 }
 \description{
-Generates descriptive and, when an independent truth annotation is
-available, validation diagnostics for GnRH detection results.
-}
-\details{
-Descriptive diagnostics are always generated. Performance metrics such as
-ROC, precision-recall curves, AUC, AUPRC, sensitivity, specificity,
-precision, F1 score, and false-positive rate are computed only when an
-independent binary truth annotation is supplied.
-
-Without an independent truth annotation, this function stores per-cell
-diagnostics and classification summaries but does not compute ROC or
-threshold-performance statistics.
-
-When \code{truth} is supplied, threshold metrics include sensitivity,
-specificity, precision, recall, F1 score, balanced accuracy, false-positive
-rate, and false positives per 100,000 truth-negative cells.
-
-Precision-recall metrics are emphasized because GnRH neurons are typically
-rare and ROC AUC alone may overstate performance in highly imbalanced data.
-}
-\seealso{
-\code{\link{detect_gnrh}},
-\code{\link{run_gnrh}}
+Run GnRH detection diagnostics
 }

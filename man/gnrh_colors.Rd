@@ -4,7 +4,9 @@
 \alias{gnrh_colors}
 \title{Color palettes}
 \usage{
-gnrh_colors(type = c("status", "confident", "class", "stage", "secretory"))
+gnrh_colors(
+  type = c("status", "confident", "class", "stage", "developmental", "secretory")
+)
 }
 \arguments{
 \item{type}{Palette type.}

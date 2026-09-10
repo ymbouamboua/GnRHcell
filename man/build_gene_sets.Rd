@@ -7,11 +7,14 @@
 build_gene_sets(files, dir = ".", gene_col = "gene")
 }
 \arguments{
-\item{files}{Character vector of marker-table filenames or paths.}
+\item{files}{Named character vector of marker files.}
 
-\item{dir}{Optional directory containing the marker files.}
+\item{dir}{Directory containing files.}
 
-\item{gene_col}{Column containing gene identifiers in each marker table.}
+\item{gene_col}{Gene column.}
+}
+\value{
+Named list of gene sets.
 }
 \description{
 Build gene sets from marker tables

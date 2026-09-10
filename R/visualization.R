@@ -321,199 +321,81 @@ gnrh_theme <- function(
 
 
 
-
 # ========================================================================= #
 # Palettes
 # ========================================================================= #
-
 #' Color palettes
-#'
 #' @param type Palette type.
-#'
 #' @return Named character vector.
 #' @export
-gnrh_colors <- function(
-    type = c(
-      "status",
-      "confident",
-      "class",
-      "stage",
-      "secretory"
-    )
-) {
+gnrh_colors <- function(type=c("status","confident","class","stage","developmental","secretory")) {
   switch(
     match.arg(type),
-
-    status = c(
-      neg = "#B0B0B0",
-      pos = "#FF4D6D"
-    ),
-
-    confident = c(
-      "FALSE" = "#B0B0B0",
-      "TRUE" = "#E63946"
-    ),
-
-    class = c(
-      neg = "#B0B0B0",
-      supported = "#4EA8DE",
-      direct = "#E63946"
-    ),
-
-    stage = c(
-      "non-gnrh" = "#B0B0B0",
-      identity = "#1F78B4",
-      migrating = "#6A3D9A",
-      mature = "#E67E22"
-    ),
-
-    secretory = c(
-      "non-gnrh" = "#B0B0B0",
-      limited = "#80B1D3",
-      supported = "#D81B60"
-    )
+    status=c(neg="#B0B0B0",pos="#FF4D6D"),
+    confident=c("FALSE"="#B0B0B0","TRUE"="#E63946"),
+    class=c(neg="#B0B0B0",supported="#4EA8DE",direct="#E63946"),
+    stage=c("non-gnrh"="#B0B0B0",early="#3B4CC0",migrating="#6A3D9A","post-migratory"="#7BC8A4",mature="#E67E22",transitional="#B8A9C9",undetermined="#D9D9D9"),
+    developmental=c("non-gnrh"="#B0B0B0",early="#3B4CC0",migrating="#00A6CA","post-migratory"="#7BC8A4",mature="#F28E2B",transitional="#B8A9C9",undetermined="#D9D9D9"),
+    secretory=c("non-gnrh"="#B0B0B0",limited="#80B1D3",supported="#D81B60")
   )
 }
-
-
-
 #' Internal GnRH palette resolver
 #' @keywords internal
 #' @noRd
 .gnrh_palette <- function(group_by) {
-  type <- switch(
-    group_by,
-    gnrh_status = "status",
-    gnrh_confident = "confident",
-    gnrh_class = "class",
-    gnrh_stage = "stage",
-    gnrh_secretory = "secretory",
-    NULL
-  )
-
+  type <- switch(group_by,gnrh_status="status",gnrh_confident="confident",gnrh_class="class",gnrh_stage="stage",gnrh_stage_raw="stage",gnrh_secretory="secretory",NULL)
   if (is.null(type)) return(NULL)
   gnrh_colors(type)
 }
-
-
 #' Resolve colors for arbitrary levels
 #' @keywords internal
 #' @noRd
-.resolve_colors <- function(levels, cols = NULL, group_by = NULL) {
-  if (is.null(cols) && !is.null(group_by))
-    cols <- .gnrh_palette(group_by)
-
+.resolve_colors <- function(levels,cols=NULL,group_by=NULL) {
+  if (is.null(cols) && !is.null(group_by)) cols <- .gnrh_palette(group_by)
   if (is.null(cols)) {
     cols <- scales::hue_pal()(length(levels))
     names(cols) <- levels
   }
-
-  if (is.null(names(cols)))
-    names(cols) <- levels[seq_len(min(length(cols), length(levels)))]
-
-  missing <- setdiff(levels, names(cols))
+  if (is.null(names(cols))) names(cols) <- levels[seq_len(min(length(cols),length(levels)))]
+  missing <- setdiff(levels,names(cols))
   if (length(missing)) {
     extra <- scales::hue_pal()(length(missing))
     names(extra) <- missing
-    cols <- c(cols, extra)
+    cols <- c(cols,extra)
   }
-
   cols[levels]
 }
-
-
 # ========================================================================= #
 # Legend helpers
 # ========================================================================= #
-
 #' Compact point legend
 #' @keywords internal
 #' @noRd
-.point_legend <- function(size = 2.3) {
+.point_legend <- function(size=2.3) {
   list(
-    ggplot2::guides(
-      colour = ggplot2::guide_legend(
-        override.aes = list(size = size, alpha = 1),
-        keyheight = grid::unit(0.28, "cm")
-      )
-    ),
-    ggplot2::theme(
-      legend.spacing.y = grid::unit(0, "cm"),
-      legend.key.width = grid::unit(0.35, "cm")
-    )
+    ggplot2::guides(colour=ggplot2::guide_legend(override.aes=list(size=size,alpha=1),keyheight=grid::unit(0.28,"cm"))),
+    ggplot2::theme(legend.spacing.y=grid::unit(0,"cm"),legend.key.width=grid::unit(0.35,"cm"))
   )
 }
-
-
 #' Compact line legend
 #' @keywords internal
 #' @noRd
-.line_legend <- function(linewidth = 1.2) {
+.line_legend <- function(linewidth=1.2) {
   list(
-    ggplot2::guides(
-      colour = ggplot2::guide_legend(
-        override.aes = list(linewidth = linewidth),
-        keyheight = grid::unit(0.30, "cm")
-      )
-    ),
-    ggplot2::theme(
-      legend.spacing.y = grid::unit(0, "cm"),
-      legend.key.width = grid::unit(0.45, "cm")
-    )
+    ggplot2::guides(colour=ggplot2::guide_legend(override.aes=list(linewidth=linewidth),keyheight=grid::unit(0.30,"cm"))),
+    ggplot2::theme(legend.spacing.y=grid::unit(0,"cm"),legend.key.width=grid::unit(0.45,"cm"))
   )
 }
-
-
 # ========================================================================= #
 # Reduction resolver
 # ========================================================================= #
-
 #' Resolve an available dimensional reduction
-#'
-#' Selects a dimensional reduction from a Seurat object. If the requested
-#' reduction is unavailable, the function searches a predefined fallback list,
-#' then any reduction containing `"umap"`, and finally returns the first
-#' available reduction.
-#'
-#' @param object A Seurat object containing dimensional reductions.
-#' @param reduction Optional character string specifying the preferred
-#'   dimensional reduction. If `NULL` or unavailable, a fallback is selected.
-#' @param fallback Character vector defining the preferred fallback order.
-#'   Defaults to `"umap"`, `"umap_scvi"`, `"umap.harmony"`, `"umap.rpca"`,
-#'   and `"pca"`.
-#'
-#' @return A character string giving the name of the selected dimensional
-#'   reduction.
-#'
-#' @details
-#' Reduction selection follows this priority:
-#' \enumerate{
-#'   \item The explicitly requested `reduction`, when available.
-#'   \item The first available reduction listed in `fallback`.
-#'   \item The first available reduction whose name contains `"umap"`.
-#'   \item The first dimensional reduction stored in the object.
-#' }
-#' An error is raised when the object contains no dimensional reductions.
-#'
 #' @keywords internal
-#'
-#' @examples
-#' \dontrun{
-#' resolve_reduction(object)
-#' resolve_reduction(object, "umap_scvi")
-#' resolve_reduction(object, fallback = c("umap", "pca"))
-#' }
-resolve_reduction <- function(
-    object,
-    reduction = NULL,
-    fallback = c("umap","umap_scvi","umap.harmony","umap.rpca","pca")
-) {
+resolve_reduction <- function(object,reduction=NULL,fallback=c("umap","umap_scvi","umap.harmony","umap.rpca","pca")) {
   .validate_seurat(object)
   available <- names(object@reductions)
-  if (!length(available)) {
-    stop("No dimensional reductions are available in `object`.",call.=FALSE)
-  }
-  if (!is.null(reduction) && length(reduction) == 1L && !is.na(reduction) && nzchar(reduction)) {
+  if (!length(available)) stop("No dimensional reductions are available in `object`.",call.=FALSE)
+  if (!is.null(reduction) && length(reduction)==1L && !is.na(reduction) && nzchar(reduction)) {
     if (reduction %in% available) return(reduction)
     warning(sprintf("Reduction `%s` not found. Using an available fallback.",reduction),call.=FALSE)
   }
@@ -523,54 +405,27 @@ resolve_reduction <- function(
   if (length(candidate)) return(candidate[[1L]])
   available[[1L]]
 }
-
 # ========================================================================= #
-# Legend helpers
+# Legend labels
 # ========================================================================= #
 #' Legend label
-#'
 #' @keywords internal
 #' @noRd
-.gnrh_legend_labels <- function(
-    x,
-    levels = NULL,
-    percentage = FALSE,
-    n_cells = TRUE
-) {
+.gnrh_legend_labels <- function(x,levels=NULL,percentage=FALSE,n_cells=TRUE) {
   x <- as.character(x)
   x[is.na(x)] <- "Unknown"
   tab <- table(x)
-  levels <- levels %||% names(tab)
-  levels <- intersect(levels, names(tab))
+  levels <- intersect(levels %||% names(tab),names(tab))
+  if (!isTRUE(n_cells)) return(stats::setNames(levels,levels))
   n <- as.integer(tab[levels])
-  if (!isTRUE(n_cells)) {
-    return(stats::setNames(levels, levels))
-  }
-  n_fmt <- format(
-    n,
-    big.mark = ",",
-    trim = TRUE,
-    scientific = FALSE
-  )
-  labels <- if (isTRUE(percentage)) {
-    paste0(
-      levels,
-      " (",
-      n_fmt,
-      " | ",
-      round(100 * n / sum(tab), 1),
-      "%)"
-    )
-  } else {
-    paste0(
-      levels,
-      " (",
-      n_fmt,
-      ")"
-    )
-  }
-  stats::setNames(labels, levels)
+  n_fmt <- format(n,big.mark=",",trim=TRUE,scientific=FALSE)
+  labels <- if (isTRUE(percentage)) paste0(levels," (",n_fmt," | ",round(100*n/sum(tab),1),"%)") else paste0(levels," (",n_fmt,")")
+  stats::setNames(labels,levels)
 }
+
+
+
+
 # ========================================================================= #
 # Embedding plot
 # ========================================================================= #
@@ -741,7 +596,11 @@ plot_gnrh_embedding <- function(
     gnrh_status = c("neg", "pos"),
     gnrh_class = c("neg", "supported", "direct"),
     gnrh_confident = c("FALSE", "TRUE"),
-    gnrh_stage = c("non-gnrh", "identity", "migrating", "mature"),
+    gnrh_stage = c(
+      "non-gnrh", "early", "migrating", "post-migratory", "mature",
+      "transitional", "undetermined"
+    ),
+    gnrh_stage_raw = c("non-gnrh", "early", "migrating", "mature"),
     gnrh_secretory = c("non-gnrh", "limited", "supported")
   )
   background_groups <- c("neg", "non-gnrh", "FALSE")
@@ -984,7 +843,7 @@ plot_gnrh_embedding <- function(
 
     # Developmental-stage scores
     staging = c(
-      "gnrh_stage_identity_score",
+      "gnrh_stage_early_score",
       "gnrh_stage_migrating_score",
       "gnrh_stage_mature_score"
     ),
@@ -1846,792 +1705,274 @@ plot_gnrh_hits <- function(
 
 
 # ========================================================================= #
-# Compact diagnostic report
+# GnRH diagnostic report
 # ========================================================================= #
-
 #' Generate a publication-ready gnrhcell diagnostic report
-#'
-#' Creates a six-panel quality-control dashboard summarizing detection,
-#' developmental staging, score separation, threshold behavior, detection
-#' classes or ROC discrimination, and marker-program support.
-#'
-#' @param object A Seurat object processed with `run_gnrh()` and
-#'   `gnrh_diagnostics()`.
-#' @param style Theme style: `"classic"`, `"minimal"`, `"bw"`, or `"test"`.
-#' @param mode Display mode: `"light"` or `"dark"`.
-#' @param truth Optional metadata column containing an independent binary
-#'   reference classification for external ROC analysis.
-#' @param roc_mode ROC behavior: `"auto"` uses external truth when supplied and
-#'   otherwise restores internal status/stage discrimination curves;
-#'   `"external"`, `"internal"`, and `"none"` force a specific behavior.
-#' @param positive_truth Values in `truth` interpreted as positive.
+#' @param object Seurat object processed with `run_gnrh()`/`gnrh_diagnostics()`.
+#' @param style Plot theme.
+#' @param mode Light or dark mode.
+#' @param truth Optional independent binary truth metadata column.
+#' @param roc_mode ROC mode: auto, external, internal, or none.
+#' @param positive_truth Values interpreted as positive truth.
 #' @param txtsize Base text size.
-#' @param max_points Maximum cells displayed in each scatter panel. All rare
-#'   GnRH-positive cells are retained before negative cells are sampled.
-#' @param seed Random seed used for display-only subsampling.
-#' @param show_class_panel Show detection-class composition when ROC analysis is
-#'   disabled or unavailable.
+#' @param max_points Maximum points shown in scatter plots.
+#' @param seed Sampling seed.
+#' @param show_class_panel Show class composition when ROC is unavailable.
 #' @param verbose Print progress messages.
-#'
 #' @return A patchwork object.
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' report <- gnrh_report(wang, style = "bw")
-#' report
-#'
-#' # External ROC using an independent manual/reference annotation
-#' report <- gnrh_report(
-#'   wang,
-#'   truth = "manual_gnrh",
-#'   roc_mode = "external",
-#'   positive_truth = c("GnRH", "pos", "TRUE"),
-#'   style = "minimal"
-#' )
-#'
-#' # Explicit internal score-discrimination curves
-#' report <- gnrh_report(wang, roc_mode = "internal", style = "bw")
-#'
-#' ggplot2::ggsave(
-#'   "gnrh_report.pdf", report,
-#'   width = 12, height = 7.5, units = "in",
-#'   device = grDevices::cairo_pdf
-#' )
-#' }
-gnrh_report <- function(
-    object,
-    style = c("test", "classic", "minimal", "bw"),
-    mode = c("light", "dark"),
-    truth = NULL,
-    roc_mode = c("auto", "external", "internal", "none"),
-    positive_truth = c("1", "TRUE", "true", "positive", "Positive", "pos", "Pos"),
-    txtsize = 10,
-    max_points = 100000L,
-    seed = 1234L,
-    show_class_panel = TRUE,
-    verbose = TRUE) {
-
+gnrh_report <- function(object,style=c("test","classic","minimal","bw"),mode=c("light","dark"),truth=NULL,roc_mode=c("auto","external","internal","none"),positive_truth=c("1","TRUE","true","positive","Positive","pos","Pos"),txtsize=10,max_points=100000L,seed=1234L,show_class_panel=TRUE,verbose=TRUE) {
   style <- match.arg(style)
   mode <- match.arg(mode)
   roc_mode <- match.arg(roc_mode)
-  resolved_roc_mode <- if (roc_mode == "auto") {
-    if (is.null(truth)) "internal" else "external"
-  } else {
-    roc_mode
-  }
-
-  if (!inherits(object, "Seurat")) {
-    stop("`object` must be a Seurat object.", call. = FALSE)
-  }
-  if (!requireNamespace("patchwork", quietly = TRUE)) {
-    stop("Package `patchwork` is required.", call. = FALSE)
-  }
-  if (!is.numeric(max_points) || length(max_points) != 1L || max_points < 100L) {
-    stop("`max_points` must be one number greater than or equal to 100.", call. = FALSE)
-  }
-  if (resolved_roc_mode == "external" && is.null(truth)) {
-    stop("`roc_mode = \"external\"` requires an independent `truth` column.", call. = FALSE)
-  }
-  if (resolved_roc_mode == "external" && identical(truth, "gnrh_status")) {
-    stop("Use `roc_mode = \"internal\"` to evaluate `gnrh_status` self-discrimination.", call. = FALSE)
-  }
-
-  if (verbose) message("[INFO] Generating publication-ready GnRH QC report")
-
+  roc_mode <- if (roc_mode=="auto") if (is.null(truth)) "internal" else "external" else roc_mode
+  if (!inherits(object,"Seurat")) stop("`object` must be a Seurat object.",call.=FALSE)
+  if (!requireNamespace("patchwork",quietly=TRUE)) stop("Package `patchwork` is required.",call.=FALSE)
+  if (length(max_points)!=1L || !is.numeric(max_points) || max_points<100) stop("`max_points` must be >= 100.",call.=FALSE)
+  if (roc_mode=="external" && is.null(truth)) stop("`roc_mode='external'` requires `truth`.",call.=FALSE)
+  if (roc_mode=="external" && identical(truth,"gnrh_status")) stop("Use `roc_mode='internal'` for self-discrimination.",call.=FALSE)
+  if (verbose) message("[INFO] Generating GnRH QC report")
   g <- object@misc$gnrh
-  if (is.null(g) || is.null(g$diagnostics)) {
-    stop(
-      "GnRH diagnostics are missing. Run `run_gnrh()` or both ",
-      "`detect_gnrh()` and `gnrh_diagnostics()` first.",
-      call. = FALSE
-    )
-  }
-
-  diagnostics <- as.data.frame(g$diagnostics)
-  metadata <- object[[]]
-  threshold_curve <- g$threshold_curve
-
-  required <- c("expr", "score", "status", "core_hits", "mig_hits", "neuro_hits")
-  missing <- setdiff(required, names(diagnostics))
-  if (length(missing)) {
-    stop("Missing diagnostic column(s): ", paste(missing, collapse = ", "), call. = FALSE)
-  }
-
-  # Add current metadata fields without assuming that diagnostics already carry
-  # all outputs. Prefer barcode matching; fall back to row order only when safe.
-  metadata_fields <- c(
-    "gnrh_class",
-    "gnrh_confident",
-
-    "gnrh_stage",
-    "gnrh_secretory",
-
-    "gnrh_support_score",
-    "gnrh_support_score_raw",
-
-    "gnrh_alternative_score",
-
-    "gnrh_identity_score",
-    "gnrh_migration_score",
-    "gnrh_neuro_score",
-
-    "gnrh_stage_identity_score",
-    "gnrh_stage_migrating_score",
-    "gnrh_stage_mature_score",
-
-    "gnrh_secretory_core_hits",
-    "gnrh_secretory_supportive_hits",
-    "gnrh_secretory_hits",
-
-    "gnrh_knn",
-
-    "gnrh_direct_signal",
-    "gnrh_direct_isolated",
-    "gnrh_transcriptomic_candidate"
+  if (is.null(g$diagnostics)) stop("GnRH diagnostics are missing. Run `run_gnrh()` or `gnrh_diagnostics()` first.",call.=FALSE)
+  d <- as.data.frame(g$diagnostics)
+  md <- object[[]]
+  req <- c("expr","score","status","core_hits","mig_hits","neuro_hits")
+  miss <- setdiff(req,names(d))
+  if (length(miss)) stop("Missing diagnostic column(s): ",paste(miss,collapse=", "),call.=FALSE)
+  cells <- rownames(d)
+  can_match <- length(cells)==nrow(d) && all(cells %in% rownames(md))
+  fields <- c(
+    "gnrh_class","gnrh_confident","gnrh_stage","gnrh_secretory",
+    "gnrh_support_score","gnrh_support_score_raw","gnrh_alternative_score",
+    "gnrh_identity_score","gnrh_migration_score","gnrh_neuro_score",
+    "gnrh_stage_early_score","gnrh_stage_migrating_score","gnrh_stage_mature_score",
+    "gnrh_secretory_core_hits","gnrh_secretory_supportive_hits","gnrh_secretory_hits",
+    "gnrh_knn","gnrh_direct_signal","gnrh_direct_isolated","gnrh_transcriptomic_candidate"
   )
-
-  if (
-    !"gnrh_transcriptomic_candidate" %in%
-    names(diagnostics) &&
-    "gnrh_dropout_candidate" %in%
-    names(metadata)
-  ) {
-    diagnostics$gnrh_transcriptomic_candidate <-
-      metadata$gnrh_dropout_candidate
+  if (!"gnrh_transcriptomic_candidate" %in% names(d) && "gnrh_dropout_candidate" %in% names(md)) d$gnrh_transcriptomic_candidate <- md$gnrh_dropout_candidate
+  for (nm in intersect(fields,names(md))) {
+    if (nm %in% names(d)) next
+    d[[nm]] <- if (can_match) md[cells,nm,drop=TRUE] else if (nrow(d)==nrow(md)) md[[nm]] else stop("Cannot align diagnostics with metadata.",call.=FALSE)
   }
-
-
-  metadata_fields <- intersect(metadata_fields, names(metadata))
-  diagnostic_cells <- rownames(diagnostics)
-  can_match <- length(diagnostic_cells) == nrow(diagnostics) &&
-    all(diagnostic_cells %in% rownames(metadata))
-
-  for (field in metadata_fields) {
-    if (!field %in% names(diagnostics)) {
-      diagnostics[[field]] <- if (can_match) {
-        metadata[diagnostic_cells, field, drop = TRUE]
-      } else if (nrow(diagnostics) == nrow(metadata)) {
-        metadata[[field]]
-      } else {
-        stop("Cannot align diagnostic rows with Seurat metadata.", call. = FALSE)
-      }
-    }
-  }
-
-  foreground <- if (mode == "dark") "#F5F5F5" else "#1A1A1A"
-  background <- if (mode == "dark") "#111111" else "white"
-  muted <- if (mode == "dark") "#BDBDBD" else "#555555"
-  tile_low <- if (mode == "dark") "#252525" else "white"
-  tile_border <- if (mode == "dark") "#111111" else "white"
-
-  report_theme <- function(
-    leg.pos = "right",
-    x.ang = 0,
-    axes = TRUE,
-    title.position = "left") {
-    gnrh_theme(
-      txtsize = txtsize,
-      x.ang = x.ang,
-      leg.pos = leg.pos,
-      title.position = title.position,
-      axes = axes,
-      style = style,
-      mode = mode
-    ) +
+  fg <- if (mode=="dark") "#F5F5F5" else "#1A1A1A"
+  bg <- if (mode=="dark") "#111111" else "white"
+  muted <- if (mode=="dark") "#BDBDBD" else "#555555"
+  tile_low <- if (mode=="dark") "#252525" else "white"
+  tile_border <- bg
+  theme_report <- function(leg.pos="right",x.ang=0,axes=TRUE) {
+    gnrh_theme(txtsize=txtsize,x.ang=x.ang,leg.pos=leg.pos,title.position="left",axes=axes,style=style,mode=mode) +
       ggplot2::theme(
-        plot.title = ggplot2::element_text(
-          face = "bold", size = txtsize + 1,
-          margin = ggplot2::margin(b = 4)
-        ),
-        plot.subtitle = ggplot2::element_text(
-          size = max(7, txtsize - 1), color = muted,
-          margin = ggplot2::margin(b = 5)
-        ),
-        legend.key.height = grid::unit(0.32, "cm"),
-        legend.key.width = grid::unit(0.32, "cm"),
-        plot.margin = ggplot2::margin(5, 6, 5, 5)
+        plot.title=ggplot2::element_text(face="bold",size=txtsize+1,margin=ggplot2::margin(b=4)),
+        plot.subtitle=ggplot2::element_text(size=max(7,txtsize-1),colour=muted,margin=ggplot2::margin(b=5)),
+        legend.key.height=grid::unit(0.32,"cm"),
+        legend.key.width=grid::unit(0.32,"cm"),
+        plot.margin=ggplot2::margin(5,6,5,5)
       )
   }
-
-  empty_panel <- function(title, subtitle = NULL) {
-    ggplot2::ggplot() +
-      ggplot2::labs(title = title, subtitle = subtitle) +
-      report_theme(leg.pos = "none", axes = FALSE) +
-      ggplot2::theme(
-        panel.border = ggplot2::element_blank(),
-        axis.line = ggplot2::element_blank()
-      )
+  empty <- function(title,subtitle=NULL) ggplot2::ggplot()+ggplot2::labs(title=title,subtitle=subtitle)+theme_report("none",axes=FALSE)+ggplot2::theme(panel.border=ggplot2::element_blank(),axis.line=ggplot2::element_blank())
+  labels_n <- function(x,lev) {
+    x <- as.character(x); x[is.na(x)] <- "Unknown"
+    tab <- table(x); lev <- intersect(lev,names(tab)); n <- as.integer(tab[lev])
+    stats::setNames(sprintf("%s (n = %s; %.1f%%)",lev,format(n,big.mark=","),100*n/sum(tab)),lev)
   }
-
-  legend_labels <- function(values, levels) {
-    values <- as.character(values)
-    values[is.na(values)] <- "Unknown"
-    counts <- table(values)
-    levels <- levels[levels %in% names(counts)]
-    labels <- sprintf(
-      "%s (n = %s; %.1f%%)",
-      levels,
-      format(as.integer(counts[levels]), big.mark = ","),
-      100 * as.integer(counts[levels]) / sum(counts)
-    )
-    stats::setNames(labels, levels)
-  }
-
-  compact_point_guide <- function() {
-    ggplot2::guides(
-      colour = ggplot2::guide_legend(
-        override.aes = list(size = 2.3, alpha = 1),
-        keyheight = grid::unit(0.32, "cm")
-      )
-    )
-  }
-
-  # Display-only sampling preserves all positive/rare cells and samples the
-  # background. Statistical summaries always use the complete diagnostics.
-  plot_data <- diagnostics
-  if (nrow(plot_data) > max_points) {
+  point_guide <- ggplot2::guides(colour=ggplot2::guide_legend(override.aes=list(size=2.3,alpha=1),keyheight=grid::unit(0.32,"cm")))
+  pd <- d
+  if (nrow(pd)>max_points) {
     set.seed(seed)
-    positive_index <- as.character(plot_data$status) == "pos"
-    positive_rows <- which(positive_index)
-    negative_rows <- which(!positive_index)
-    effective_max <- max(as.integer(max_points), length(positive_rows))
-    room <- max(0L, effective_max - length(positive_rows))
-    sampled_negative <- if (length(negative_rows) > room) {
-      sample(negative_rows, room)
-    } else {
-      negative_rows
-    }
-    selected <- c(sampled_negative, positive_rows)
-    plot_data <- plot_data[selected, , drop = FALSE]
+    pos <- which(as.character(pd$status)=="pos")
+    neg <- which(as.character(pd$status)!="pos")
+    room <- max(0L,max(as.integer(max_points),length(pos))-length(pos))
+    pd <- pd[c(if (length(neg)>room) sample(neg,room) else neg,pos),,drop=FALSE]
   }
-
-  status_colors <- gnrh_colors("status")
-  status_levels <- intersect(names(status_colors), unique(as.character(diagnostics$status)))
-  status_labels <- legend_labels(diagnostics$status, status_levels)
-
-  # A — Detection landscape
-  p1 <- ggplot2::ggplot(
-    plot_data,
-    ggplot2::aes(.data$expr, .data$score, colour = .data$status)
-  ) +
-    ggplot2::geom_point(alpha = 0.42, size = 1.5, stroke = 0) +
-    ggplot2::scale_colour_manual(
-      values = status_colors,
-      breaks = names(status_labels),
-      labels = status_labels,
-      drop = FALSE
-    ) +
-    ggplot2::labs(
-      title = "GnRH detection landscape",
-      x = expression(italic(GNRH1)~"expression"),
-      y = "Composite score",
-      colour = "Status"
-    ) +
-    report_theme() +
-    compact_point_guide()
-
-  # B — Developmental stages
-  if ("gnrh_stage" %in% names(diagnostics)) {
-    stage_colors <- gnrh_colors("stage")
-    stage_levels <- intersect(names(stage_colors), unique(as.character(diagnostics$gnrh_stage)))
-    stage_labels <- legend_labels(diagnostics$gnrh_stage, stage_levels)
-
-    p2 <- ggplot2::ggplot(
-      plot_data,
-      ggplot2::aes(.data$expr, .data$score, colour = .data$gnrh_stage)
-    ) +
-      ggplot2::geom_point(alpha = 0.42, size = 1.5, stroke = 0) +
-      ggplot2::scale_colour_manual(
-        values = stage_colors,
-        breaks = names(stage_labels),
-        labels = stage_labels,
-        drop = FALSE
-      ) +
-      ggplot2::labs(
-        title = "Developmental-stage landscape",
-        x = expression(italic(GNRH1)~"expression"),
-        y = "Composite score",
-        colour = "Stage"
-      ) +
-      report_theme() +
-      compact_point_guide()
-  } else {
-    p2 <- empty_panel("Developmental stages unavailable")
+  # ----------------------------------------------------------------------- #
+  # A. Detection landscape
+  # ----------------------------------------------------------------------- #
+  status_cols <- gnrh_colors("status")
+  status_lev <- intersect(names(status_cols),unique(as.character(d$status)))
+  status_lab <- labels_n(d$status,status_lev)
+  p1 <- ggplot2::ggplot(pd,ggplot2::aes(.data$expr,.data$score,colour=.data$status)) +
+    ggplot2::geom_point(alpha=0.42,size=1.5,stroke=0) +
+    ggplot2::scale_colour_manual(values=status_cols,breaks=names(status_lab),labels=status_lab,drop=FALSE) +
+    ggplot2::labs(title="GnRH detection landscape",x=expression(italic(GNRH1)~"expression"),y="Composite score",colour="Status") +
+    theme_report()+point_guide
+  # ----------------------------------------------------------------------- #
+  # B. Developmental stage
+  # ----------------------------------------------------------------------- #
+  if ("gnrh_stage" %in% names(d)) {
+    stage_cols <- gnrh_colors("stage")
+    stage_lev <- intersect(names(stage_cols),unique(as.character(d$gnrh_stage)))
+    stage_lab <- labels_n(d$gnrh_stage,stage_lev)
+    p2 <- ggplot2::ggplot(pd,ggplot2::aes(.data$expr,.data$score,colour=.data$gnrh_stage)) +
+      ggplot2::geom_point(alpha=0.42,size=1.5,stroke=0) +
+      ggplot2::scale_colour_manual(values=stage_cols,breaks=names(stage_lab),labels=stage_lab,drop=FALSE) +
+      ggplot2::labs(title="Developmental-stage landscape",x=expression(italic(GNRH1)~"expression"),y="Composite score",colour="Stage") +
+      theme_report()+point_guide
+  } else p2 <- empty("Developmental stages unavailable")
+  # ----------------------------------------------------------------------- #
+  # C. Score separation
+  # ----------------------------------------------------------------------- #
+  dd <- d[is.finite(d$score),,drop=FALSE]
+  p3 <- ggplot2::ggplot(dd,ggplot2::aes(.data$score,fill=.data$status,colour=.data$status)) +
+    ggplot2::geom_density(alpha=0.25,linewidth=0.55,adjust=1) +
+    ggplot2::scale_fill_manual(values=status_cols,breaks=status_lev) +
+    ggplot2::scale_colour_manual(values=status_cols,breaks=status_lev) +
+    ggplot2::labs(title="GnRH score separation",x="Composite score",y="Density",fill="Status",colour="Status") +
+    theme_report()
+  # ----------------------------------------------------------------------- #
+  # D. Threshold performance
+  # ----------------------------------------------------------------------- #
+  threshold_fun <- function(score,ref,n=200L) {
+    score <- suppressWarnings(as.numeric(score)); ref <- as.logical(ref)
+    ok <- is.finite(score) & !is.na(ref); score <- score[ok]; ref <- ref[ok]
+    if (length(score)<2L || length(unique(ref))<2L) return(NULL)
+    rng <- range(score); if (diff(rng)<=0) return(NULL)
+    div <- function(a,b) if (b>0) a/b else NA_real_
+    do.call(rbind,lapply(seq(rng[1],rng[2],length.out=n),function(thr) {
+      pred <- score>=thr
+      TP <- sum(pred & ref); FP <- sum(pred & !ref); FN <- sum(!pred & ref); TN <- sum(!pred & !ref)
+      se <- div(TP,TP+FN); sp <- div(TN,TN+FP); pr <- div(TP,TP+FP)
+      F1 <- if (is.finite(pr) && is.finite(se) && pr+se>0) 2*pr*se/(pr+se) else NA_real_
+      data.frame(threshold=thr,sensitivity=se,specificity=sp,precision=pr,F1=F1)
+    }))
   }
-
-  # C — Score separation
-  density_data <- diagnostics[is.finite(diagnostics$score), , drop = FALSE]
-  p3 <- ggplot2::ggplot(
-    density_data,
-    ggplot2::aes(.data$score, fill = .data$status, colour = .data$status)
-  ) +
-    ggplot2::geom_density(alpha = 0.25, linewidth = 0.55, adjust = 1) +
-    ggplot2::scale_fill_manual(values = status_colors, breaks = status_levels) +
-    ggplot2::scale_colour_manual(values = status_colors, breaks = status_levels) +
-    ggplot2::labs(
-      title = "GnRH score separation",
-      x = "Composite score", y = "Density",
-      fill = "Status", colour = "Status"
-    ) +
-    report_theme()
-
-  # D — Threshold performance
-
-  make_internal_threshold_curve <- function(score, reference, n_thresholds = 200L) {
-    score <- suppressWarnings(as.numeric(score))
-    reference <- as.logical(reference)
-    ok <- is.finite(score) & !is.na(reference)
-    score <- score[ok]; reference <- reference[ok]
-
-    if (length(score) < 2L || length(unique(reference)) < 2L) return(NULL)
-
-    rng <- range(score, finite = TRUE)
-    if (!all(is.finite(rng)) || diff(rng) <= 0) return(NULL)
-
-    safe_div <- function(x, y) ifelse(y > 0, x / y, NA_real_)
-
-    curve <- lapply(seq(rng[1], rng[2], length.out = n_thresholds), function(thr) {
-      pred <- score >= thr
-      TP <- sum(pred & reference); FP <- sum(pred & !reference)
-      FN <- sum(!pred & reference); TN <- sum(!pred & !reference)
-
-      sens <- safe_div(TP, TP + FN)
-      spec <- safe_div(TN, TN + FP)
-      prec <- safe_div(TP, TP + FP)
-      F1 <- if (is.finite(prec) && is.finite(sens) && prec + sens > 0)
-        2 * prec * sens / (prec + sens) else NA_real_
-
-      data.frame(
-        threshold = thr,
-        sensitivity = sens,
-        specificity = spec,
-        precision = prec,
-        F1 = F1
-      )
-    })
-
-    do.call(rbind, curve)
-  }
-
-
-  # ----------------------------------------------------------------------- #-- #-- #
-  # Resolve threshold source
-  # ----------------------------------------------------------------------- #-- #-- #
-
+  tc <- NULL
   threshold_mode <- "none"
-  report_threshold_curve <- NULL
-
-  if (resolved_roc_mode == "external" && !is.null(threshold_curve)) {
-    report_threshold_curve <- as.data.frame(threshold_curve)
-    threshold_mode <- "external"
-
-  } else if (resolved_roc_mode == "internal") {
-    internal_predictor <- if ("gnrh_support_score_raw" %in% colnames(metadata)) {
-      metadata$gnrh_support_score_raw
-    } else if ("gnrh_support_score" %in% colnames(metadata)) {
-      metadata$gnrh_support_score
-    } else NULL
-
-    if (!is.null(internal_predictor)) {
-      report_threshold_curve <- make_internal_threshold_curve(
-        internal_predictor,
-        as.character(metadata$gnrh_status) == "pos"
-      )
-      if (!is.null(report_threshold_curve)) threshold_mode <- "internal"
+  if (roc_mode=="external" && !is.null(g$threshold_curve)) {
+    tc <- as.data.frame(g$threshold_curve); threshold_mode <- "external"
+  } else if (roc_mode=="internal") {
+    predictor <- if ("gnrh_support_score_raw" %in% names(md)) md$gnrh_support_score_raw else if ("gnrh_support_score" %in% names(md)) md$gnrh_support_score else NULL
+    if (!is.null(predictor)) {
+      tc <- threshold_fun(predictor,as.character(md$gnrh_status)=="pos")
+      if (!is.null(tc)) threshold_mode <- "internal"
     }
-
-  } else if (!is.null(threshold_curve)) {
-    report_threshold_curve <- as.data.frame(threshold_curve)
-    threshold_mode <- "external"
   }
-
-
-  # ----------------------------------------------------------------------- #-- #-- #
-  # Plot
-  # ----------------------------------------------------------------------- #-- #-- #
-
-  req <- c("threshold", "sensitivity", "specificity", "F1")
-
-  if (!is.null(report_threshold_curve) &&
-      all(req %in% colnames(report_threshold_curve))) {
-
-    d <- report_threshold_curve
-    valid <- is.finite(d$threshold) & is.finite(d$F1)
-
-    best_i <- if (any(valid))
-      which.max(replace(d$F1, !valid, -Inf)) else NA_integer_
-
-    best <- if (!is.na(best_i)) d$threshold[best_i] else NA_real_
-    best_F1 <- if (!is.na(best_i)) d$F1[best_i] else NA_real_
-
+  if (!is.null(tc) && all(c("threshold","sensitivity","specificity","F1") %in% names(tc))) {
+    valid <- is.finite(tc$threshold) & is.finite(tc$F1)
+    bi <- if (any(valid)) which.max(replace(tc$F1,!valid,-Inf)) else NA_integer_
+    best <- if (!is.na(bi)) tc$threshold[bi] else NA_real_
+    best_f1 <- if (!is.na(bi)) tc$F1[bi] else NA_real_
     long <- rbind(
-      data.frame(threshold = d$threshold, metric = "Sensitivity", value = d$sensitivity),
-      data.frame(threshold = d$threshold, metric = "Specificity", value = d$specificity),
-      data.frame(threshold = d$threshold, metric = "F1", value = d$F1)
+      data.frame(threshold=tc$threshold,metric="Sensitivity",value=tc$sensitivity),
+      data.frame(threshold=tc$threshold,metric="Specificity",value=tc$specificity),
+      data.frame(threshold=tc$threshold,metric="F1",value=tc$F1)
     )
-
-    cols <- c(
-      Sensitivity = "#0072B2",
-      Specificity = "#009E73",
-      F1 = "#D55E00"
-    )
-
-    subtitle <- if (threshold_mode == "internal") {
-      if (is.finite(best))
-        sprintf("Internal consistency; optimal threshold %.3f", best)
-      else
-        "Internal consistency; not independent validation"
-    } else {
-      if (is.finite(best))
-        sprintf("Optimal threshold %.3f", best)
-      else
-        "Independent validation"
-    }
-
-    metric_labels <- c(
-      Sensitivity = "Sensitivity",
-      Specificity = "Specificity",
-      F1 = if (is.finite(best_F1))
-        sprintf("F1 (max = %.3f)", best_F1)
-      else
-        "F1"
-    )
-
-    xlab <- if (
-      threshold_mode == "internal" &&
-      "gnrh_support_score_raw" %in% colnames(metadata)
-    ) {
-      "GnRH support-score threshold"
-    } else if (threshold_mode == "internal") {
-      "Standardized support-score threshold"
-    } else {
-      "Threshold"
-    }
-
-    p4 <- ggplot2::ggplot(
-      long,
-      ggplot2::aes(
-        .data$threshold,
-        .data$value,
-        colour = .data$metric
-      )
-    ) +
-      ggplot2::geom_line(
-        linewidth = 0.7,
-        na.rm = TRUE
-      ) +
-      ggplot2::geom_vline(
-        xintercept = best,
-        linetype = "dashed",
-        colour = muted,
-        linewidth = 0.45,
-        na.rm = TRUE
-      ) +
-      ggplot2::scale_colour_manual(
-        values = cols,
-        breaks = c("Sensitivity", "Specificity", "F1"),
-        labels = metric_labels
-      )  +
-      ggplot2::scale_y_continuous(
-        limits = c(0, 1),
-        breaks = seq(0, 1, 0.25),
-        expand = ggplot2::expansion(mult = c(0, 0.03))
-      ) +
-      ggplot2::labs(
-        title = "Threshold performance",
-        subtitle = subtitle,
-        x = xlab,
-        y = "Performance",
-        colour = NULL
-      ) +
-      report_theme() +
-      ggplot2::theme(
-        axis.title.x = ggplot2::element_text(
-          margin = ggplot2::margin(t = -20)
-        )
-      ) +
-      ggplot2::guides(
-        colour = ggplot2::guide_legend(
-          override.aes = list(linewidth = 1.1),
-          keyheight = grid::unit(0.32, "cm")
-        )
-      )
-
-  } else {
-    p4 <- empty_panel(
-      "Threshold curve unavailable",
-      if (resolved_roc_mode == "internal")
-        "GnRH support score unavailable for internal threshold analysis"
-      else
-        "Supply an independent truth annotation for threshold validation"
-    )
+    metric_cols <- c(Sensitivity="#0072B2",Specificity="#009E73",F1="#D55E00")
+    metric_lab <- c(Sensitivity="Sensitivity",Specificity="Specificity",F1=if (is.finite(best_f1)) sprintf("F1 (max = %.3f)",best_f1) else "F1")
+    subtitle4 <- if (threshold_mode=="internal") sprintf("Internal consistency%s",if (is.finite(best)) paste0("; optimal threshold ",sprintf("%.3f",best)) else "") else if (is.finite(best)) sprintf("Independent validation; optimal threshold %.3f",best) else "Independent validation"
+    xlab4 <- if (threshold_mode=="internal") "GnRH support-score threshold" else "Threshold"
+    p4 <- ggplot2::ggplot(long,ggplot2::aes(.data$threshold,.data$value,colour=.data$metric)) +
+      ggplot2::geom_line(linewidth=0.7,na.rm=TRUE) +
+      ggplot2::geom_vline(xintercept=best,linetype="dashed",colour=muted,linewidth=0.45,na.rm=TRUE) +
+      ggplot2::scale_colour_manual(values=metric_cols,breaks=names(metric_cols),labels=metric_lab) +
+      ggplot2::scale_y_continuous(limits=c(0,1),breaks=seq(0,1,0.25),expand=ggplot2::expansion(mult=c(0,0.03))) +
+      ggplot2::labs(title="Threshold performance",subtitle=subtitle4,x=xlab4,y="Performance",colour=NULL) +
+      theme_report() +
+      ggplot2::guides(colour=ggplot2::guide_legend(override.aes=list(linewidth=1.1),keyheight=grid::unit(0.32,"cm")))
+  } else p4 <- empty("Threshold curve unavailable",if (roc_mode=="internal") "GnRH support score unavailable" else "Supply an independent truth annotation")
+  # ----------------------------------------------------------------------- #
+  # E. ROC / classification
+  # ----------------------------------------------------------------------- #
+  roc_add <- function(ref,pred,label) {
+    ref <- as.integer(ref); pred <- suppressWarnings(as.numeric(pred))
+    ok <- !is.na(ref) & is.finite(pred)
+    if (sum(ok)<2L || length(unique(ref[ok]))!=2L) return(NULL)
+    r <- pROC::roc(ref[ok],pred[ok],levels=c(0,1),direction="<",quiet=TRUE)
+    data.frame(FPR=1-r$specificities,TPR=r$sensitivities,group=label,auc=as.numeric(pROC::auc(r)))
   }
-
-
-
-  # E — Restored ROC analysis or detection classes
   p5 <- NULL
-
-  roc_add <- function(reference, predictor, label) {
-    reference <- as.integer(reference)
-    predictor <- as.numeric(predictor)
-    valid <- !is.na(reference) & is.finite(predictor)
-    if (sum(valid) < 2L || length(unique(reference[valid])) != 2L) return(NULL)
-
-    roc <- pROC::roc(
-      response = reference[valid], predictor = predictor[valid],
-      levels = c(0, 1), direction = "<", quiet = TRUE
-    )
-    data.frame(
-      FPR = 1 - roc$specificities,
-      TPR = roc$sensitivities,
-      group = label,
-      auc = as.numeric(pROC::auc(roc))
-    )
-  }
-
-  if (resolved_roc_mode != "none") {
-    if (!requireNamespace("pROC", quietly = TRUE)) {
-      if (verbose) message("[INFO] Package `pROC` unavailable; using class-composition panel")
+  if (roc_mode!="none" && requireNamespace("pROC",quietly=TRUE)) {
+    rl <- list()
+    if (roc_mode=="external") {
+      if (!truth %in% names(md)) stop("Truth column `",truth,"` not found.",call.=FALSE)
+      tv <- if (can_match) md[cells,truth,drop=TRUE] else md[[truth]]
+      rl[["External GnRH status"]] <- roc_add(as.character(tv) %in% as.character(positive_truth),d$score,"External GnRH status")
     } else {
-      roc_list <- list()
-
-      if (resolved_roc_mode == "external") {
-        if (!truth %in% names(metadata)) {
-          stop("Truth column `", truth, "` was not found in object metadata.", call. = FALSE)
-        }
-        truth_values <- if (can_match) {
-          metadata[diagnostic_cells, truth, drop = TRUE]
-        } else {
-          metadata[[truth]]
-        }
-        reference <- as.character(truth_values) %in% as.character(positive_truth)
-        roc_list[["External GnRH status"]] <- roc_add(
-          reference, diagnostics$score, "External GnRH status"
-        )
-      } else {
-        # These restored curves quantify internal score discrimination. The
-        # classifications were derived from the same score system, so they are
-        # intentionally labelled as diagnostic rather than external validation.
-        roc_list[["GnRH status"]] <- roc_add(
-          diagnostics$status == "pos", diagnostics$score, "GnRH status"
-        )
-
-        if ("gnrh_stage" %in% names(diagnostics)) {
-          stage_scores <- c(
-            identity =
-              "gnrh_stage_identity_score",
-
-            migrating =
-              "gnrh_stage_migrating_score",
-
-            mature =
-              "gnrh_stage_mature_score"
-          )
-
-          positive_stage <- as.character(
-            diagnostics$gnrh_stage
-          )
-
-          for (stage in names(stage_scores)) {
-            score_column <-
-              stage_scores[[stage]]
-
-            if (
-              stage %in% positive_stage &&
-              score_column %in%
-              names(diagnostics)
-            ) {
-              roc_list[[stage]] <-
-                roc_add(
-                  positive_stage == stage,
-                  diagnostics[[score_column]],
-                  stage
-                )
-            }
-          }
-        }
-
-
-        if (
-          "gnrh_secretory" %in%
-          names(diagnostics) &&
-          "gnrh_secretory_hits" %in%
-          names(diagnostics)
-        ) {
-          roc_list[["Secretory"]] <-
-            roc_add(
-              diagnostics$gnrh_secretory ==
-                "supported",
-              diagnostics$gnrh_secretory_hits,
-              "Secretory"
-            )
-        }
-
+      rl[["GnRH status"]] <- roc_add(d$status=="pos",d$score,"GnRH status")
+      if ("gnrh_stage" %in% names(d)) {
+        stage_map <- c(early="gnrh_stage_early_score",migrating="gnrh_stage_migrating_score",mature="gnrh_stage_mature_score")
+        st <- as.character(d$gnrh_stage)
+        for (nm in names(stage_map)) if (nm %in% st && stage_map[[nm]] %in% names(d)) rl[[nm]] <- roc_add(st==nm,d[[stage_map[[nm]]]],nm)
       }
-
-      roc_list <- Filter(Negate(is.null), roc_list)
-      if (length(roc_list)) {
-        roc_data <- do.call(rbind, roc_list)
-        auc_data <- unique(roc_data[c("group", "auc")])
-        auc_data$label <- sprintf("%s (AUC = %.3f)", auc_data$group, auc_data$auc)
-        roc_data$group <- factor(roc_data$group, levels = auc_data$group)
-
-        roc_colors <- c(
-          "External GnRH status" = status_colors[["pos"]],
-          "GnRH status" = status_colors[["pos"]],
-          gnrh_colors("stage")
-        )
-        missing_colors <- setdiff(auc_data$group, names(roc_colors))
-        if (length(missing_colors)) {
-          extra <- grDevices::hcl.colors(length(missing_colors), "Dark 3")
-          names(extra) <- missing_colors
-          roc_colors <- c(roc_colors, extra)
-        }
-
-        roc_title <- if (resolved_roc_mode == "external") {
-          "External ROC performance"
-        } else {
-          "Internal score discrimination"
-        }
-        roc_subtitle <- if (resolved_roc_mode == "external") {
-          paste0("Independent reference: ", truth)
-        } else {
-          "Diagnostic self-consistency; not independent validation"
-        }
-
-        p5 <- ggplot2::ggplot(
-          roc_data,
-          ggplot2::aes(.data$FPR, .data$TPR, colour = .data$group)
+      if (all(c("gnrh_secretory","gnrh_secretory_hits") %in% names(d))) rl[["Secretory"]] <- roc_add(d$gnrh_secretory=="supported",d$gnrh_secretory_hits,"Secretory")
+    }
+    rl <- Filter(Negate(is.null),rl)
+    if (length(rl)) {
+      rd <- do.call(rbind,rl)
+      au <- unique(rd[c("group","auc")])
+      au$label <- sprintf("%s (AUC = %.3f)",au$group,au$auc)
+      rd$group <- factor(rd$group,levels=au$group)
+      roc_cols <- c("External GnRH status"=status_cols[["pos"]],"GnRH status"=status_cols[["pos"]],gnrh_colors("stage"))
+      missing <- setdiff(au$group,names(roc_cols))
+      if (length(missing)) {
+        extra <- grDevices::hcl.colors(length(missing),"Dark 3")
+        names(extra) <- missing
+        roc_cols <- c(roc_cols,extra)
+      }
+      p5 <- ggplot2::ggplot(rd,ggplot2::aes(.data$FPR,.data$TPR,colour=.data$group)) +
+        ggplot2::geom_abline(slope=1,intercept=0,linetype="dashed",colour=muted,linewidth=0.4) +
+        ggplot2::geom_line(linewidth=0.8) +
+        ggplot2::scale_colour_manual(values=roc_cols,breaks=au$group,labels=stats::setNames(au$label,au$group)) +
+        ggplot2::coord_equal(xlim=c(0,1),ylim=c(0,1)) +
+        ggplot2::labs(
+          title=if (roc_mode=="external") "External ROC performance" else "Internal score discrimination",
+          subtitle=if (roc_mode=="external") paste0("Independent reference: ",truth) else "Diagnostic self-consistency; not independent validation",
+          x="False-positive rate",y="True-positive rate",colour=NULL
         ) +
-          ggplot2::geom_abline(
-            slope = 1, intercept = 0, linetype = "dashed",
-            colour = muted, linewidth = 0.4
-          ) +
-          ggplot2::geom_line(linewidth = 0.8) +
-          ggplot2::scale_colour_manual(
-            values = roc_colors,
-            breaks = auc_data$group,
-            labels = stats::setNames(auc_data$label, auc_data$group)
-          ) +
-          ggplot2::coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
-          ggplot2::labs(
-            title = roc_title,
-            subtitle = roc_subtitle,
-            x = "False-positive rate",
-            y = "True-positive rate",
-            colour = NULL
-          ) +
-          report_theme() +
-          ggplot2::guides(
-            colour = ggplot2::guide_legend(
-              override.aes = list(linewidth = 1.1),
-              keyheight = grid::unit(0.32, "cm")
-            )
-          )
-      }
+        theme_report() +
+        ggplot2::guides(colour=ggplot2::guide_legend(override.aes=list(linewidth=1.1),keyheight=grid::unit(0.32,"cm")))
     }
   }
-
   if (is.null(p5) && show_class_panel) {
-    status_order <- c("neg", "pos")
-    status_data <- as.data.frame(
-      table(factor(as.character(diagnostics$status), levels = status_order)),
-      stringsAsFactors = FALSE
-    )
-    names(status_data) <- c("status", "n")
-    status_data$pct <- 100 * status_data$n / sum(status_data$n)
-    status_colors <- gnrh_colors("status")
-
-    p5 <- ggplot2::ggplot(status_data, ggplot2::aes(.data$status, .data$n, fill = .data$status)) +
-      ggplot2::geom_col(width = 0.68, colour = tile_border, linewidth = 0.3) +
-      ggplot2::geom_text(
-        ggplot2::aes(label = sprintf("%s\n%.1f%%", format(.data$n, big.mark = ","), .data$pct)),
-        vjust = -0.2, size = txtsize / 3.2, colour = foreground
-      ) +
-      ggplot2::scale_fill_manual(values = status_colors, drop = FALSE) +
-      ggplot2::scale_y_continuous(
-        labels = scales::label_comma(),
-        expand = ggplot2::expansion(mult = c(0, 0.16))
-      ) +
-      ggplot2::labs(title = "GnRH detection status", x = NULL, y = "Cells") +
-      report_theme(leg.pos = "none")
+    sd <- as.data.frame(table(factor(as.character(d$status),levels=c("neg","pos"))),stringsAsFactors=FALSE)
+    names(sd) <- c("status","n"); sd$pct <- 100*sd$n/sum(sd$n)
+    p5 <- ggplot2::ggplot(sd,ggplot2::aes(.data$status,.data$n,fill=.data$status)) +
+      ggplot2::geom_col(width=0.68,colour=tile_border,linewidth=0.3) +
+      ggplot2::geom_text(ggplot2::aes(label=sprintf("%s\n%.1f%%",format(.data$n,big.mark=","),.data$pct)),vjust=-0.2,size=txtsize/3.2,colour=fg) +
+      ggplot2::scale_fill_manual(values=status_cols,drop=FALSE) +
+      ggplot2::scale_y_continuous(labels=scales::label_comma(),expand=ggplot2::expansion(mult=c(0,0.16))) +
+      ggplot2::labs(title="GnRH detection status",x=NULL,y="Cells") +
+      theme_report("none")
   }
-  if (is.null(p5)) p5 <- empty_panel("Detection-status panel unavailable")
-
-  # F — Marker-program support
-  module_data <- data.frame(
-    status = rep(diagnostics$status, 3L),
-    module = rep(c("Core", "Migration", "Neuroendocrine"), each = nrow(diagnostics)),
-    hits = c(diagnostics$core_hits, diagnostics$mig_hits, diagnostics$neuro_hits)
+  if (is.null(p5)) p5 <- empty("Detection-status panel unavailable")
+  # ----------------------------------------------------------------------- #
+  # F. Marker support
+  # ----------------------------------------------------------------------- #
+  m <- data.frame(
+    status=rep(d$status,3),
+    module=rep(c("Core","Migration","Neuroendocrine"),each=nrow(d)),
+    hits=c(d$core_hits,d$mig_hits,d$neuro_hits)
   )
-  module_summary <- stats::aggregate(
-    hits ~ status + module,
-    data = module_data,
-    FUN = function(x) mean(x, na.rm = TRUE)
-  )
-  module_summary$module <- factor(
-    module_summary$module,
-    levels = c("Core", "Migration", "Neuroendocrine")
-  )
-  module_summary$status <- factor(module_summary$status, levels = c("neg", "pos"))
-
-  p6 <- ggplot2::ggplot(
-    module_summary,
-    ggplot2::aes(.data$module, .data$status, fill = .data$hits)
-  ) +
-    ggplot2::geom_tile(colour = tile_border, linewidth = 0.45) +
-    ggplot2::geom_text(
-      ggplot2::aes(label = sprintf("%.2f", .data$hits)),
-      size = txtsize / 3.2,
-      colour = foreground
-    ) +
-    ggplot2::scale_fill_gradient(low = tile_low, high = status_colors[["pos"]]) +
-    ggplot2::labs(
-      title = "Marker-program support",
-      x = NULL, y = NULL, fill = "Mean hits"
-    ) +
-    report_theme(x.ang = 25)
-
+  ms <- stats::aggregate(hits~status+module,m,FUN=function(x) mean(x,na.rm=TRUE))
+  ms$module <- factor(ms$module,levels=c("Core","Migration","Neuroendocrine"))
+  ms$status <- factor(ms$status,levels=c("neg","pos"))
+  p6 <- ggplot2::ggplot(ms,ggplot2::aes(.data$module,.data$status,fill=.data$hits)) +
+    ggplot2::geom_tile(colour=tile_border,linewidth=0.45) +
+    ggplot2::geom_text(ggplot2::aes(label=sprintf("%.2f",.data$hits)),size=txtsize/3.2,colour=fg) +
+    ggplot2::scale_fill_gradient(low=tile_low,high=status_cols[["pos"]]) +
+    ggplot2::labs(title="Marker-program support",x=NULL,y=NULL,fill="Mean hits") +
+    theme_report(x.ang=25)
+  # ----------------------------------------------------------------------- #
   # Assemble
-  n_positive <- sum(as.character(diagnostics$status) == "pos", na.rm = TRUE)
-  n_confident <- if ("gnrh_confident" %in% names(diagnostics)) {
-    sum(as.character(diagnostics$gnrh_confident) %in% c("TRUE", "true", "1", "pos"), na.rm = TRUE)
-  } else {
-    NA_integer_
-  }
+  # ----------------------------------------------------------------------- #
+  n_pos <- sum(as.character(d$status)=="pos",na.rm=TRUE)
+  n_conf <- if ("gnrh_confident" %in% names(d)) sum(as.logical(d$gnrh_confident),na.rm=TRUE) else NA_integer_
   subtitle <- paste0(
-    "Cells: ", format(ncol(object), big.mark = ","),
-    "  |  Features: ", format(nrow(object), big.mark = ","),
-    "  |  GnRH+: ", format(n_positive, big.mark = ","),
-    if (!is.na(n_confident)) paste0("  |  Confident: ", format(n_confident, big.mark = ",")) else ""
+    "Cells: ",format(ncol(object),big.mark=","),
+    "  |  Features: ",format(nrow(object),big.mark=","),
+    "  |  GnRH+: ",format(n_pos,big.mark=","),
+    if (!is.na(n_conf)) paste0("  |  Confident: ",format(n_conf,big.mark=",")) else ""
   )
-
   annotation_theme <- ggplot2::theme(
-    plot.background = ggplot2::element_rect(fill = background, colour = NA),
-    plot.title = ggplot2::element_text(
-      family = "", face = "bold", size = txtsize + 5,
-      colour = foreground, hjust = 0
-    ),
-    plot.subtitle = ggplot2::element_text(
-      family = "", size = txtsize, colour = muted, hjust = 0
-    ),
-    plot.tag = ggplot2::element_text(
-      family = "", face = "bold", size = txtsize + 1,
-      colour = foreground
-    )
+    plot.background=ggplot2::element_rect(fill=bg,colour=NA),
+    plot.title=ggplot2::element_text(face="bold",size=txtsize+5,colour=fg,hjust=0),
+    plot.subtitle=ggplot2::element_text(size=txtsize,colour=muted,hjust=0),
+    plot.tag=ggplot2::element_text(face="bold",size=txtsize+1,colour=fg)
   )
-
-  ((p1 | p2 | p3) / (p4 | p5 | p6)) +
-    patchwork::plot_layout(guides = "keep", heights = c(1, 1)) +
-    patchwork::plot_annotation(
-      title = "gnrhcell diagnostic report",
-      subtitle = subtitle,
-      tag_levels = "A",
-      theme = annotation_theme
-    )
+  ((p1|p2|p3)/(p4|p5|p6)) +
+    patchwork::plot_layout(guides="keep",heights=c(1,1)) +
+    patchwork::plot_annotation(title="gnrhcell diagnostic report",subtitle=subtitle,tag_levels="A",theme=annotation_theme)
 }
+
 
 
 # ========================================================================= #
@@ -3873,4 +3214,3 @@ plot_gnrh_specificity <- function(
       txtsize = txtsize
     )
 }
-

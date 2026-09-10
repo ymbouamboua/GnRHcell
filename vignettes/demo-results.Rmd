@@ -90,10 +90,11 @@ summarise_demo <- function(object) {
   data.frame(
     cells = nrow(md),
     gnrh_detected = sum(positive, na.rm = TRUE),
-    identity = sum(md$gnrh_stage == "identity", na.rm = TRUE),
+    early = sum(md$gnrh_stage == "early", na.rm = TRUE),
     migrating = sum(md$gnrh_stage == "migrating", na.rm = TRUE),
+    post_migratory = sum(md$gnrh_stage == "post-migratory", na.rm = TRUE),
     mature = sum(md$gnrh_stage == "mature", na.rm = TRUE),
-    secreting = sum(md$gnrh_stage == "secreting", na.rm = TRUE)
+    transitional = sum(md$gnrh_stage == "transitional", na.rm = TRUE)
   )
 }
 

@@ -163,11 +163,13 @@ Important output groups are:
 | `gnrh_direct_signal` | Detectable direct `GNRH1` signal |
 | `gnrh_direct_supported` | Direct signal with independent identity support |
 | `gnrh_direct_isolated` | Direct signal without sufficient identity support |
-| `gnrh_stage` | `non-gnrh`, `identity`, `migrating`, `mature` |
+| `gnrh_stage` | Preferred biological state: `early`, `migrating`, `post-migratory`, `mature`, `transitional`, `undetermined`, `non-gnrh` |
 | `gnrh_stage_resolution` | `non-gnrh`, `transitional`, `resolved` |
+| `gnrh_developmental_index` | Continuous balance between mature and migration program scores |
 | `gnrh_score` | Composite GnRH detection score |
 | `gnrh_support_score` | Supporting lineage and biological evidence |
-| `gnrh_identity_score` | Identity-stage evidence |
+| `gnrh_identity_score` | GnRH lineage-identity evidence used by detection |
+| `gnrh_early_specification_score` | Early/specification program activity |
 | `gnrh_migrating_score` | Migration-stage evidence |
 | `gnrh_mature_score` | Maturation-stage evidence |
 
@@ -611,7 +613,7 @@ Result:
 stage_markers <- find_gnrh_stage_markers(
   object = hpsc,
   stage_col = "gnrh_stage",
-  stages = c("identity", "migrating", "mature"),
+  stages = c("early", "migrating", "post-migratory", "mature"),
   class_col = "gnrh_class",
   positive_classes = c("direct", "supported"),
   donor_col = "orig.ident",

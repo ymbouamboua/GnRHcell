@@ -7,13 +7,8 @@
 gnrh_secretory_marker_module()
 }
 \value{
-Character vector of uppercase gene symbols.
+Character vector of secretory genes.
 }
 \description{
-Returns genes associated with neuroendocrine peptide processing,
-dense-core vesicles, and regulated secretion.
-}
-\details{
-This program represents a functional phenotype rather than a developmental
-stage.
+GnRH secretory marker program
 }

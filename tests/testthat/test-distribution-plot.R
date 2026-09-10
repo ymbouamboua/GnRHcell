@@ -3,7 +3,7 @@ test_that("distribution plots adapt to the number of samples", {
     dimnames = list(c("GNRH1", "ACTB"), paste0("cell", 1:12)))
   object <- SeuratObject::CreateSeuratObject(counts = counts)
   object$sample <- rep(c("D22", "D24", "D26"), each = 4)
-  object$gnrh_stage <- rep(c("non-gnrh", "identity", "migrating", "mature"), 3)
+  object$gnrh_stage <- rep(c("non-gnrh", "early", "migrating", "mature"), 3)
 
   plot <- plot_gnrh_distribution(
     object, group.by = "gnrh_stage", split.by = "sample",
@@ -24,7 +24,7 @@ test_that("bar gap is independent of bar width", {
     dimnames = list(c("GNRH1", "ACTB"), paste0("cell", 1:12)))
   object <- SeuratObject::CreateSeuratObject(counts = counts)
   object$sample <- rep(c("D22", "D24", "D26"), each = 4)
-  object$gnrh_stage <- rep(c("non-gnrh", "identity", "migrating", "mature"), 3)
+  object$gnrh_stage <- rep(c("non-gnrh", "early", "migrating", "mature"), 3)
 
   plot <- plot_gnrh_distribution(
     object, group.by = "gnrh_stage", split.by = "sample",

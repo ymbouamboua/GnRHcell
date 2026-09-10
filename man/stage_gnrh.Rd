@@ -18,59 +18,29 @@ stage_gnrh(
 )
 }
 \arguments{
-\item{object}{A Seurat object previously processed with
-\code{\link{detect_gnrh}}.}
+\item{object}{A Seurat object previously processed with \code{detect_gnrh()}.}
 
 \item{assay}{Assay used for developmental and secretory scoring.}
 
 \item{layer}{Expression layer used for module scoring.}
 
-\item{min_migration_hits}{Minimum migration-core hits required to retain a
-migrating assignment.}
+\item{min_migration_hits}{Minimum migration-core hits.}
 
-\item{min_secretory_core_hits}{Minimum core secretory marker hits.}
+\item{min_secretory_core_hits}{Minimum core secretory hits.}
 
 \item{min_secretory_supportive_hits}{Minimum supportive secretory hits.}
 
-\item{expression_weight}{Weight assigned to normalized module expression.}
+\item{expression_weight}{Weight assigned to module expression.}
 
 \item{detection_weight}{Weight assigned to module detection fraction.}
 
-\item{stage_margin}{Minimum difference between best and second-best
-developmental score required for \code{gnrh_stage_confident = TRUE}.}
+\item{stage_margin}{Minimum top-vs-second score margin.}
 
 \item{verbose}{Print progress messages.}
 }
 \value{
-A Seurat object containing developmental-stage scores,
-assignments, confidence metrics, migration evidence, and secretory support.
+A Seurat object with GnRH developmental-state metadata.
 }
 \description{
-Assigns developmental states to GnRH-positive cells using curated
-transcriptional programs representing lineage identity, migration, and
-neuroendocrine maturation.
-}
-\details{
-Developmental stage and secretory machinery are modeled independently.
-
-Developmental stage is derived from integrated module activity combining
-normalized expression and the fraction of detected module genes.
-
-The continuous developmental-program scores are retained independently from
-the categorical dominant-stage assignment.
-
-\code{gnrh_stage_confident} indicates whether the dominant program exceeds
-the second-best program by at least \code{stage_margin}.
-
-\code{gnrh_stage_resolution} stores the corresponding categorical
-interpretation: \code{"resolved"}, \code{"transitional"}, or
-\code{"non-gnrh"}.
-
-Developmental scores are stored using the \code{gnrh_stage_*} namespace and
-therefore do not overwrite detection scores such as
-\code{gnrh_identity_score}.
-}
-\seealso{
-\code{\link{detect_gnrh}},
-\code{\link{run_gnrh}}
+Stage GnRH lineage cells
 }

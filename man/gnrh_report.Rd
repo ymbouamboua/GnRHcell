@@ -19,31 +19,25 @@ gnrh_report(
 )
 }
 \arguments{
-\item{object}{A Seurat object processed with \code{run_gnrh()} and
-\code{gnrh_diagnostics()}.}
+\item{object}{Seurat object processed with \code{run_gnrh()}/\code{gnrh_diagnostics()}.}
 
-\item{style}{Theme style: \code{"classic"}, \code{"minimal"}, \code{"bw"}, or \code{"test"}.}
+\item{style}{Plot theme.}
 
-\item{mode}{Display mode: \code{"light"} or \code{"dark"}.}
+\item{mode}{Light or dark mode.}
 
-\item{truth}{Optional metadata column containing an independent binary
-reference classification for external ROC analysis.}
+\item{truth}{Optional independent binary truth metadata column.}
 
-\item{roc_mode}{ROC behavior: \code{"auto"} uses external truth when supplied and
-otherwise restores internal status/stage discrimination curves;
-\code{"external"}, \code{"internal"}, and \code{"none"} force a specific behavior.}
+\item{roc_mode}{ROC mode: auto, external, internal, or none.}
 
-\item{positive_truth}{Values in \code{truth} interpreted as positive.}
+\item{positive_truth}{Values interpreted as positive truth.}
 
 \item{txtsize}{Base text size.}
 
-\item{max_points}{Maximum cells displayed in each scatter panel. All rare
-GnRH-positive cells are retained before negative cells are sampled.}
+\item{max_points}{Maximum points shown in scatter plots.}
 
-\item{seed}{Random seed used for display-only subsampling.}
+\item{seed}{Sampling seed.}
 
-\item{show_class_panel}{Show detection-class composition when ROC analysis is
-disabled or unavailable.}
+\item{show_class_panel}{Show class composition when ROC is unavailable.}
 
 \item{verbose}{Print progress messages.}
 }
@@ -51,31 +45,5 @@ disabled or unavailable.}
 A patchwork object.
 }
 \description{
-Creates a six-panel quality-control dashboard summarizing detection,
-developmental staging, score separation, threshold behavior, detection
-classes or ROC discrimination, and marker-program support.
-}
-\examples{
-\dontrun{
-report <- gnrh_report(wang, style = "bw")
-report
-
-# External ROC using an independent manual/reference annotation
-report <- gnrh_report(
-  wang,
-  truth = "manual_gnrh",
-  roc_mode = "external",
-  positive_truth = c("GnRH", "pos", "TRUE"),
-  style = "minimal"
-)
-
-# Explicit internal score-discrimination curves
-report <- gnrh_report(wang, roc_mode = "internal", style = "bw")
-
-ggplot2::ggsave(
-  "gnrh_report.pdf", report,
-  width = 12, height = 7.5, units = "in",
-  device = grDevices::cairo_pdf
-)
-}
+Generate a publication-ready gnrhcell diagnostic report
 }

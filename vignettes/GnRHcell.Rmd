@@ -256,14 +256,17 @@ used when robust estimation is not possible.
 
 # Developmental staging
 
-After detection, `stage_gnrh()` assigns cells to the dominant developmental program.
+After detection, `stage_gnrh()` separates GnRH lineage identity from the
+developmental interpretation. The preferred output is `gnrh_stage`.
 
 Current stages are:
 
-- `identity`
+- `early`
 - `migrating`
+- `post-migratory`
 - `mature`
-- `secreting`
+- `transitional`
+- `undetermined`
 - `non-gnrh`
 
 ```{r eval=FALSE}
@@ -271,7 +274,7 @@ Current stages are:
 table(hpsc_gnrh$gnrh_stage)
 ```
 
-Non-GnRH cells are assigned to `non-gnrh`.
+Secretory support is reported independently in `gnrh_secretory`.
 
 # Diagnostic report
 

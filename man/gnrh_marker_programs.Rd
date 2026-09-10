@@ -20,36 +20,6 @@ gnrh_marker_programs(
   write_output = TRUE
 )
 }
-\arguments{
-\item{files}{Named character vector containing marker table paths.}
-
-\item{results}{Result returned by \code{\link{gnrh_gene_upset}}.}
-
-\item{outdir}{Output directory.}
-
-\item{modules}{Developmental modules.}
-
-\item{secretory_module}{Functional secretory program.}
-
-\item{coexpr_col}{Optional GNRH1 co-expression column.}
-
-\item{gene_col}{Gene column.}
-
-\item{min_medium_score}{Minimum marker evidence score for medium confidence.}
-
-\item{min_high_score}{Minimum marker evidence score for high confidence.}
-
-\item{min_high_datasets}{Minimum datasets supporting a high-confidence gene.}
-
-\item{min_medium_datasets}{Minimum datasets supporting a medium-confidence gene.}
-
-\item{include_gnrh1}{Include GNRH1 as reference gene.}
-
-\item{write_output}{Write TSV outputs.}
-}
-\value{
-Named marker-program result list.
-}
 \description{
 Classify GnRH marker candidates into biological programs
 }

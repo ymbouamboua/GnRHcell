@@ -1,754 +1,164 @@
 #' Assign dominant developmental stage
-#'
-#' Internal helper assigning the dominant developmental state from curated
-#' GnRH developmental-program scores.
-#'
-#' Raw assignments are based on the highest score among \code{identity},
-#' \code{migrating}, and \code{mature}. Migrating assignments can optionally
-#' be rejected when insufficient migration-core evidence is present.
-#'
-#' @param scores Numeric matrix or data frame containing developmental-stage
-#'   scores in columns.
-#' @param migration_core_hits Optional integer vector containing migration-core
-#'   marker hits.
-#' @param min_migration_hits Minimum migration-core hits required to retain a
-#'   migrating assignment.
-#'
-#' @return A list containing final stage, raw stage, dominant score,
-#'   second-best score, score margin, and migration-filter status.
-#'
 #' @keywords internal
 #' @noRd
-assign_stage <- function(
-    scores,
-    migration_core_hits = NULL,
-    min_migration_hits = 2L
-) {
+assign_stage <- function(scores,migration_core_hits=NULL,min_migration_hits=2L) {
   scores <- as.matrix(scores)
-
-  required <- c(
-    "identity",
-    "migrating",
-    "mature"
-  )
-
-  missing <- setdiff(
-    required,
-    colnames(scores)
-  )
-
-  if (length(missing)) {
-    stop(
-      "Missing developmental-stage score(s): ",
-      paste(missing, collapse = ", "),
-      call. = FALSE
-    )
-  }
-
-  scores <- scores[
-    ,
-    required,
-    drop = FALSE
-  ]
-
-  if (!nrow(scores)) {
-    return(
-      list(
-        stage = character(0),
-        raw_stage = character(0),
-        top_score = numeric(0),
-        second_score = numeric(0),
-        margin = numeric(0),
-        migration_filtered = logical(0)
-      )
-    )
-  }
-
+  req <- c("early","migrating","mature")
+  miss <- setdiff(req,colnames(scores))
+  if (length(miss)) stop("Missing developmental-stage score(s): ",paste(miss,collapse=", "),call.=FALSE)
+  scores <- scores[,req,drop=FALSE]
+  if (!nrow(scores)) return(list(stage=character(),raw_stage=character(),top_score=numeric(),second_score=numeric(),margin=numeric(),migration_filtered=logical()))
   finite <- is.finite(scores)
-
-  scores_work <- scores
-  scores_work[!finite] <- -Inf
-
-  no_information <- rowSums(finite) == 0L
-
-  top_index <- max.col(
-    scores_work,
-    ties.method = "first"
-  )
-
-  raw_stage <- colnames(scores_work)[
-    top_index
-  ]
-
-  raw_stage[
-    no_information
-  ] <- NA_character_
-
-  top_score <- scores_work[
-    cbind(
-      seq_len(nrow(scores_work)),
-      top_index
-    )
-  ]
-
-  second_score <- vapply(
-    seq_len(nrow(scores_work)),
-    function(i) {
-      x <- sort(
-        scores_work[i, ],
-        decreasing = TRUE
-      )
-
-      if (
-        length(x) < 2L ||
-        !is.finite(x[[2L]])
-      ) {
-        return(NA_real_)
-      }
-
-      x[[2L]]
-    },
-    numeric(1)
-  )
-
-  top_score[
-    no_information
-  ] <- NA_real_
-
-  margin <- top_score - second_score
-
-  stage <- raw_stage
-
-  migration_filtered <- rep(
-    FALSE,
-    nrow(scores_work)
-  )
-
+  x <- scores
+  x[!finite] <- -Inf
+  noinfo <- rowSums(finite)==0L
+  top_i <- max.col(x,ties.method="first")
+  raw <- colnames(x)[top_i]
+  raw[noinfo] <- NA_character_
+  top <- x[cbind(seq_len(nrow(x)),top_i)]
+  second <- apply(x,1,function(z) { z <- sort(z,decreasing=TRUE); if (length(z)<2L || !is.finite(z[2])) NA_real_ else z[2] })
+  top[noinfo] <- NA_real_
+  margin <- top-second
+  stage <- raw
+  filtered <- rep(FALSE,nrow(x))
   if (!is.null(migration_core_hits)) {
-    if (
-      length(migration_core_hits) !=
-      nrow(scores_work)
-    ) {
-      stop(
-        "`migration_core_hits` must contain one value per cell.",
-        call. = FALSE
-      )
-    }
-
-    migration_core_hits <- suppressWarnings(
-      as.numeric(
-        migration_core_hits
-      )
-    )
-
-    migration_core_hits[
-      !is.finite(migration_core_hits)
-    ] <- 0
-
-    migration_filtered <-
-      !is.na(stage) &
-      stage == "migrating" &
-      migration_core_hits <
-      min_migration_hits
-
-    if (any(migration_filtered)) {
-      alternative <- scores_work[
-        migration_filtered,
-        c(
-          "identity",
-          "mature"
-        ),
-        drop = FALSE
-      ]
-
-      alternative_index <- max.col(
-        alternative,
-        ties.method = "first"
-      )
-
-      stage[
-        migration_filtered
-      ] <- colnames(alternative)[
-        alternative_index
-      ]
+    if (length(migration_core_hits)!=nrow(x)) stop("`migration_core_hits` must contain one value per cell.",call.=FALSE)
+    hits <- suppressWarnings(as.numeric(migration_core_hits))
+    hits[!is.finite(hits)] <- 0
+    filtered <- !is.na(stage) & stage=="migrating" & hits<min_migration_hits
+    if (any(filtered)) {
+      alt <- x[filtered,c("early","mature"),drop=FALSE]
+      stage[filtered] <- colnames(alt)[max.col(alt,ties.method="first")]
     }
   }
-
-  list(
-    stage = stage,
-    raw_stage = raw_stage,
-    top_score = top_score,
-    second_score = second_score,
-    margin = margin,
-    migration_filtered = migration_filtered
-  )
+  list(stage=stage,raw_stage=raw,top_score=top,second_score=second,margin=margin,migration_filtered=filtered)
 }
-
-
+# ----------------------------------------------------------------------- #
+# Developmental-state interpretation
+# ----------------------------------------------------------------------- #
+#' Derive a conservative developmental state
+#' @keywords internal
+#' @noRd
+.derive_developmental_state <- function(raw_stage,margin,positive,migration_filtered,secretory_supported,stage_margin) {
+  n <- length(raw_stage)
+  if (!all(vapply(list(margin,positive,migration_filtered,secretory_supported),length,integer(1))==n)) stop("Developmental-state inputs must have equal lengths.",call.=FALSE)
+  state <- rep("undetermined",n)
+  state[!positive] <- "non-gnrh"
+  uncertain <- positive & (is.na(raw_stage) | !is.finite(margin) | margin<stage_margin | migration_filtered)
+  state[uncertain] <- "transitional"
+  ok <- positive & !uncertain
+  state[ok & raw_stage=="early"] <- "early"
+  state[ok & raw_stage=="migrating"] <- "migrating"
+  state[ok & raw_stage=="mature" & !secretory_supported] <- "post-migratory"
+  state[ok & raw_stage=="mature" & secretory_supported] <- "mature"
+  state
+}
+# ----------------------------------------------------------------------- #
+# Stage GnRH cells
+# ----------------------------------------------------------------------- #
 #' Stage GnRH lineage cells
-#'
-#' Assigns developmental states to GnRH-positive cells using curated
-#' transcriptional programs representing lineage identity, migration, and
-#' neuroendocrine maturation.
-#'
-#' Developmental stage and secretory machinery are modeled independently.
-#'
-#' @param object A Seurat object previously processed with
-#'   \code{\link{detect_gnrh}}.
+#' @param object A Seurat object previously processed with `detect_gnrh()`.
 #' @param assay Assay used for developmental and secretory scoring.
 #' @param layer Expression layer used for module scoring.
-#' @param min_migration_hits Minimum migration-core hits required to retain a
-#'   migrating assignment.
-#' @param min_secretory_core_hits Minimum core secretory marker hits.
+#' @param min_migration_hits Minimum migration-core hits.
+#' @param min_secretory_core_hits Minimum core secretory hits.
 #' @param min_secretory_supportive_hits Minimum supportive secretory hits.
-#' @param expression_weight Weight assigned to normalized module expression.
+#' @param expression_weight Weight assigned to module expression.
 #' @param detection_weight Weight assigned to module detection fraction.
-#' @param stage_margin Minimum difference between best and second-best
-#'   developmental score required for \code{gnrh_stage_confident = TRUE}.
+#' @param stage_margin Minimum top-vs-second score margin.
 #' @param verbose Print progress messages.
-#'
-#' @return A Seurat object containing developmental-stage scores,
-#' assignments, confidence metrics, migration evidence, and secretory support.
-#'
-#' @details
-#' Developmental stage is derived from integrated module activity combining
-#' normalized expression and the fraction of detected module genes.
-#'
-#' The continuous developmental-program scores are retained independently from
-#' the categorical dominant-stage assignment.
-#'
-#' \code{gnrh_stage_confident} indicates whether the dominant program exceeds
-#' the second-best program by at least \code{stage_margin}.
-#'
-#' \code{gnrh_stage_resolution} stores the corresponding categorical
-#' interpretation: \code{"resolved"}, \code{"transitional"}, or
-#' \code{"non-gnrh"}.
-#'
-#' Developmental scores are stored using the \code{gnrh_stage_*} namespace and
-#' therefore do not overwrite detection scores such as
-#' \code{gnrh_identity_score}.
-#'
-#' @seealso
-#' \code{\link{detect_gnrh}},
-#' \code{\link{run_gnrh}}
-#'
+#' @return A Seurat object with GnRH developmental-state metadata.
 #' @export
-stage_gnrh <- function(
-    object,
-    assay = "RNA",
-    layer = "data",
-    min_migration_hits = 2L,
-    min_secretory_core_hits = 1L,
-    min_secretory_supportive_hits = 2L,
-    expression_weight = 0.5,
-    detection_weight = 0.5,
-    stage_margin = 0.10,
-    verbose = TRUE
-) {
-  if (!inherits(object, "Seurat")) {
-    stop(
-      "`object` must be a Seurat object.",
-      call. = FALSE
-    )
-  }
-
-  log <- .msg(verbose)
-
-  validate_integer <- function(x, name) {
-    if (
-      length(x) != 1L ||
-      is.na(x) ||
-      !is.finite(x) ||
-      x < 0 ||
-      x != floor(x)
-    ) {
-      stop(
-        "`",
-        name,
-        "` must be a single non-negative integer.",
-        call. = FALSE
-      )
-    }
-
+stage_gnrh <- function(object,assay="RNA",layer="data",min_migration_hits=2L,min_secretory_core_hits=1L,min_secretory_supportive_hits=2L,expression_weight=0.5,detection_weight=0.5,stage_margin=0.10,verbose=TRUE) {
+  if (!inherits(object,"Seurat")) stop("`object` must be a Seurat object.",call.=FALSE)
+  .int <- function(x,nm) {
+    if (length(x)!=1L || is.na(x) || !is.finite(x) || x<0 || x!=floor(x)) stop("`",nm,"` must be a single non-negative integer.",call.=FALSE)
     as.integer(x)
   }
-
-  min_migration_hits <- validate_integer(
-    min_migration_hits,
-    "min_migration_hits"
-  )
-
-  min_secretory_core_hits <- validate_integer(
-    min_secretory_core_hits,
-    "min_secretory_core_hits"
-  )
-
-  min_secretory_supportive_hits <- validate_integer(
-    min_secretory_supportive_hits,
-    "min_secretory_supportive_hits"
-  )
-
-  if (
-    length(stage_margin) != 1L ||
-    !is.finite(stage_margin) ||
-    stage_margin < 0
-  ) {
-    stop(
-      "`stage_margin` must be a single non-negative number.",
-      call. = FALSE
-    )
-  }
-
-  # ------------------------------------------------------------------------- #
-  # Input
-  # ------------------------------------------------------------------------- #
-
-  object <- validate_input(
-    object,
-    assay = assay,
-    required_layers = layer,
-    auto_normalize = FALSE,
-    verbose = FALSE
-  )
-
+  min_migration_hits <- .int(min_migration_hits,"min_migration_hits")
+  min_secretory_core_hits <- .int(min_secretory_core_hits,"min_secretory_core_hits")
+  min_secretory_supportive_hits <- .int(min_secretory_supportive_hits,"min_secretory_supportive_hits")
+  if (length(stage_margin)!=1L || !is.finite(stage_margin) || stage_margin<0) stop("`stage_margin` must be a single non-negative number.",call.=FALSE)
+  log <- .msg(verbose)
+  object <- validate_input(object,assay=assay,required_layers=layer,auto_normalize=FALSE,verbose=FALSE)
   md <- object[[]]
-
-  if (!"gnrh_status" %in% colnames(md)) {
-    stop(
-      "`gnrh_status` is missing. Run `detect_gnrh()` first.",
-      call. = FALSE
-    )
-  }
-
-  positive <-
-    !is.na(md$gnrh_status) &
-    as.character(md$gnrh_status) == "pos"
-
+  if (!"gnrh_status" %in% colnames(md)) stop("`gnrh_status` is missing. Run `detect_gnrh()` first.",call.=FALSE)
+  positive <- !is.na(md$gnrh_status) & as.character(md$gnrh_status)=="pos"
   negative <- !positive
-
-  log(
-    sprintf(
-      "Staging %s GnRH-positive cells",
-      format(
-        sum(positive),
-        big.mark = ","
-      )
-    )
-  )
-
-  # ------------------------------------------------------------------------- #
-  # Expression
-  # ------------------------------------------------------------------------- #
-
-  expr <- .get_expr(
-    object,
-    assay = assay,
-    layer = layer
-  )
-
+  log(sprintf("Staging %s GnRH-positive cells",format(sum(positive),big.mark=",")))
+  expr <- .get_expr(object,assay=assay,layer=layer)
   genes <- rownames(expr)
-
-  # ------------------------------------------------------------------------- #
-  # Developmental programs
-  # ------------------------------------------------------------------------- #
-
-  modules <- .build_stage_modules(
-    genes
-  )
-
-  required_stages <- c(
-    "identity",
-    "migrating",
-    "mature"
-  )
-
-  missing <- setdiff(
-    required_stages,
-    names(modules)
-  )
-
-  if (length(missing)) {
-    stop(
-      "Developmental-stage modules are incomplete. Missing: ",
-      paste(missing, collapse = ", "),
-      call. = FALSE
-    )
-  }
-
-  developmental_modules <- modules[
-    required_stages
-  ]
-
-  mod <- .score_modules(
-    expr = expr,
-    modules = developmental_modules,
-    expression_weight = expression_weight,
-    detection_weight = detection_weight
-  )
-
-  expression_scores <- as.data.frame(
-    mod$score,
-    check.names = FALSE
-  )
-
-  detection_fractions <- as.data.frame(
-    mod$fraction,
-    check.names = FALSE
-  )
-
-  stage_scores <- as.data.frame(
-    mod$integrated,
-    check.names = FALSE
-  )
-
-  # ------------------------------------------------------------------------- #
-  # Migration-core evidence
-  # ------------------------------------------------------------------------- #
-
-  migration_core <- .build_migration_core(
-    genes
-  )
-
-  migration_core_hits <- if (
-    length(migration_core)
-  ) {
-    as.integer(
-      Matrix::colSums(
-        expr[
-          migration_core,
-          ,
-          drop = FALSE
-        ] > 0
-      )
-    )
-  } else {
-    integer(
-      ncol(expr)
-    )
-  }
-
-  # ------------------------------------------------------------------------- #
-  # Stage assignment
-  # ------------------------------------------------------------------------- #
-
-  assignment <- assign_stage(
-    scores = stage_scores,
-    migration_core_hits = migration_core_hits,
-    min_migration_hits = min_migration_hits
-  )
-
-  raw_stage <- assignment$raw_stage
-  stage <- assignment$stage
-
-  stage_reassigned <-
-    !is.na(raw_stage) &
-    !is.na(stage) &
-    raw_stage != stage
-
-  stage_reason <- rep(
-    "max_score",
-    length(stage)
-  )
-
-  stage_reason[
-    is.na(raw_stage)
-  ] <- "insufficient_stage_signal"
-
-  stage_reason[
-    assignment$migration_filtered
-  ] <- "migration_core_filter"
-
-  # ------------------------------------------------------------------------- #
-  # Stage confidence
-  # ------------------------------------------------------------------------- #
-
-  stage_confident <-
-    positive &
-    !is.na(stage) &
-    is.finite(assignment$margin) &
-    assignment$margin >= stage_margin
-
-  stage_resolution <- ifelse(
-    negative,
-    "non-gnrh",
-    ifelse(
-      stage_confident,
-      "resolved",
-      "transitional"
-    )
-  )
-
-  # ------------------------------------------------------------------------- #
-  # Mask negative cells
-  # ------------------------------------------------------------------------- #
-
-  stage[
-    negative
-  ] <- "non-gnrh"
-
-  stage_reassigned[
-    negative
-  ] <- FALSE
-
-  stage_confident[
-    negative
-  ] <- FALSE
-
-  stage_reason[
-    negative
-  ] <- "non_gnrh"
-
-  # ------------------------------------------------------------------------- #
-  # Secretory program
-  # ------------------------------------------------------------------------- #
-
-  secretory_module <- .build_secretory_module(
-    genes
-  )
-
-  if (
-    !all(
-      c(
-        "core",
-        "supportive"
-      ) %in%
-      names(secretory_module)
-    )
-  ) {
-    stop(
-      "Secretory module must contain `core` and `supportive` gene sets.",
-      call. = FALSE
-    )
-  }
-
-  secretory_core_hits <- if (
-    length(secretory_module$core)
-  ) {
-    as.integer(
-      Matrix::colSums(
-        expr[
-          secretory_module$core,
-          ,
-          drop = FALSE
-        ] > 0
-      )
-    )
-  } else {
-    integer(
-      ncol(expr)
-    )
-  }
-
-  secretory_supportive_hits <- if (
-    length(secretory_module$supportive)
-  ) {
-    as.integer(
-      Matrix::colSums(
-        expr[
-          secretory_module$supportive,
-          ,
-          drop = FALSE
-        ] > 0
-      )
-    )
-  } else {
-    integer(
-      ncol(expr)
-    )
-  }
-
-  secretory_hits <-
-    secretory_core_hits +
-    secretory_supportive_hits
-
-  secretory_supported <-
-    positive &
-    secretory_core_hits >=
-    min_secretory_core_hits &
-    (
-      secretory_core_hits >=
-        max(
-          2L,
-          min_secretory_core_hits
-        ) |
-        secretory_supportive_hits >=
-        min_secretory_supportive_hits
-    )
-
-  secretory_state <- ifelse(
-    negative,
-    "non-gnrh",
-    ifelse(
-      secretory_supported,
-      "supported",
-      "limited"
-    )
-  )
-
-  # ------------------------------------------------------------------------- #
-  # Metadata: developmental stage
-  # ------------------------------------------------------------------------- #
-
+  req <- c("early","migrating","mature")
+  modules <- .build_stage_modules(genes)
+  miss <- setdiff(req,names(modules))
+  if (length(miss)) stop("Developmental-stage modules are incomplete. Missing: ",paste(miss,collapse=", "),call.=FALSE)
+  dev_modules <- modules[req]
+  mod <- .score_modules(expr=expr,modules=dev_modules,expression_weight=expression_weight,detection_weight=detection_weight,input_type=if (grepl("^counts($|\\.)",layer)) "counts" else "normalized")
+  expr_score <- as.data.frame(mod$score,check.names=FALSE)
+  frac_score <- as.data.frame(mod$fraction,check.names=FALSE)
+  stage_score <- as.data.frame(mod$integrated,check.names=FALSE)
+  mig_core <- .build_migration_core(genes)
+  mig_hits <- if (length(mig_core)) as.integer(Matrix::colSums(expr[mig_core,,drop=FALSE]>0)) else integer(ncol(expr))
+  a <- assign_stage(stage_score,mig_hits,min_migration_hits)
+  raw <- a$raw_stage
+  stage <- a$stage
+  reassigned <- !is.na(raw) & !is.na(stage) & raw!=stage
+  reason <- rep("max_score",length(stage))
+  reason[is.na(raw)] <- "insufficient_stage_signal"
+  reason[a$migration_filtered] <- "migration_core_filter"
+  confident <- positive & !is.na(stage) & !a$migration_filtered & is.finite(a$margin) & a$margin>=stage_margin
+  resolution <- ifelse(negative,"non-gnrh",ifelse(confident,"resolved","transitional"))
+  stage[negative] <- "non-gnrh"
+  reassigned[negative] <- FALSE
+  confident[negative] <- FALSE
+  reason[negative] <- "non_gnrh"
+  sec <- .build_secretory_module(genes)
+  if (!all(c("core","supportive") %in% names(sec))) stop("Secretory module must contain `core` and `supportive` gene sets.",call.=FALSE)
+  core_hits <- if (length(sec$core)) as.integer(Matrix::colSums(expr[sec$core,,drop=FALSE]>0)) else integer(ncol(expr))
+  sup_hits <- if (length(sec$supportive)) as.integer(Matrix::colSums(expr[sec$supportive,,drop=FALSE]>0)) else integer(ncol(expr))
+  sec_hits <- core_hits+sup_hits
+  sec_supported <- positive & core_hits>=min_secretory_core_hits & (core_hits>=max(2L,min_secretory_core_hits) | sup_hits>=min_secretory_supportive_hits)
+  sec_state <- ifelse(negative,"non-gnrh",ifelse(sec_supported,"supported","limited"))
+  dev_state <- .derive_developmental_state(raw_stage=raw,margin=a$margin,positive=positive,migration_filtered=a$migration_filtered,secretory_supported=sec_supported,stage_margin=stage_margin)
+  dev_index <- stage_score$mature-stage_score$migrating
+  # Keep the dominant-program diagnostic restricted to the detected lineage.
+  # Otherwise every background cell is misleadingly labelled as a GnRH stage.
+  raw_display <- raw
+  raw_display[negative] <- "non-gnrh"
   object$gnrh_stage_raw <- factor(
-    raw_stage,
-    levels = required_stages
+    raw_display,
+    levels = c(req, "non-gnrh")
   )
-
-  object$gnrh_stage <- factor(
-    stage,
-    levels = c(
-      required_stages,
-      "non-gnrh"
-    )
-  )
-
-  object$gnrh_stage_reassigned <-
-    as.logical(
-      stage_reassigned
-    )
-
-  object$gnrh_stage_reason <- factor(
-    stage_reason,
-    levels = c(
-      "max_score",
-      "migration_core_filter",
-      "insufficient_stage_signal",
-      "non_gnrh"
-    )
-  )
-
-  object$gnrh_stage_score <-
-    assignment$top_score
-
-  object$gnrh_stage_second_score <-
-    assignment$second_score
-
-  object$gnrh_stage_margin <-
-    assignment$margin
-
-  object$gnrh_stage_confident <-
-    stage_confident
-
-  object$gnrh_stage_resolution <- factor(
-    stage_resolution,
-    levels = c(
-      "resolved",
-      "transitional",
-      "non-gnrh"
-    )
-  )
-
-  # ------------------------------------------------------------------------- #
-  # Metadata: continuous developmental programs
-  # ------------------------------------------------------------------------- #
-
-  for (nm in required_stages) {
-    object[[
-      paste0(
-        "gnrh_stage_",
-        nm,
-        "_score"
-      )
-    ]] <- stage_scores[[nm]]
-
-    object[[
-      paste0(
-        "gnrh_stage_",
-        nm,
-        "_expression"
-      )
-    ]] <- expression_scores[[nm]]
-
-    object[[
-      paste0(
-        "gnrh_stage_",
-        nm,
-        "_fraction"
-      )
-    ]] <- detection_fractions[[nm]]
+  object$gnrh_stage_reassigned <- reassigned
+  object$gnrh_stage_reason <- factor(reason,levels=c("max_score","migration_core_filter","insufficient_stage_signal","non_gnrh"))
+  object$gnrh_stage_score <- a$top_score
+  object$gnrh_stage_second_score <- a$second_score
+  object$gnrh_stage_margin <- a$margin
+  object$gnrh_stage_confident <- confident
+  object$gnrh_stage_resolution <- factor(resolution,levels=c("resolved","transitional","non-gnrh"))
+  object$gnrh_stage <- factor(dev_state,levels=c("early","migrating","post-migratory","mature","transitional","undetermined","non-gnrh"))
+  object$gnrh_developmental_index <- dev_index
+  object$gnrh_early_specification_score <- stage_score$early
+  object$gnrh_lineage_identity_score <- if ("gnrh_identity_score" %in% colnames(md)) as.numeric(md$gnrh_identity_score) else stage_score$early
+  obsolete <- c("gnrh_stage_legacy","gnrh_developmental_state","gnrh_stage_identity_score","gnrh_stage_identity_expression","gnrh_stage_identity_fraction")
+  for (nm in intersect(obsolete,colnames(object[[]]))) object[[nm]] <- NULL
+  for (nm in req) {
+    object[[paste0("gnrh_stage_",nm,"_score")]] <- stage_score[[nm]]
+    object[[paste0("gnrh_stage_",nm,"_expression")]] <- expr_score[[nm]]
+    object[[paste0("gnrh_stage_",nm,"_fraction")]] <- frac_score[[nm]]
   }
-
-  object$gnrh_migration_core_hits <-
-    migration_core_hits
-
-  # ------------------------------------------------------------------------- #
-  # Metadata: secretory program
-  # ------------------------------------------------------------------------- #
-
-  object$gnrh_secretory_core_hits <-
-    secretory_core_hits
-
-  object$gnrh_secretory_supportive_hits <-
-    secretory_supportive_hits
-
-  object$gnrh_secretory_hits <-
-    secretory_hits
-
-  object$gnrh_secretory_supported <-
-    secretory_supported
-
-  object$gnrh_secretory <- factor(
-    secretory_state,
-    levels = c(
-      "limited",
-      "supported",
-      "non-gnrh"
-    )
-  )
-
-  # ------------------------------------------------------------------------- #
-  # Stored information
-  # ------------------------------------------------------------------------- #
-
-  object@misc$gnrh_stage_modules <-
-    developmental_modules
-
-  object@misc$gnrh_migration_core <-
-    migration_core
-
-  object@misc$gnrh_secretory_module <-
-    secretory_module
-
-  object@misc$gnrh_stage_parameters <- list(
-    assay = assay,
-    layer = layer,
-
-    expression_weight =
-      expression_weight,
-
-    detection_weight =
-      detection_weight,
-
-    stage_margin =
-      stage_margin,
-
-    min_migration_hits =
-      min_migration_hits,
-
-    min_secretory_core_hits =
-      min_secretory_core_hits,
-
-    min_secretory_supportive_hits =
-      min_secretory_supportive_hits
-  )
-
-  if (is.null(object@misc$gnrh)) {
-    object@misc$gnrh <- list()
-  }
-
-  object@misc$gnrh$stage <- list(
-    modules =
-      developmental_modules,
-
-    migration_core =
-      migration_core,
-
-    secretory_module =
-      secretory_module,
-
-    parameters =
-      object@misc$gnrh_stage_parameters
-  )
-
+  object$gnrh_migration_core_hits <- mig_hits
+  object$gnrh_secretory_core_hits <- core_hits
+  object$gnrh_secretory_supportive_hits <- sup_hits
+  object$gnrh_secretory_hits <- sec_hits
+  object$gnrh_secretory_supported <- sec_supported
+  object$gnrh_secretory <- factor(sec_state,levels=c("limited","supported","non-gnrh"))
+  pars <- list(assay=assay,layer=layer,score_input_type=mod$input_type,expression_weight=expression_weight,detection_weight=detection_weight,stage_margin=stage_margin,min_migration_hits=min_migration_hits,min_secretory_core_hits=min_secretory_core_hits,min_secretory_supportive_hits=min_secretory_supportive_hits)
+  object@misc$gnrh_stage_modules <- dev_modules
+  object@misc$gnrh_migration_core <- mig_core
+  object@misc$gnrh_secretory_module <- sec
+  object@misc$gnrh_stage_parameters <- pars
+  if (is.null(object@misc$gnrh)) object@misc$gnrh <- list()
+  object@misc$gnrh$stage <- list(modules=dev_modules,migration_core=mig_core,secretory_module=sec,parameters=pars)
   object
 }

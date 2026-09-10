@@ -7,10 +7,8 @@
 gnrh_stage_gene_references()
 }
 \value{
-Data frame containing gene, program, dimension, evidence class,
-and reference information.
+Gene-level reference table.
 }
 \description{
-Returns a gene-level reference table describing curated GnRH developmental
-and secretory programs.
+GnRH developmental and functional marker gene references
 }

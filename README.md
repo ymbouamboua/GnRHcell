@@ -48,6 +48,7 @@ Documentation:
 Install the development version from GitHub with `pak`:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("ymbouamboua/GnRHcell")
 ```
@@ -55,6 +56,7 @@ pak::pak("ymbouamboua/GnRHcell")
 Alternatively, use `remotes`:
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("ymbouamboua/GnRHcell")
 ```
@@ -62,6 +64,7 @@ remotes::install_github("ymbouamboua/GnRHcell")
 Load the package:
 
 ``` r
+
 library(GnRHcell)
 library(Seurat)
 ```
@@ -72,6 +75,7 @@ library(Seurat)
 and returns the updated Seurat object.
 
 ``` r
+
 # `obj` should contain normalized expression data.
 # A dimensional reduction is recommended for visualization.
 obj <- run_gnrh(obj)
@@ -105,6 +109,7 @@ Use `summary_level = "detailed"` for the complete diagnostic summary or
 Inspect the principal outputs:
 
 ``` r
+
 table(obj$gnrh_status, useNA = "ifany")
 table(obj$gnrh_class, useNA = "ifany")
 table(obj$gnrh_confident, useNA = "ifany")
@@ -127,6 +132,7 @@ Result:
 The most frequently used metadata columns include:
 
 ``` r
+
 grep(
   "^gnrh_",
   colnames(obj[[]]),
@@ -245,6 +251,7 @@ Because these objects are stored as `.rds` files, load them with
 `readRDS()` rather than `data()`:
 
 ``` r
+
 load_gnrh_data <- function(name) {
   available <- c(
     "hpsc",
@@ -283,6 +290,7 @@ Active assay: RNA (33538 features, 2000 variable features)
 Load all reference datasets when sufficient memory is available:
 
 ``` r
+
 dataset_ids <- c(
   "hpsc",
   "hudeca_nose",
@@ -304,6 +312,7 @@ For memory-constrained analyses, load and process one object at a time.
 ### Embeddings
 
 ``` r
+
 plot_gnrh_embedding(
   hpsc,
   group_by = "gnrh_status",
@@ -336,6 +345,7 @@ Large datasets are rasterized automatically when appropriate.
 presets.
 
 ``` r
+
 plot_gnrh_feature(
   hpsc,
   preset = "core",
@@ -371,6 +381,7 @@ Core-feature result:
 Plot arbitrary genes or metadata fields:
 
 ``` r
+
 plot_gnrh_feature(
   hpsc,
   features = c("GNRH1", "FEZF1", "ISL1", "DCX"),
@@ -387,6 +398,7 @@ plot_gnrh_feature(
 ### Dot plots
 
 ``` r
+
 plot_gnrh_dot(
   hpsc,
   features = c(
@@ -411,6 +423,7 @@ Result:
 ### Distributions
 
 ``` r
+
 plot_gnrh_distribution(
   hpsc,
   group.by = "gnrh_stage",
@@ -436,6 +449,7 @@ Result:
 ### Diagnostic report
 
 ``` r
+
 hpsc <- run_gnrh(hpsc)
 
 report <- gnrh_report(
@@ -463,6 +477,7 @@ and should not be interpreted as independent validation.
 When an independent manual or reference annotation is available:
 
 ``` r
+
 report <- gnrh_report(
   hpsc,
   truth = "gnrh_class",
@@ -470,6 +485,7 @@ report <- gnrh_report(
   roc_mode = "external",
   style = "bw"
 )
+
 report
 ```
 
@@ -482,6 +498,7 @@ report
 Export a vector report:
 
 ``` r
+
 ggplot2::ggsave(
   "gnrh_diagnostic_report.pdf",
   report,
@@ -501,6 +518,7 @@ differential expression, specificity, `GNRH1` co-detection, and donor
 recurrence.
 
 ``` r
+
 genes <- find_gnrh_genes(
   object = hpsc,
   annotation_col = "ann2",
@@ -543,16 +561,18 @@ indiscriminately.
 ### Co-expression and gene networks
 
 ``` r
-p1=plot_gnrh_coexpr(
+
+p1 = plot_gnrh_coexpr(
   genes$markers,
   coexp_cutoff = 0.30
 )
 
-p2=plot_network(
+p2 = plot_network(
   genes$markers,
   top_n = 40,
   threshold = 0.10
 )
+
 p1+p2
 ```
 
@@ -571,6 +591,7 @@ with the other GnRH-positive stages. It does not require coexpression
 with `GNRH1`, avoiding enrichment for general GnRH-lineage markers.
 
 ``` r
+
 stage_markers <- find_gnrh_stage_markers(
   object = hpsc,
   stage_col = "gnrh_stage",
@@ -601,7 +622,9 @@ Top stage-associated results in the `hpsc` demo:
 | Mature | `LHX5-AS1` | 1.35 | 95.5% | 50.5% | 1.42e-29 |
 
 ``` r
+
 library(dplyr)
+
 top <- stage_markers$candidates %>% 
   group_by(stage) %>% 
   top_n(n = 5, wt = avg_log2FC)
@@ -628,6 +651,7 @@ The complete result is available in
 Retrieve the top markers per stage:
 
 ``` r
+
 top_stage_markers <- stage_markers$candidates |>
   dplyr::group_by(.data$stage) |>
   dplyr::slice_max(
@@ -651,6 +675,7 @@ population-level claims.
 Each row defines an independent Seurat dataset:
 
 ``` r
+
 datasets <- data.frame(
   id = c(
     "hpsc",
@@ -709,6 +734,7 @@ For installed package data, replace the paths with calls to
 ### Validate the configuration
 
 ``` r
+
 datasets <- prepare_gnrh_datasets(
   datasets,
   check_files = TRUE,
@@ -731,6 +757,7 @@ Validation result for the bundled configuration:
 ### Run the collection
 
 ``` r
+
 collection <- run_gnrh_collection(
   datasets = datasets,
   output_dir = "gnrh_results",
@@ -761,12 +788,14 @@ from the collection output directory. The configured reduction is
 respected, including `umap_scvi`.
 
 ``` r
+
 collection$comparisons$gallery$summary
 collection$comparisons$gallery$umap_plot
 collection$comparisons$gallery$stage_plot
 ```
 
 ``` r
+
 names(collection$results)
 names(collection$comparisons)
 
@@ -782,6 +811,7 @@ conserved programs.
 For lower memory use:
 
 ``` r
+
 collection <- run_gnrh_collection(
   datasets = datasets,
   output_dir = "gnrh_results",
@@ -796,6 +826,7 @@ Processed objects must remain available in the collection when running
 validation directly:
 
 ``` r
+
 validation <- validate_gnrh_collection(
   collection,
   positive_classes = c("direct", "supported"),
@@ -820,6 +851,7 @@ are not counted as GnRH-positive.
 ```
 
 ``` r
+
 validation$detection
 validation$status_class
 validation$scores
@@ -856,6 +888,7 @@ Cross-dataset result:
 ### Run one dataset
 
 ``` r
+
 result <- run_gnrh_dataset(
   object = hpsc,
   dataset_id = "hpsc",
@@ -868,6 +901,7 @@ result <- run_gnrh_dataset(
 )
 
 result$run_info
+
 head(result$markers)
 ```
 
@@ -899,6 +933,7 @@ Running GnRHcell: Human hPSC
 ## Cross-dataset comparisons
 
 ``` r
+
 comparison <- compare_gnrh_datasets(
   datasets = datasets,
   output_dir = "gnrh_results",
@@ -920,6 +955,7 @@ comparison$gallery$stage_plot
 Marker programs can also be generated from existing result tables:
 
 ``` r
+
 files <- c(
   "HuDeCa nose" = "gnrh_hudeca_nose_markers.tsv",
   "Human hPSC" = "gnrh_hpsc_markers.tsv",
@@ -957,6 +993,7 @@ The plotting functions require the optional Bioconductor packages
 `ComplexHeatmap` and `circlize`:
 
 ``` r
+
 # install.packages("BiocManager")
 # BiocManager::install(c("ComplexHeatmap", "circlize"))
 ```
@@ -964,6 +1001,7 @@ The plotting functions require the optional Bioconductor packages
 Use the marker files produced by `run_gnrh_collection()`:
 
 ``` r
+
 marker_dir <- file.path("gnrh_results", "markers")
 
 marker_files <- stats::setNames(
@@ -992,6 +1030,7 @@ comparable heatmaps, specify the same score explicitly when it is
 present in every table:
 
 ``` r
+
 conserved_markers <- plot_gnrh_conserved_markers(
   files = marker_files,
   dir = marker_dir,
@@ -1024,6 +1063,7 @@ between their target dataset score and the mean score in the other
 datasets:
 
 ``` r
+
 specific_markers <- plot_gnrh_dataset_specific_markers(
   files = marker_files,
   dir = marker_dir,
@@ -1054,6 +1094,7 @@ The returned tables can be filtered or exported independently of the
 heatmaps:
 
 ``` r
+
 utils::write.csv(
   conserved_markers$conserved,
   file.path("gnrh_results", "comparisons", "conserved_gnrh_markers.csv"),
@@ -1072,6 +1113,7 @@ plot describes set membership, whereas the heatmaps retain marker-effect
 magnitude across datasets.
 
 ``` r
+
 marker_dir <- file.path("gnrh_results", "markers")
 
 files <- c(
@@ -1100,6 +1142,7 @@ programs <- gnrh_marker_programs(
 Visualize the results:
 
 ``` r
+
 plot_gnrh_marker_programs(
   programs,
   table = "high_confidence",
@@ -1201,6 +1244,7 @@ Objects are written to `objects/` only when `save_objects = TRUE`.
 ## Development
 
 ``` r
+
 devtools::document()
 devtools::test()
 devtools::check()
@@ -1210,6 +1254,7 @@ pkgdown::build_site()
 Rebuild `README.md` after editing this source file:
 
 ``` r
+
 devtools::build_readme()
 ```
 

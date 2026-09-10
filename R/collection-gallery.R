@@ -48,9 +48,11 @@
         cells = nrow(md),
         gnrh_detected = sum(positive, na.rm = TRUE),
         detected_percent = 100 * mean(positive, na.rm = TRUE),
-        identity = sum(positive & as.character(md$gnrh_stage) == "identity", na.rm = TRUE),
+        early = sum(positive & as.character(md$gnrh_stage) == "early", na.rm = TRUE),
         migrating = sum(positive & as.character(md$gnrh_stage) == "migrating", na.rm = TRUE),
+        post_migratory = sum(positive & as.character(md$gnrh_stage) == "post-migratory", na.rm = TRUE),
         mature = sum(positive & as.character(md$gnrh_stage) == "mature", na.rm = TRUE),
+        transitional = sum(positive & as.character(md$gnrh_stage) == "transitional", na.rm = TRUE),
         secretory_supported = if ("gnrh_secretory" %in% colnames(md)) sum(positive & as.character(md$gnrh_secretory) == "supported", na.rm = TRUE) else NA_integer_,
         secretory_limited = if ("gnrh_secretory" %in% colnames(md)) sum(positive & as.character(md$gnrh_secretory) == "limited", na.rm = TRUE) else NA_integer_,
         check.names = FALSE
@@ -150,25 +152,42 @@
   # ========================================================================= #
   # Developmental-stage collection map
   # ========================================================================= #
+  stage_col <- "gnrh_stage"
+  stage_levels <- c(
+    "early", "migrating", "post-migratory", "mature", "transitional"
+  )
+  stage_palette <- gnrh_colors("stage")[stage_levels]
+  stage_display <- c(
+    early = "Early",
+    migrating = "Migrating",
+    "post-migratory" = "Post-migratory",
+    mature = "Mature",
+    transitional = "Transitional"
+  )
+
   stage_plots <- lapply(seq_along(objects), function(i) {
     object <- objects[[i]]
     md <- object[[]]
-    if (!"gnrh_stage" %in% colnames(md)) return(NULL)
+    if (!stage_col %in% colnames(md)) return(NULL)
     reduction_i <- resolve_reduction(object, as.character(datasets$reduction[[i]]))
     stage_counts <- table(
       factor(
-        as.character(md$gnrh_stage),
-        levels = c("non-gnrh", "identity", "migrating", "mature")
+        as.character(md[[stage_col]]),
+        levels = c("non-gnrh", stage_levels)
       )
     )
-    stage_labels <- c(
-      identity = paste0("Identity (n = ", format(stage_counts[["identity"]], big.mark = ",", trim = TRUE), ")"),
-      migrating = paste0("Migrating (n = ", format(stage_counts[["migrating"]], big.mark = ",", trim = TRUE), ")"),
-      mature = paste0("Mature (n = ", format(stage_counts[["mature"]], big.mark = ",", trim = TRUE), ")")
+    stage_labels <- stats::setNames(
+      paste0(
+        unname(stage_display[stage_levels]),
+        " (n = ",
+        format(as.integer(stage_counts[stage_levels]), big.mark = ",", trim = TRUE),
+        ")"
+      ),
+      stage_levels
     )
     plot_gnrh_embedding(
       object = object,
-      group_by = "gnrh_stage",
+      group_by = stage_col,
       reduction = reduction_i,
       n.cells = FALSE,
       percentage = FALSE,
@@ -177,10 +196,10 @@
       alpha = 1,
       background_alpha = 1,
       plot.ttl = as.character(datasets$label[[i]]),
-      cols = gnrh_colors("stage"),
+      cols = stage_palette,
       leg.pos = "bottom",
       leg.dir = "horizontal",
-      leg.ncol = 3,
+      leg.ncol = min(5L, length(stage_levels)),
       leg.size = 8,
       item.size = 2.5,
       item.border = FALSE,
@@ -188,8 +207,8 @@
       style = "test"
     ) +
       ggplot2::scale_colour_manual(
-        values = gnrh_colors("stage"),
-        breaks = c("identity", "migrating", "mature"),
+        values = stage_palette,
+        breaks = stage_levels,
         labels = stage_labels,
         drop = FALSE
       ) +
@@ -247,13 +266,12 @@
   # ========================================================================= #
   # Developmental-stage composition
   # ========================================================================= #
-  stage_levels <- c("identity", "migrating", "mature")
   stage_data <- do.call(
     rbind,
     lapply(seq_along(objects), function(i) {
       md <- objects[[i]][[]]
       md <- md[as.character(md$gnrh_status) == "pos", , drop = FALSE]
-      counts <- table(factor(as.character(md$gnrh_stage), levels = stage_levels))
+      counts <- table(factor(as.character(md[[stage_col]]), levels = stage_levels))
       total <- sum(counts)
       data.frame(
         dataset = factor(as.character(datasets$label[[i]]), levels = rev(as.character(datasets$label))),
@@ -285,8 +303,8 @@
     ) +
     ggplot2::coord_flip() +
     ggplot2::scale_fill_manual(
-      values = c(identity = "#3B4CC0", migrating = "#00A6CA", mature = "#F28E2B"),
-      labels = c(identity = "Identity", migrating = "Migrating", mature = "Mature"),
+      values = stage_palette,
+      labels = stage_display,
       drop = FALSE
     ) +
     ggplot2::scale_y_continuous(

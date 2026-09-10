@@ -18,53 +18,29 @@ run_gnrh(
 )
 }
 \arguments{
-\item{object}{A Seurat object containing single-cell RNA-seq data.}
+\item{object}{A Seurat object.}
 
-\item{detect}{Logical. Run GnRH detection. Default is \code{TRUE}.}
+\item{detect}{Run GnRH detection.}
 
-\item{stage}{Logical. Run developmental staging. Default is \code{TRUE}.}
+\item{stage}{Run developmental staging.}
 
-\item{diagnostics}{Logical. Run diagnostic analysis. Default is \code{TRUE}.}
+\item{diagnostics}{Run diagnostics.}
 
-\item{detect_args}{Named list of additional arguments passed to
-\code{\link{detect_gnrh}}.}
+\item{detect_args}{Named arguments passed to \code{detect_gnrh()}.}
 
-\item{stage_args}{Named list of additional arguments passed to
-\code{\link{stage_gnrh}}.}
+\item{stage_args}{Named arguments passed to \code{stage_gnrh()}.}
 
-\item{diagnostic_args}{Named list of additional arguments passed to
-\code{\link{gnrh_diagnostics}}.}
+\item{diagnostic_args}{Named arguments passed to \code{gnrh_diagnostics()}.}
 
-\item{summary_level}{Character scalar controlling the final pipeline summary.
-\code{"concise"} prints four compact lines, \code{"detailed"} prints the
-full diagnostic summary, and \code{"none"} suppresses the summary.
-Default is \code{"concise"}.}
+\item{summary_level}{Summary level: concise, detailed, or none.}
 
-\item{verbose}{Logical. Print progress messages. Default is \code{TRUE}.}
+\item{verbose}{Print progress messages.}
 
-\item{...}{Additional arguments passed to \code{\link{detect_gnrh}} for
-backward compatibility. Values in \code{detect_args} take precedence.}
+\item{...}{Additional arguments passed to \code{detect_gnrh()}.}
 }
 \value{
-A Seurat object updated with GnRH detection, developmental staging,
-diagnostics, and runtime metadata.
+Updated Seurat object.
 }
 \description{
-Executes the complete GnRHcell workflow for GnRH detection,
-developmental staging, diagnostics, and runtime reporting.
-}
-\details{
-Detection, developmental staging, and diagnostics can be configured
-independently through \code{detect_args}, \code{stage_args}, and
-\code{diagnostic_args}.
-
-When developmental staging is available, the pipeline summary reports both
-dominant developmental stages and stage-resolution status
-(\code{resolved} or \code{transitional}).
-}
-\seealso{
-\code{\link{detect_gnrh}},
-\code{\link{stage_gnrh}},
-\code{\link{gnrh_diagnostics}},
-\code{\link{extract_gnrh_run_info}}
+Run complete GnRHcell analysis pipeline
 }

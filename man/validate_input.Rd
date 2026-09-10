@@ -17,50 +17,21 @@ validate_input(
 \arguments{
 \item{object}{A Seurat object.}
 
-\item{assay}{Assay to validate. If \code{NULL}, the default assay is used.}
+\item{assay}{Assay to validate; defaults to \code{DefaultAssay(object)}.}
 
-\item{required_layers}{Character vector containing required expression
-layers. Default is \code{c("counts", "data")}.}
+\item{required_layers}{Required layers: counts, data, or scale.data.}
 
-\item{auto_normalize}{Logical. Automatically generate the \code{"data"}
-layer with \code{Seurat::NormalizeData()} when required and missing.
-Default is \code{FALSE}.}
+\item{auto_normalize}{Generate missing \code{data} with \code{NormalizeData()}.}
 
-\item{min_cells}{Minimum number of cells required. Default is \code{1}.}
+\item{min_cells}{Minimum number of cells.}
 
-\item{min_features}{Minimum number of features required. Default is
-\code{1}.}
+\item{min_features}{Minimum number of features.}
 
-\item{verbose}{Logical. Print progress messages.}
+\item{verbose}{Print progress messages.}
 }
 \value{
 A validated Seurat object, optionally normalized.
 }
 \description{
-Validates that a Seurat object contains the assay and expression layers
-required by GnRHcell.
-}
-\details{
-The function supports Seurat v5 \code{Assay5} objects and legacy Seurat
-assays. Required expression layers can be specified explicitly, allowing
-detection workflows to require raw counts only while staging or marker
-workflows can additionally require normalized data.
-
-When normalized expression is required but unavailable,
-\code{auto_normalize = TRUE} runs \code{Seurat::NormalizeData()}.
-
-For \code{\link{detect_gnrh}}, validation should normally use
-\code{required_layers = "counts"}.
-
-Functions based on normalized expression, such as developmental staging or
-marker discovery, should require \code{c("counts", "data")} or
-\code{"data"} as appropriate.
-
-For Seurat v5 assays containing multiple count or data layers,
-\code{Seurat::JoinLayers()} may be required before analysis.
-}
-\seealso{
-\code{\link{detect_gnrh}},
-\code{\link{stage_gnrh}},
-\code{\link[Seurat:NormalizeData]{Seurat::NormalizeData}}
+Validate input Seurat object for GnRH analysis
 }

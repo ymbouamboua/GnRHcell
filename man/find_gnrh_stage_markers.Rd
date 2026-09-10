@@ -7,7 +7,7 @@
 find_gnrh_stage_markers(
   object,
   stage_col = "gnrh_stage",
-  stages = c("identity", "migrating", "mature"),
+  stages = c("early", "migrating", "post-migratory", "mature"),
   class_col = "gnrh_class",
   positive_classes = c("direct", "supported"),
   exclude_stages = "non-gnrh",
@@ -38,7 +38,7 @@ developmental-stage metadata.}
 developmental-stage labels. Default is \code{"gnrh_stage"}.}
 
 \item{stages}{Character vector giving the stages to compare. Default is
-\code{c("identity", "migrating", "mature")}.}
+\code{c("early", "migrating", "post-migratory", "mature")}.}
 
 \item{class_col}{Optional character scalar giving the GnRH detection-class
 metadata column. When supplied, only cells whose class belongs to

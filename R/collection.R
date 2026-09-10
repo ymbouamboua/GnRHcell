@@ -1935,7 +1935,7 @@ run_gnrh_dataset <- function(
       "gnrh_neuro_supportive_hits",
       "gnrh_neuro_hits",
       "gnrh_migration_core_hits",
-      "gnrh_stage_identity_score",
+      "gnrh_stage_early_score",
       "gnrh_stage_migrating_score",
       "gnrh_stage_mature_score",
       "gnrh_knn"
@@ -2271,10 +2271,10 @@ run_gnrh_dataset <- function(
               .data$n_cells[.data$migration_outcome == "reassigned"],
               na.rm = TRUE
             ),
-            n_to_identity = sum(
+            n_to_early = sum(
               .data$n_cells[
                 .data$migration_outcome == "reassigned" &
-                  .data$gnrh_stage == "identity"
+                  .data$gnrh_stage == "early"
               ],
               na.rm = TRUE
             ),
@@ -2500,6 +2500,4 @@ run_gnrh_dataset <- function(
     class = "gnrh_validation"
   )
 }
-
-
 
