@@ -86,7 +86,7 @@ run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=
   count_value <- function(x,v) if (x %in% colnames(md)) sum(as.character(md[[x]])==v,na.rm=TRUE) else 0L
   print_table <- function(x,title,exclude=NULL,order=NULL) {
     x <- as.character(x)
-    x <- x[!is.na(x) & (is.null(exclude) || !x %in% exclude)]
+    x <- x[!is.na(x) & !x %in% exclude]
     if (!length(x)) return(invisible(NULL))
     tab <- table(x)
     if (!is.null(order)) tab <- tab[c(intersect(order,names(tab)),setdiff(names(tab),order))]
@@ -105,8 +105,11 @@ run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=
     log(sprintf("  Cells: %s | GnRH+: %s (%.1f%%) | high confidence: %s",format(total,big.mark=","),format(pos,big.mark=","),if (total) 100*pos/total else 0,format(conf,big.mark=",")))
     direct <- if ("gnrh_class" %in% colnames(md)) count_value("gnrh_class","direct") else count_true("gnrh_direct_supported")
     supported <- count_value("gnrh_class","supported")
-    isolated <- count_true("gnrh_direct_isolated")
-    log(sprintf("  Evidence: direct %s | transcriptomic %s | isolated GNRH1 signal %s",format(direct,big.mark=","),format(supported,big.mark=","),format(isolated,big.mark=",")))
+    isolated_all <- count_true("gnrh_direct_isolated")
+    review <- count_true("gnrh_review_candidate")
+    if (is.na(review)) review <- 0L
+    isolated <- if (is.na(isolated_all)) NA_integer_ else max(0L,isolated_all-review)
+    log(sprintf("  Classification: direct %s | supported %s | review %s | isolated signal %s",format(direct,big.mark=","),format(supported,big.mark=","),format(review,big.mark=","),format(isolated,big.mark=",")))
     if ("gnrh_stage" %in% colnames(md) && pos>0L) {
       lev <- c("early","migrating","post-migratory","mature","transitional")
       st <- table(factor(as.character(md$gnrh_stage),levels=lev))
@@ -129,7 +132,8 @@ run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=
     evidence <- c(
       gnrh_direct_signal="GNRH1 direct signal",
       gnrh_direct_supported="identity-supported direct",
-      gnrh_direct_isolated="isolated GNRH1 signal",
+      gnrh_direct_isolated="all unsupported direct GNRH1 signals",
+      gnrh_review_candidate="manual-review direct signal",
       gnrh_reference_positive="high-specificity reference",
       gnrh_transcriptomic_candidate="transcriptomic candidates",
       gnrh_confident="high-confidence GnRH"

@@ -38,7 +38,7 @@ GNRH_DEFAULT_MIN_UMI <- 2
 GNRH_DEFAULT_SCORE_Q <- 0.85
 CELL_RASTER_THRESHOLD <- 1e5
 CELL_DEFAULT_THEME <- "classic"
-CELL_DEFAULT_BASE_SIZE <- 12
+CELL_DEFAULT_BASE_SIZE <- 14
 
 
 # Global package options
@@ -49,7 +49,7 @@ CELL_DEFAULT_BASE_SIZE <- 12
 
   defaults <- list(
     gnrhcell.raster_threshold = 1e5,
-    gnrhcell.base_size = 12,
+    gnrhcell.base_size = 14,
     gnrhcell.base_family = "Helvetica",
     gnrhcell.palette = "base"
   )

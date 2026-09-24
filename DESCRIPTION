@@ -10,7 +10,7 @@ Authors@R:
     )
 Description: Provides tools to detect, score, and stage GnRH-like cells in
     single-cell RNA-seq data using gene modules, adaptive scoring,
-    ambient RNA correction, and Seurat-compatible workflows.
+    ambient RNA diagnostics, and Seurat-compatible workflows.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:
@@ -43,6 +43,7 @@ Imports:
     readr
 Suggests:
     ggrastr,
+    writexl,
     ComplexHeatmap,
     circlize,
     testthat (>= 3.0.0),

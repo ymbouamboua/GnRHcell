@@ -63,10 +63,26 @@
 # GnRH marker programs
 # ============================================================================= #
 #' Classify GnRH marker candidates into biological programs
+#' @param files Named character vector of marker-result files.
+#' @param results Result returned by `gnrh_upset()`.
+#' @param outdir Directory for generated tables.
+#' @param modules Named list of developmental gene modules.
+#' @param secretory_module Character vector defining the secretory program.
+#' @param coexpr_col Column containing co-expression support.
+#' @param gene_col Column containing gene symbols.
+#' @param min_medium_score Minimum score for medium-confidence candidates.
+#' @param min_high_score Minimum score for high-confidence candidates.
+#' @param min_high_datasets Minimum number of supporting datasets required for
+#'   high-confidence classification.
+#' @param min_medium_datasets Minimum number of supporting datasets required
+#'   for medium-confidence classification.
+#' @param include_gnrh1 Logical; retain `GNRH1` in the integrated results.
+#' @param write_output Logical; write result tables to `outdir`.
+#' @return A list of integrated marker-program tables and summaries.
 #' @export
-gnrh_marker_programs <- function(files,results,outdir,modules=gnrh_stage_modules(),secretory_module=gnrh_secretory_marker_module(),coexpr_col="coexpr_flag",gene_col="gene",min_medium_score=0.25,min_high_score=1,min_high_datasets=2L,min_medium_datasets=1L,include_gnrh1=TRUE,write_output=TRUE) {
+find_gnrh_programs <- function(files,results,outdir,modules=gnrh_stage_modules(),secretory_module=gnrh_secretory_marker_module(),coexpr_col="coexpr_flag",gene_col="gene",min_medium_score=0.25,min_high_score=1,min_high_datasets=2L,min_medium_datasets=1L,include_gnrh1=TRUE,write_output=TRUE) {
   .validate_named_files(files,"files")
-  if (!is.list(results)) stop("`results` must be returned by `gnrh_gene_upset()`.",call.=FALSE)
+  if (!is.list(results)) stop("`results` must be returned by `gnrh_upset()`.",call.=FALSE)
   if (!is.list(modules) || !length(modules) || is.null(names(modules))) stop("`modules` must be a named list.",call.=FALSE)
   min_high_datasets <- as.integer(min_high_datasets)
   min_medium_datasets <- as.integer(min_medium_datasets)
@@ -192,12 +208,9 @@ gnrh_marker_programs <- function(files,results,outdir,modules=gnrh_stage_modules
 gnrh_stage_modules <- function(include_secretory=FALSE) {
   modules <- list(
     early=c("FEZF1","OTX2","SIX3","SIX6","DLX1","DLX2","DLX5","DLX6"),
-    migrating=c("ANOS1","PROKR2","PROK2","NSMF","DCX","L1CAM","SEMA3A",
-                "SEMA3C","SEMA3F","NRP1","NRP2","ROBO1","ROBO2","ROBO3",
-                "SLIT1","UNC5D","RIPOR2","PTPRO","PLXNA3","NFASC","ADGRV1",
-                "CDH22","CTNNA2","FREM1","CXCR4","GDNF","TMEM131L","DLX6OS1"),
-    mature=c("KISS1R","GNRHR","DOC2B","PTPRN","BAIAP3","SCG2","SCG5","VGF",
-             "HCN1","NALCN","SCN3A","SCN9A","KCNMB2","CACNA1B","CHRNB4","CHRNA3")
+    migrating=c("PROKR2","NSMF","SEMA3C","SEMA3F","ROBO2","ROBO3",
+                "RIPOR2","PLXNA3","SLIT1","CXCR4"),
+    mature=c("KISS1R","DOC2B","PTPRN","BAIAP3","SCG2","SCG5","HCN1","NALCN")
   )
   modules <- lapply(modules,function(x) unique(toupper(x)))
   if (isTRUE(include_secretory)) modules$secretory <- gnrh_secretory_marker_module()

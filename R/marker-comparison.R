@@ -50,8 +50,8 @@
 #' @param require_same_score Require the same score column across datasets.
 #'
 #' @return Numeric gene-by-dataset score matrix.
-#' @export
-merge_gnrh_marker_scores <- function(
+#' @keywords internal
+.merge_gnrh_marker_scores <- function(
     ...,
     dataset_names=NULL,
     dir=".",
@@ -378,7 +378,7 @@ merge_gnrh_marker_scores <- function(
 # ============================================================================= #
 #' Plot conserved GnRH markers across datasets
 #'
-#' @inheritParams merge_gnrh_marker_scores
+#' @inheritParams .merge_gnrh_marker_scores
 #' @param files Named marker TSV filenames or paths.
 #' @param min_datasets Minimum number of datasets supporting a gene.
 #' @param top_n Maximum number of genes displayed.
@@ -389,10 +389,11 @@ merge_gnrh_marker_scores <- function(
 #' @param fontsize_row,fontsize_col,fontsize_legend Font sizes.
 #' @param filename Optional PDF or PNG filename.
 #' @param width,height Optional figure dimensions in inches.
+#' @param title Optional heatmap title. Use `NULL` to omit it.
 #'
 #' @return List containing heatmap matrices and conserved-marker summary.
 #' @export
-plot_gnrh_conserved_markers <- function(
+gnrh_conserved <- function(
     files,
     dir=".",
     gene_col="gene",
@@ -411,10 +412,11 @@ plot_gnrh_conserved_markers <- function(
     fontsize_legend=10,
     filename=NULL,
     width=NULL,
-    height=NULL
+    height=NULL,
+    title="Conserved GnRH markers"
 ) {
   gene_case <- match.arg(gene_case)
-  mat <- merge_gnrh_marker_scores(
+  mat <- .merge_gnrh_marker_scores(
     files,
     dataset_names=dataset_names,
     dir=dir,
@@ -484,7 +486,7 @@ plot_gnrh_conserved_markers <- function(
     fontsize_row=fontsize_row,
     fontsize_col=fontsize_col,
     fontsize_legend=fontsize_legend,
-    title="Conserved GnRH markers"
+    title=title
   )
   # ------------------------------------------------------------------------- #
   # Adaptive dimensions
@@ -519,7 +521,7 @@ plot_gnrh_conserved_markers <- function(
 # ============================================================================= #
 #' Plot dataset-specific GnRH markers
 #'
-#' @inheritParams plot_gnrh_conserved_markers
+#' @inheritParams gnrh_conserved
 #' @param top_n_per_dataset Maximum markers selected per dataset. If
 #'   \code{NULL}, automatically adapted to dataset number.
 #' @param max_datasets Maximum number of datasets supporting a marker.
@@ -527,7 +529,7 @@ plot_gnrh_conserved_markers <- function(
 #'
 #' @return List containing heatmap, score matrices, and specificity table.
 #' @export
-plot_gnrh_dataset_specific_markers <- function(
+gnrh_specific <- function(
     files,
     dir=".",
     gene_col="gene",
@@ -535,7 +537,7 @@ plot_gnrh_dataset_specific_markers <- function(
     dataset_names=names(files),
     gene_case=c("upper","asis"),
     top_n_per_dataset=NULL,
-    max_datasets=2L,
+    max_datasets=1L,
     min_target_score=NULL,
     exclude_genes=NULL,
     scale_rows=TRUE,
@@ -547,10 +549,11 @@ plot_gnrh_dataset_specific_markers <- function(
     fontsize_legend=10,
     filename=NULL,
     width=NULL,
-    height=NULL
+    height=NULL,
+    title="Dataset-specific GnRH markers"
 ) {
   gene_case <- match.arg(gene_case)
-  mat <- merge_gnrh_marker_scores(
+  mat <- .merge_gnrh_marker_scores(
     files,
     dataset_names=dataset_names,
     dir=dir,
@@ -669,7 +672,7 @@ plot_gnrh_dataset_specific_markers <- function(
     fontsize_row=fontsize_row,
     fontsize_col=fontsize_col,
     fontsize_legend=fontsize_legend,
-    title="Dataset-specific GnRH markers"
+    title=title
   )
   # ------------------------------------------------------------------------- #
   # Adaptive dimensions

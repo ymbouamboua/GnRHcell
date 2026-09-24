@@ -19,7 +19,10 @@
 #'
 #' Cells with direct \code{GNRH1} signal but no independent GnRH identity
 #' evidence are retained as \code{direct_isolated} diagnostic signals but are
-#' not classified as GnRH-positive.
+#' not classified as GnRH-positive. A conservative subset with stronger direct
+#' signal, GnRH-like neighborhood support, coherent marker evidence, and no
+#' strong alternative identity is additionally flagged as \code{review_candidate}.
+#' This flag is diagnostic only and never changes GnRH-positive status.
 #'
 #' @param raw Numeric vector containing raw \code{GNRH1} UMI counts.
 #' @param norm Numeric vector containing normalized \code{GNRH1} expression.
@@ -75,6 +78,9 @@
     identity_moderate,
     independent_support
 ) {
+  if (!is.numeric(min_umi) || length(min_umi)!=1L || !is.finite(min_umi) ||
+      min_umi<1 || min_umi!=floor(min_umi))
+    stop("`min_umi` must be a positive integer.",call.=FALSE)
   n <- length(raw)
 
   required <- list(
@@ -203,7 +209,7 @@
   # Route 1: direct detection
   # ------------------------------------------------------------------------- #
 
-  direct_signal <- lib_ok & umi_ok
+  direct_signal <- lib_ok & umi_any & umi_ok
 
   direct_supported <-
     direct_signal &
@@ -212,6 +218,26 @@
   direct_isolated <-
     direct_signal &
     !identity_moderate
+
+  # ------------------------------------------------------------------------- #
+  # Conservative manual-review flag
+  #
+  # This is deliberately NOT a rescue route. It separates unusually strong,
+  # biologically coherent direct signals from low-information isolated GNRH1
+  # events while preserving the high-specificity positive classifier.
+  # ------------------------------------------------------------------------- #
+
+  total_hits <- core_hits + mig_hits + neuro_primary_hits + neuro_supportive_hits
+  review_min_umi <- max(3L, as.integer(min_umi) + 1L)
+  review_knn_thr <- 0.50
+  review_min_hits <- 5L
+
+  review_candidate <-
+    direct_isolated &
+    raw >= review_min_umi &
+    knn >= review_knn_thr &
+    total_hits >= review_min_hits &
+    alternative_low
 
   direct <- direct_supported
 
@@ -351,6 +377,7 @@
     direct_signal = direct_signal,
     direct_supported = direct_supported,
     direct_isolated = direct_isolated,
+    review_candidate = review_candidate,
     direct = direct,
 
     supported_candidate = supported_candidate,
@@ -374,6 +401,7 @@
     direct_signal = direct_signal,
     direct_supported = direct_supported,
     direct_isolated = direct_isolated,
+    review_candidate = review_candidate,
 
     transcriptomic_candidate = transcriptomic_candidate,
 
@@ -389,6 +417,9 @@
 
     knn_support_thr = knn_support_thr,
     knn_strong_thr = knn_strong_thr,
+    review_min_umi = review_min_umi,
+    review_knn_thr = review_knn_thr,
+    review_min_hits = review_min_hits,
 
     rules = rules,
     rule_summary = rule_summary

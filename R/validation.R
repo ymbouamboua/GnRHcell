@@ -10,8 +10,8 @@
 #' @param min_features Minimum number of features.
 #' @param verbose Print progress messages.
 #' @return A validated Seurat object, optionally normalized.
-#' @export
-validate_input <- function(object,assay=NULL,required_layers=c("counts","data"),auto_normalize=FALSE,min_cells=1L,min_features=1L,verbose=TRUE) {
+#' @keywords internal
+.validate_input <- function(object,assay=NULL,required_layers=c("counts","data"),auto_normalize=FALSE,min_cells=1L,min_features=1L,verbose=TRUE) {
   if (!inherits(object,"Seurat")) stop("`object` must be a Seurat object.",call.=FALSE)
   log <- .msg(verbose)
   assay <- assay %||% Seurat::DefaultAssay(object)

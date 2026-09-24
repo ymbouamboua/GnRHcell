@@ -5,7 +5,7 @@ test_that("distribution plots adapt to the number of samples", {
   object$sample <- rep(c("D22", "D24", "D26"), each = 4)
   object$gnrh_stage <- rep(c("non-gnrh", "early", "migrating", "mature"), 3)
 
-  plot <- plot_gnrh_distribution(
+  plot <- gnrh_celldistribution(
     object, group.by = "gnrh_stage", split.by = "sample",
     proportion = TRUE, label = FALSE
   )
@@ -26,7 +26,7 @@ test_that("bar gap is independent of bar width", {
   object$sample <- rep(c("D22", "D24", "D26"), each = 4)
   object$gnrh_stage <- rep(c("non-gnrh", "early", "migrating", "mature"), 3)
 
-  plot <- plot_gnrh_distribution(
+  plot <- gnrh_celldistribution(
     object, group.by = "gnrh_stage", split.by = "sample",
     bar.width = 0.3, bar.gap = 0.2, adaptive = FALSE, label = FALSE
   )

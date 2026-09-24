@@ -6,8 +6,8 @@ test_that("coexpression plot titles are bold and centered", {
     p_val_adj = c(1e-20, 1e-10, 1e-5)
   )
 
-  coexpr <- plot_gnrh_coexpr(markers, coexp_cutoff = 0.3)
-  network <- plot_network(markers, top_n = 3, threshold = 0.3)
+  coexpr <- gnrh_coexpr(markers, coexp_cutoff = 0.3)
+  network <- gnrh_network(markers, top_n = 3, threshold = 0.3)
 
   expect_equal(coexpr$theme$plot.title$face, "bold")
   expect_equal(coexpr$theme$plot.title$hjust, 0.5)

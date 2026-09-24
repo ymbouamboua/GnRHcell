@@ -1,4 +1,9 @@
-.build_collection_gallery <- function(objects, datasets, output_dir) {
+.build_collection_gallery <- function(
+    objects,
+    datasets,
+    output_dir,
+    show_titles = TRUE
+) {
   # ========================================================================= #
   # Validation
   # ========================================================================= #
@@ -26,12 +31,13 @@
     files
   }
   gallery_layout <- function(n) {
-    ncol <- min(3L, max(1L, n))
+    # Near-square grids avoid the sparse 3 + 1 layout for four datasets.
+    ncol <- min(3L, max(1L, ceiling(sqrt(n))))
     list(
       ncol = ncol,
       nrow = ceiling(n / ncol),
-      width = max(5.5, 4.8 * ncol),
-      height = max(4.8, 4.6 * ceiling(n / ncol))
+      width = max(6.5, 6.0 * ncol),
+      height = max(5.8, 5.5 * ceiling(n / ncol))
     )
   }
   # ========================================================================= #
@@ -68,14 +74,14 @@
   status_plots <- lapply(seq_along(objects), function(i) {
     object <- objects[[i]]
     md <- object[[]]
-    reduction_i <- resolve_reduction(object, as.character(datasets$reduction[[i]]))
+    reduction_i <- gnrh_reduction(object, as.character(datasets$reduction[[i]]))
     n_neg <- sum(as.character(md$gnrh_status) == "neg", na.rm = TRUE)
     n_pos <- sum(as.character(md$gnrh_status) == "pos", na.rm = TRUE)
     status_labels <- c(
       neg = paste0("Other cells (n = ", format(n_neg, big.mark = ",", trim = TRUE), ")"),
       pos = paste0("GnRH detected (n = ", format(n_pos, big.mark = ",", trim = TRUE), ")")
     )
-    plot_gnrh_embedding(
+    gnrh_cellmap(
       object = object,
       group_by = "gnrh_status",
       reduction = reduction_i,
@@ -86,18 +92,18 @@
       alpha = 1,
       background_alpha = 1,
       plot.ttl = as.character(datasets$label[[i]]),
-      cols = gnrh_colors("status"),
+      cols = gnrh_palette("status"),
       leg.pos = "bottom",
       leg.dir = "horizontal",
       leg.ncol = 2,
       leg.size = 8,
       item.size = 2.5,
       item.border = FALSE,
-      txtsize = 10,
+      txtsize = getOption("gnrhcell.base_size", 14),
       style = "test"
     ) +
       ggplot2::scale_colour_manual(
-        values = gnrh_colors("status"),
+        values = gnrh_palette("status"),
         breaks = c("neg", "pos"),
         labels = status_labels,
         drop = FALSE
@@ -135,10 +141,10 @@
   status_layout <- gallery_layout(length(status_plots))
   umap_plot <- patchwork::wrap_plots(status_plots, ncol = status_layout$ncol) +
     patchwork::plot_annotation(
-      title = paste0(
+      title = if (isTRUE(show_titles)) paste0(
         "GnRHcell detection across ", length(status_plots), " dataset",
         if (length(status_plots) == 1L) "" else "s"
-      ),
+      ) else NULL,
       theme = ggplot2::theme(
         plot.title = ggplot2::element_text(face = "bold", size = 16, hjust = 0.5, margin = ggplot2::margin(b = 6))
       )
@@ -156,7 +162,7 @@
   stage_levels <- c(
     "early", "migrating", "post-migratory", "mature", "transitional"
   )
-  stage_palette <- gnrh_colors("stage")[stage_levels]
+  stage_palette <- gnrh_palette("stage")[stage_levels]
   stage_display <- c(
     early = "Early",
     migrating = "Migrating",
@@ -169,23 +175,21 @@
     object <- objects[[i]]
     md <- object[[]]
     if (!stage_col %in% colnames(md)) return(NULL)
-    reduction_i <- resolve_reduction(object, as.character(datasets$reduction[[i]]))
+    reduction_i <- gnrh_reduction(object, as.character(datasets$reduction[[i]]))
     stage_counts <- table(
       factor(
         as.character(md[[stage_col]]),
         levels = c("non-gnrh", stage_levels)
       )
     )
+    # Counts differ between panels, so keep one shared stage legend and report
+    # the number of detected cells in each panel subtitle.
     stage_labels <- stats::setNames(
-      paste0(
-        unname(stage_display[stage_levels]),
-        " (n = ",
-        format(as.integer(stage_counts[stage_levels]), big.mark = ",", trim = TRUE),
-        ")"
-      ),
+      unname(stage_display[stage_levels]),
       stage_levels
     )
-    plot_gnrh_embedding(
+    n_stage_positive <- sum(as.integer(stage_counts[stage_levels]))
+    gnrh_cellmap(
       object = object,
       group_by = stage_col,
       reduction = reduction_i,
@@ -200,10 +204,10 @@
       leg.pos = "bottom",
       leg.dir = "horizontal",
       leg.ncol = min(5L, length(stage_levels)),
-      leg.size = 8,
-      item.size = 2.5,
+      leg.size = 10,
+      item.size = 3.2,
       item.border = FALSE,
-      txtsize = 10,
+      txtsize = getOption("gnrhcell.base_size", 14),
       style = "test"
     ) +
       ggplot2::scale_colour_manual(
@@ -212,7 +216,13 @@
         labels = stage_labels,
         drop = FALSE
       ) +
-      ggplot2::labs(colour = NULL) +
+      ggplot2::labs(
+        colour = NULL,
+        subtitle = paste0(
+          "Detected GnRH cells: n = ",
+          format(n_stage_positive, big.mark = ",", trim = TRUE)
+        )
+      ) +
       ggplot2::guides(
         colour = ggplot2::guide_legend(
           title = NULL,
@@ -224,7 +234,8 @@
       ggplot2::theme(
         plot.title = ggplot2::element_text(face = "bold", hjust = 0.5, margin = ggplot2::margin(b = 5)),
         aspect.ratio = 1,
-        axis.title = ggplot2::element_text(size = 8),
+        plot.subtitle = ggplot2::element_text(size = 10, hjust = 0.5),
+        axis.title = ggplot2::element_text(size = 10),
         axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 3)),
         axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 3)),
         legend.position = "bottom",
@@ -232,7 +243,7 @@
         legend.justification = "center",
         legend.box.just = "center",
         legend.title = ggplot2::element_blank(),
-        legend.text = ggplot2::element_text(size = 8),
+        legend.text = ggplot2::element_text(size = 10),
         legend.spacing.x = grid::unit(4, "pt"),
         legend.key.width = grid::unit(10, "pt"),
         legend.key.height = grid::unit(10, "pt"),
@@ -247,15 +258,18 @@
   if (length(stage_plots)) {
     stage_layout <- gallery_layout(length(stage_plots))
     stage_map_plot <- patchwork::wrap_plots(stage_plots, ncol = stage_layout$ncol) +
+      patchwork::plot_layout(guides = "collect") +
       patchwork::plot_annotation(
-        title = paste0(
+        title = if (isTRUE(show_titles)) paste0(
           "GnRH developmental stages across ", length(stage_plots), " dataset",
           if (length(stage_plots) == 1L) "" else "s"
-        ),
+        ) else NULL,
         theme = ggplot2::theme(
-          plot.title = ggplot2::element_text(face = "bold", size = 16, hjust = 0.5, margin = ggplot2::margin(b = 6))
+          plot.title = ggplot2::element_text(face = "bold", size = 18, hjust = 0.5, margin = ggplot2::margin(b = 8)),
+          legend.position = "bottom"
         )
-      )
+      ) &
+      ggplot2::theme(legend.position = "bottom")
     stage_map_files <- save_gallery_plot(
       stage_map_plot,
       file.path(output_dir, "collection-map-stage"),
@@ -314,17 +328,21 @@
       expand = ggplot2::expansion(mult = c(0.005, 0.025))
     ) +
     ggplot2::labs(
-      title = "Developmental-stage composition of detected cells",
+      title = if (isTRUE(show_titles)) "Developmental-stage composition of detected cells" else NULL,
       x = NULL,
       y = "Detected cells",
       fill = "Stage"
     ) +
-    ggplot2::theme_classic(base_size = 11) +
+    gnrh_theme(
+      style = "classic",
+      txtsize = getOption("gnrhcell.base_size", 14),
+      leg.pos = "bottom",
+      leg.dir = "horizontal",
+      plot.margin = c(8, 12, 6, 8)
+    ) +
     ggplot2::theme(
       plot.title = ggplot2::element_text(face = "bold", hjust = 0.5),
       axis.text.y = ggplot2::element_text(face = "bold"),
-      legend.position = "bottom",
-      legend.direction = "horizontal",
       legend.box.just = "center",
       plot.margin = ggplot2::margin(8, 12, 6, 8)
     )

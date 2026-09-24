@@ -12,7 +12,6 @@
 #'   \item neuroendocrine maturation programs;
 #'   \item hormonal responsiveness;
 #'   \item alternative neuronal or neuroendocrine identity programs;
-#'   \item ambient RNA information;
 #'   \item neighborhood enrichment using k-nearest neighbors; and
 #'   \item adaptive transcriptomic support thresholds.
 #' }
@@ -61,7 +60,10 @@
 #' Direct candidates require at least \code{min_umi} raw \code{GNRH1} counts
 #' and moderate independent GnRH identity evidence. Cells meeting the UMI rule
 #' without identity evidence are retained as \code{gnrh_direct_isolated} and
-#' \code{gnrh_direct_signal}, but remain GnRH-negative.
+#' \code{gnrh_direct_signal}, but remain GnRH-negative. Rare isolated cells with
+#' stronger direct signal, coherent marker evidence, GnRH-like neighborhood
+#' support, and no strong alternative identity are additionally flagged as
+#' \code{gnrh_review_candidate}; this is a diagnostic flag only.
 #'
 #' Supported candidates contain detectable but sub-threshold \code{GNRH1}
 #' and additionally require independent GnRH identity and transcriptomic
@@ -74,6 +76,9 @@
 #'
 #' Migration-associated expression contributes supportive evidence but cannot
 #' independently establish GnRH identity.
+#'
+#' Ambient RNA is reported as a diagnostic ratio only; it does not correct
+#' expression values or affect classification.
 #'
 #' The main \code{gnrh_score} includes direct \code{GNRH1} information,
 #' whereas \code{gnrh_support_score} deliberately excludes direct
@@ -102,8 +107,30 @@ detect_gnrh <- function(object,
                         scale_factor=10000,
                         max_alternative=0.75,
                         verbose=TRUE) {
+  scalar <- function(x, nm, lower=0, upper=Inf, integer=FALSE, strict=FALSE) {
+    if (!is.numeric(x) || length(x)!=1L || !is.finite(x) ||
+        x<lower || x>upper || (strict && x==lower) ||
+        (integer && (x!=floor(x) || x>.Machine$integer.max)))
+      stop("Invalid `",nm,"`: expected a finite numeric scalar in ",
+           if (strict) "(" else "[",lower,", ",upper,"]",
+           if (integer) " with an integer value" else "", ".",call.=FALSE)
+  }
+  scalar(min_umi,"min_umi",lower=1,integer=TRUE)
+  scalar(min_counts,"min_counts")
+  scalar(k,"k",lower=1,integer=TRUE)
+  scalar(min_reference_cells,"min_reference_cells",lower=1,integer=TRUE)
+  scalar(mad_factor,"mad_factor")
+  scalar(scale_factor,"scale_factor",strict=TRUE)
+  scalar(max_alternative,"max_alternative",upper=1)
+  scalar(supported_q,"supported_q",upper=1)
+  scalar(candidate_q,"candidate_q",upper=1)
+  if (candidate_q<supported_q)
+    stop("`candidate_q` must be >= `supported_q`.",call.=FALSE)
+  if (!is.numeric(dims) || !length(dims) || any(!is.finite(dims)) ||
+      any(dims<1 | dims!=floor(dims) | dims>.Machine$integer.max))
+    stop("`dims` must contain positive integer dimensions.",call.=FALSE)
   log <- .msg(verbose)
-  object <- validate_input(object,assay=assay,required_layers=layer,verbose=verbose)
+  object <- .validate_input(object,assay=assay,required_layers=layer,verbose=verbose)
   expr <- .get_expr(object,assay=assay,layer=layer)
   genes <- rownames(expr)
   log(sprintf("Matrix loaded: %d genes by %d cells",nrow(expr),ncol(expr)))
@@ -156,7 +183,8 @@ detect_gnrh <- function(object,
   support_score_raw <- 4*identity_score+0.35*migration_score+0.75*neuro_score+0.10*hormone_score+0.35*knn_identity
   support_score <- .scale0(support_score_raw)
   nz <- norm[is.finite(norm) & norm>0]
-  expr_thr <- if (length(nz)>20L && stats::mad(nz)>0) stats::median(nz)+mad_factor*stats::mad(nz) else if (length(nz)) as.numeric(stats::quantile(nz,0.99,names=FALSE)) else Inf
+  expr_thr <- if (length(nz)>20L && stats::mad(nz)>0) stats::median(nz)+mad_factor*stats::mad(nz)
+  else if (length(nz)) as.numeric(stats::quantile(nz,0.99,names=FALSE)) else Inf
   hits <- list(
     core=core_hits,mig=mig_hits,neuro=neuro_hits,
     identity_primary=identity_primary_hits,identity_supportive=identity_supportive_hits,
@@ -175,8 +203,18 @@ detect_gnrh <- function(object,
   object$gnrh_class <- factor(cls$class,levels=c("neg","supported","direct"))
   object$gnrh_direct_supported <- cls$direct_supported
   object$gnrh_direct_isolated <- cls$direct_isolated
+  object$gnrh_review_candidate <- cls$review_candidate
   object$gnrh_direct_signal <- cls$direct_signal
   object$gnrh_signal_status <- factor(ifelse(cls$direct_signal,"signal","no_signal"),levels=c("no_signal","signal"))
+  signal_class <- rep("none",length(cls$status))
+  signal_class[cls$direct_isolated] <- "isolated"
+  signal_class[cls$review_candidate] <- "review"
+  signal_class[cls$class=="supported"] <- "supported"
+  signal_class[cls$direct_supported] <- "direct"
+  object$gnrh_signal_class <- factor(
+    signal_class,
+    levels=c("none","isolated","review","supported","direct")
+  )
   object$gnrh_transcriptomic_candidate <- cls$transcriptomic_candidate
   object$gnrh_dropout_candidate <- cls$transcriptomic_candidate
   object$gnrh_reference_positive <- cls$reference_positive
@@ -220,7 +258,8 @@ detect_gnrh <- function(object,
     supported_thr=cls$supported_thr,candidate_thr=cls$candidate_thr,
     dropout_thr=cls$candidate_thr,reference_n=cls$reference_n,
     knn_support_thr=cls$knn_support_thr,knn_strong_thr=cls$knn_strong_thr,
-    max_alternative=max_alternative,
+    review_min_umi=cls$review_min_umi,review_knn_thr=cls$review_knn_thr,
+    review_min_hits=cls$review_min_hits,max_alternative=max_alternative,
     module_weights=.gnrh_module_weights(),
     support_weights=c(identity=4,migration=0.35,neuroendocrine=0.75,hormone=0.10,knn_identity=0.35),
     identity_rules=list(

@@ -58,6 +58,16 @@ test_that("developmental stage module excludes persistent lineage identity", {
   ))
 })
 
+test_that("public and internal stage modules have one source of truth", {
+  public <- gnrh_stage_modules()
+  genes <- unique(unlist(public, use.names = FALSE))
+
+  expect_identical(
+    .build_stage_modules(genes),
+    public
+  )
+})
+
 
 test_that("identity-support rule behaves as expected", {
   identity_supported <- function(

@@ -41,7 +41,8 @@ assign_stage <- function(scores,migration_core_hits=NULL,min_migration_hits=2L) 
 #' @noRd
 .derive_developmental_state <- function(raw_stage,margin,positive,migration_filtered,secretory_supported,stage_margin) {
   n <- length(raw_stage)
-  if (!all(vapply(list(margin,positive,migration_filtered,secretory_supported),length,integer(1))==n)) stop("Developmental-state inputs must have equal lengths.",call.=FALSE)
+  if (!all(vapply(list(margin,positive,migration_filtered,secretory_supported),length,integer(1))==n))
+    stop("Developmental-state inputs must have equal lengths.",call.=FALSE)
   state <- rep("undetermined",n)
   state[!positive] <- "non-gnrh"
   uncertain <- positive & (is.na(raw_stage) | !is.finite(margin) | margin<stage_margin | migration_filtered)
@@ -80,7 +81,7 @@ stage_gnrh <- function(object,assay="RNA",layer="data",min_migration_hits=2L,min
   min_secretory_supportive_hits <- .int(min_secretory_supportive_hits,"min_secretory_supportive_hits")
   if (length(stage_margin)!=1L || !is.finite(stage_margin) || stage_margin<0) stop("`stage_margin` must be a single non-negative number.",call.=FALSE)
   log <- .msg(verbose)
-  object <- validate_input(object,assay=assay,required_layers=layer,auto_normalize=FALSE,verbose=FALSE)
+  object <- .validate_input(object,assay=assay,required_layers=layer,auto_normalize=FALSE,verbose=FALSE)
   md <- object[[]]
   if (!"gnrh_status" %in% colnames(md)) stop("`gnrh_status` is missing. Run `detect_gnrh()` first.",call.=FALSE)
   positive <- !is.na(md$gnrh_status) & as.character(md$gnrh_status)=="pos"

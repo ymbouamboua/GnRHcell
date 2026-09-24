@@ -81,10 +81,10 @@
 #' @keywords internal
 #' @noRd
 .build_stage_modules <- function(genes) {
-  list(
-    early=.match_genes(c("FEZF1","SIX6","SIX3","OTX2","DLX1","DLX2","DLX5","DLX6"),genes),
-    migrating=.match_genes(c("PROKR2","NSMF","SEMA3C","SEMA3F","ROBO2","ROBO3","RIPOR2","PLXNA3","SLIT1","CXCR4"),genes),
-    mature=.match_genes(c("KISS1R","DOC2B","PTPRN","BAIAP3","SCG2","SCG5","HCN1","NALCN"),genes)
+  lapply(
+    gnrh_stage_modules(),
+    .match_genes,
+    genes = genes
   )
 }
 # ----------------------------------------------------------------------- #

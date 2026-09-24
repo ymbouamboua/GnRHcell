@@ -32,3 +32,10 @@ A Seurat object with diagnostics stored in \code{object@misc$gnrh}.
 \description{
 Run GnRH detection diagnostics
 }
+\details{
+AUPRC is computed as non-interpolated average precision using every distinct
+predictor value, grouping tied scores together. It sums each recall increase
+multiplied by the precision after that increase. The PR curve includes the
+conventional no-prediction endpoint (recall 0, precision 1). AUPRC does not
+depend on \code{n_thresholds}, which controls the threshold diagnostic grid.
+}

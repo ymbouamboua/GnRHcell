@@ -9,7 +9,7 @@ test_that("GnRH marker scores merge with automatic score detection", {
     avg_log2FC = c(8, 3)
   )
 
-  matrix <- merge_gnrh_marker_scores(
+  matrix <- .merge_gnrh_marker_scores(
     list(A = a, B = b),
     dataset_names = c("A", "B")
   )
@@ -32,6 +32,17 @@ test_that("GnRH marker scores merge with automatic score detection", {
   )
 })
 
+test_that("dataset-specific markers use strict unique-list support by default", {
+  expect_identical(
+    formals(gnrh_specific)$max_datasets,
+    1L
+  )
+  expect_identical(
+    formals(compare_gnrh_datasets)$specific_max_datasets,
+    1L
+  )
+})
+
 
 test_that("GnRH marker score validation is informative", {
   bad <- data.frame(
@@ -40,7 +51,7 @@ test_that("GnRH marker score validation is informative", {
   )
 
   expect_error(
-    merge_gnrh_marker_scores(
+    .merge_gnrh_marker_scores(
       list(A = bad)
     ),
     "No supported score column"
@@ -79,7 +90,7 @@ test_that("named marker file vectors are accepted", {
     quote = FALSE
   )
 
-  matrix <- merge_gnrh_marker_scores(
+  matrix <- .merge_gnrh_marker_scores(
     c(A = "a.tsv"),
     dir = directory
   )

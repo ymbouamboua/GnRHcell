@@ -5,6 +5,12 @@
 #' @param predictor Metadata column used for threshold validation.
 #' @param n_thresholds Number of thresholds evaluated.
 #' @param verbose Print progress messages.
+#' @details
+#' AUPRC is computed as non-interpolated average precision using every distinct
+#' predictor value, grouping tied scores together. It sums each recall increase
+#' multiplied by the precision after that increase. The PR curve includes the
+#' conventional no-prediction endpoint (recall 0, precision 1). AUPRC does not
+#' depend on `n_thresholds`, which controls the threshold diagnostic grid.
 #' @return A Seurat object with diagnostics stored in `object@misc$gnrh`.
 #' @export
 gnrh_diagnostics <- function(object,truth=NULL,positive=NULL,predictor="gnrh_support_score_raw",n_thresholds=200L,verbose=TRUE) {
@@ -33,6 +39,8 @@ gnrh_diagnostics <- function(object,truth=NULL,positive=NULL,predictor="gnrh_sup
     direct_signal=as.logical(opt("gnrh_direct_signal",FALSE)),
     direct_supported=as.logical(opt("gnrh_direct_supported",FALSE)),
     direct_isolated=as.logical(opt("gnrh_direct_isolated",FALSE)),
+    review_candidate=as.logical(opt("gnrh_review_candidate",FALSE)),
+    signal_class=as.character(opt("gnrh_signal_class","none")),
     reference_positive=as.logical(opt("gnrh_reference_positive",FALSE)),
     transcriptomic_candidate=as.logical(opt("gnrh_transcriptomic_candidate",opt("gnrh_dropout_candidate",FALSE))),
     identity_moderate=as.logical(opt("gnrh_identity_moderate",FALSE)),
@@ -73,6 +81,7 @@ gnrh_diagnostics <- function(object,truth=NULL,positive=NULL,predictor="gnrh_sup
     direct_signal=count_true(opt("gnrh_direct_signal",FALSE)),
     direct_supported=count_true(opt("gnrh_direct_supported",FALSE)),
     direct_isolated=count_true(opt("gnrh_direct_isolated",FALSE)),
+    review_candidate=count_true(opt("gnrh_review_candidate",FALSE)),
     reference_positive=count_true(opt("gnrh_reference_positive",FALSE)),
     transcriptomic_candidate=count_true(opt("gnrh_transcriptomic_candidate",opt("gnrh_dropout_candidate",FALSE))),
     stage_resolved=count_true(opt("gnrh_stage_confident",FALSE))
@@ -116,7 +125,7 @@ gnrh_diagnostics <- function(object,truth=NULL,positive=NULL,predictor="gnrh_sup
   if (length(n_thresholds)!=1L || is.na(n_thresholds) || !is.finite(n_thresholds) || n_thresholds<2 || n_thresholds!=floor(n_thresholds)) stop("`n_thresholds` must be an integer >= 2.",call.=FALSE)
   n_thresholds <- as.integer(n_thresholds)
   r <- range(predictor_values,finite=TRUE)
-  if (!all(is.finite(r)) || diff(r)<=0) stop("Predictor has no usable range.",call.=FALSE)
+  if (!all(is.finite(r))) stop("Predictor has no usable range.",call.=FALSE)
   thresholds <- sort(unique(c(Inf,seq(r[1],r[2],length.out=n_thresholds),-Inf)),decreasing=TRUE)
   safe_div <- function(a,b) if (length(b)!=1L || b<=0) NA_real_ else a/b
   metric_row <- function(threshold) {
@@ -145,13 +154,16 @@ gnrh_diagnostics <- function(object,truth=NULL,positive=NULL,predictor="gnrh_sup
   roc <- curve[is.finite(curve$fpr) & is.finite(curve$tpr),c("threshold","fpr","tpr","sensitivity","specificity"),drop=FALSE]
   roc <- roc[order(roc$fpr,roc$tpr),,drop=FALSE]
   roc <- roc[!duplicated(roc[,c("fpr","tpr"),drop=FALSE]),,drop=FALSE]
-  auc <- if (nrow(roc)>=2L) sum(diff(roc$fpr)*(head(roc$tpr,-1L)+tail(roc$tpr,-1L))/2) else NA_real_
-  pr <- curve[is.finite(curve$recall) & is.finite(curve$precision),c("threshold","recall","precision"),drop=FALSE]
-  if (nrow(pr)) {
-    pr <- stats::aggregate(precision~recall,data=pr,FUN=max)
-    pr <- pr[order(pr$recall),,drop=FALSE]
-  }
-  auprc <- if (nrow(pr)>=2L) sum(diff(pr$recall)*(head(pr$precision,-1L)+tail(pr$precision,-1L))/2) else NA_real_
+  auc <- if (nrow(roc)>=2L) sum(diff(roc$fpr)*(utils::head(roc$tpr,-1L)+utils::tail(roc$tpr,-1L))/2) else NA_real_
+  # Evaluate every distinct score, grouping ties before integrating recall.
+  ord <- order(predictor_values,decreasing=TRUE)
+  ranked <- predictor_values[ord]
+  ends <- c(which(diff(ranked)!=0),length(ranked))
+  tp <- cumsum(truth_positive[ord])[ends]
+  recall <- tp/sum(truth_positive)
+  precision_pr <- tp/ends
+  pr <- data.frame(recall=c(0,recall),precision=c(1,precision_pr))
+  auprc <- sum(diff(pr$recall)*precision_pr)
   actual <- as.character(md$gnrh_status[ok])=="pos"
   TP <- sum(actual & truth_positive)
   FP <- sum(actual & !truth_positive)

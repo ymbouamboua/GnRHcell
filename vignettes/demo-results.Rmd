@@ -29,8 +29,8 @@ GnRH-cell prevalence** in the source tissues or complete atlases.
 
 ## Detection across demo objects
 
-```{r, echo=FALSE, out.width="100%", eval=TRUE}
-knitr::include_graphics("../man/figures/demo-umap-status.png")
+```{r, echo=FALSE, out.width="100%", eval=TRUE, purl=FALSE}
+knitr::include_graphics("figures/demo-umap-status.png")
 ```
 
 Red points are cells classified as `gnrh_status == "pos"`; grey points are all
@@ -56,8 +56,8 @@ objects.
 
 ## Developmental-stage composition
 
-```{r, echo=FALSE, out.width="95%", eval=TRUE}
-knitr::include_graphics("../man/figures/demo-stage-composition.png")
+```{r, echo=FALSE, out.width="95%", eval=TRUE, purl=FALSE}
+knitr::include_graphics("figures/demo-stage-composition.png")
 ```
 
 The hPSC-derived and fetal-nose objects retain substantial identity and
@@ -68,7 +68,7 @@ validation.
 
 ## Reproduce the summary
 
-```{r reproduce-summary}
+```{r reproduce-summary, eval=FALSE}
 library(GnRHcell)
 
 ids <- c(

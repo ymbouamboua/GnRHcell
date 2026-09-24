@@ -207,6 +207,7 @@
       reference_positive=sum_if("gnrh_reference_positive"),
       transcriptomic_candidate=sum_if("gnrh_transcriptomic_candidate"),
       direct_isolated=sum_if("gnrh_direct_isolated"),
+      review_candidate=sum_if("gnrh_review_candidate"),
       direct_signal=sum_if("gnrh_direct_signal")
     ),
     timing=list(seconds=step_times,human=lapply(step_times,.format_duration)),
@@ -233,9 +234,9 @@
     x$source_file <- basename(f)
     x
   }))
-  num <- c("n_genes","n_cells","neg","pos","direct","supported","confident","reference_positive","transcriptomic_candidate","direct_isolated","direct_signal","detect_sec","stage_sec","diagnostics_sec","total_sec")
+  num <- c("n_genes","n_cells","neg","pos","direct","supported","confident","reference_positive","transcriptomic_candidate","direct_isolated","review_candidate","direct_signal","detect_sec","stage_sec","diagnostics_sec","total_sec")
   for (nm in intersect(num,colnames(stats))) stats[[nm]] <- suppressWarnings(as.numeric(stats[[nm]]))
-  zero <- intersect(c("neg","pos","direct","supported","confident","reference_positive","transcriptomic_candidate","direct_isolated","direct_signal"),colnames(stats))
+  zero <- intersect(c("neg","pos","direct","supported","confident","reference_positive","transcriptomic_candidate","direct_isolated","review_candidate","direct_signal"),colnames(stats))
   for (nm in zero) stats[[nm]][is.na(stats[[nm]])] <- 0
   stats
 }
@@ -245,8 +246,8 @@
 #' @param object A Seurat object processed with `run_gnrh()`.
 #' @param dataset_name Optional dataset name.
 #' @return One-row data frame of GnRHcell run statistics.
-#' @export
-extract_gnrh_run_info <- function(object,dataset_name=NULL) {
+#' @keywords internal
+.extract_gnrh_run_info <- function(object,dataset_name=NULL) {
   if (is.null(object@misc$gnrh$run_info)) stop("Missing object@misc$gnrh$run_info. Run run_gnrh() first.",call.=FALSE)
   info <- object@misc$gnrh$run_info
   sec <- info$timing$seconds %||% list()
@@ -267,6 +268,7 @@ extract_gnrh_run_info <- function(object,dataset_name=NULL) {
     transcriptomic_candidate=count_true("gnrh_transcriptomic_candidate"),
     direct_signal=count_true("gnrh_direct_signal"),
     direct_isolated=count_true("gnrh_direct_isolated"),
+    review_candidate=count_true("gnrh_review_candidate"),
     detect_sec=as.numeric(sec$detect_sec %||% NA_real_),
     stage_sec=as.numeric(sec$stage_sec %||% NA_real_),
     diagnostics_sec=as.numeric(sec$diagnostics_sec %||% NA_real_),
@@ -309,8 +311,19 @@ build_gene_sets <- function(files,dir=".",gene_col="gene") {
 # Gene-set overlap
 # ============================================================================= #
 #' Gene set overlap analysis and visualization
+#' @param gene_sets Named list containing one character vector of genes per
+#'   dataset or group.
+#' @param min_size Minimum intersection size retained in the UpSet plot.
+#' @param venn_title Title used for the overlap plot.
+#' @param outdir Directory in which overlap tables and figures are written.
+#' @param save_plot Logical; save the generated plot and tables.
+#' @param max_intersections Maximum number of intersections displayed.
+#' @param plot_width,plot_height Optional output dimensions in inches.
+#' @param dpi Resolution used for raster output.
+#' @return A list containing cleaned gene sets, overlap summaries, unique genes,
+#'   common genes, pairwise results, and the plot.
 #' @export
-gnrh_gene_upset <- function(gene_sets,min_size=1,venn_title="Overlap of Gene Sets",outdir=".",save_plot=TRUE,max_intersections=Inf,plot_width=NULL,plot_height=NULL,dpi=600) {
+gnrh_upset <- function(gene_sets,min_size=1,venn_title="Overlap of Gene Sets",outdir=".",save_plot=TRUE,max_intersections=Inf,plot_width=NULL,plot_height=NULL,dpi=600) {
   for (pkg in c("ggplot2","ComplexUpset","patchwork")) if (!requireNamespace(pkg,quietly=TRUE)) stop("Package '",pkg,"' is required.",call.=FALSE)
   if (!is.list(gene_sets) || length(gene_sets)<2L) stop("`gene_sets` must contain at least two sets.",call.=FALSE)
   labels <- names(gene_sets)
@@ -355,8 +368,9 @@ gnrh_gene_upset <- function(gene_sets,min_size=1,venn_title="Overlap of Gene Set
   n_sets <- length(gene_sets)
   if (is.null(max_intersections)) max_intersections <- if (n_sets<=4) 25L else if (n_sets<=6) 35L else if (n_sets<=10) 50L else 60L
   n_displayed <- if (is.infinite(max_intersections)) n_available else min(n_available,as.integer(max_intersections))
-  if (is.null(plot_width)) plot_width <- max(9,min(18,7+0.16*n_displayed+0.25*n_sets))
-  if (is.null(plot_height)) plot_height <- max(6,min(11,4.6+0.45*n_sets))
+  label_space <- min(1.8,max(0,(max(nchar(labels))-12)*0.04))
+  if (is.null(plot_width)) plot_width <- max(7,min(18,5.4+0.12*n_displayed+0.55*n_sets+label_space))
+  if (is.null(plot_height)) plot_height <- max(5.5,min(11,4.4+0.45*n_sets))
   width_ratio <- min(0.32,max(0.19,0.17+max(nchar(labels))/250))
   count_size <- if (n_displayed<=20) 3.6 else if (n_displayed<=40) 3 else 2.5
   text_size <- if (n_sets<=6) 9 else if (n_sets<=10) 8 else 7

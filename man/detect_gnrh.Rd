@@ -83,7 +83,6 @@ Detection integrates:
 \item neuroendocrine maturation programs;
 \item hormonal responsiveness;
 \item alternative neuronal or neuroendocrine identity programs;
-\item ambient RNA information;
 \item neighborhood enrichment using k-nearest neighbors; and
 \item adaptive transcriptomic support thresholds.
 }
@@ -100,7 +99,10 @@ purposes.
 Direct candidates require at least \code{min_umi} raw \code{GNRH1} counts
 and moderate independent GnRH identity evidence. Cells meeting the UMI rule
 without identity evidence are retained as \code{gnrh_direct_isolated} and
-\code{gnrh_direct_signal}, but remain GnRH-negative.
+\code{gnrh_direct_signal}, but remain GnRH-negative. Rare isolated cells with
+stronger direct signal, coherent marker evidence, GnRH-like neighborhood
+support, and no strong alternative identity are additionally flagged as
+\code{gnrh_review_candidate}; this is a diagnostic flag only.
 
 Supported candidates contain detectable but sub-threshold \code{GNRH1}
 and additionally require independent GnRH identity and transcriptomic
@@ -113,6 +115,9 @@ GNRH1-negative cells may instead be flagged as
 
 Migration-associated expression contributes supportive evidence but cannot
 independently establish GnRH identity.
+
+Ambient RNA is reported as a diagnostic ratio only; it does not correct
+expression values or affect classification.
 
 The main \code{gnrh_score} includes direct \code{GNRH1} information,
 whereas \code{gnrh_support_score} deliberately excludes direct
