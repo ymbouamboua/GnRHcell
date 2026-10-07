@@ -1,7 +1,7 @@
 GnRHcell
 ================
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/GnRHcell-logo.svg" width="360" alt="GnRHcell logo">
 
@@ -235,7 +235,7 @@ human hypothalamic references.
 > source atlases. Detection and staging are GnRHcell outputs and require
 > independent biological validation.
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/demo-umap-status.png" width="900" alt="UMAP comparison of GnRHcell detection in five demo datasets">
 
@@ -245,7 +245,7 @@ Detected cells occupy coherent transcriptional neighborhoods across the
 five demo objects, while their distribution varies with biological
 context and source study.
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/demo-stage-composition.png" width="850" alt="Developmental-stage composition among GnRH-detected cells">
 
@@ -340,10 +340,11 @@ For memory-constrained analyses, load and process one object at a time.
 
 ## Visualization
 
-GnRHcell uses a concise `gnrh_cell*` plotting API inspired by `cellplot`:
+GnRHcell uses a concise `gnrh_cell*` plotting API inspired by
+`cellplot`:
 
 | Task | Function |
-|---|---|
+|----|----|
 | Embedding | `gnrh_cellmap()` |
 | Feature expression | `gnrh_cellfeat()` |
 | Dotplot | `gnrh_celldot()` |
@@ -356,7 +357,8 @@ GnRHcell uses a concise `gnrh_cell*` plotting API inspired by `cellplot`:
 | External signature | `gnrh_signature()` |
 | Theme/palette/export | `gnrh_theme()`, `gnrh_palette()`, `gnrh_save()` |
 
-The former `plot_gnrh_*` API has been removed before the first public release.
+The former `plot_gnrh_*` API has been removed before the first public
+release.
 
 ### Exporting figures for posters
 
@@ -405,6 +407,7 @@ The same function saves tables and R objects; the extension selects the
 writer:
 
 ``` r
+
 gnrh_save(markers, "markers.tsv")
 gnrh_save(markers, "markers.xlsx")  # requires writexl
 gnrh_save(results, "results.rds")
@@ -430,9 +433,9 @@ visible.
 
 ### Cross-model validation of a published signature
 
-Use `gnrh_signature()` to test an external gene set only
-in cells detected as GnRH-positive. Dataset IDs and unique labels are
-both accepted:
+Use `gnrh_signature()` to test an external gene set only in cells
+detected as GnRH-positive. Dataset IDs and unique labels are both
+accepted:
 
 ``` r
 
@@ -483,7 +486,7 @@ gnrh_cellmap(
 
 Result from the bundled `hpsc` object:
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-embedding-results.png" width="900" alt="GnRH detection and developmental-stage embeddings in the hPSC demo object">
 
@@ -496,8 +499,7 @@ coordinate scale is specifically required.
 
 ### Feature presets
 
-`gnrh_cellfeat()` supports direct feature names and GnRHcell
-presets.
+`gnrh_cellfeat()` supports direct feature names and GnRHcell presets.
 
 ``` r
 
@@ -527,7 +529,7 @@ gnrh_cellfeat(
 
 Core-feature result:
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-feature-core.png" width="850" alt="Core GnRH feature maps in the hPSC demo object">
 
@@ -544,7 +546,7 @@ gnrh_cellfeat(
 )
 ```
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-genes.png" width="850" alt="Core GnRH feature maps in the hPSC demo object">
 
@@ -569,7 +571,7 @@ gnrh_celldot(
 
 Result:
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-dotplot.png" width="800" alt="GnRH developmental-program dot plot">
 
@@ -595,7 +597,7 @@ gnrh_celldistribution(
 
 Result:
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-stage-distribution.png" width="800" alt="GnRH developmental-stage distribution by hPSC sample">
 
@@ -619,7 +621,7 @@ report
 
 Compact internal diagnostic result:
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-report.png" width="800" alt="Internal GnRHcell diagnostic summary">
 
@@ -644,7 +646,7 @@ report <- gnrh_report(
 report
 ```
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-report-status.png" width="800" alt="Internal GnRHcell diagnostic summary">
 
@@ -733,7 +735,7 @@ p1+p2
 
 Result:
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-lineage-marker-results.png" width="900" alt="GnRH-lineage co-expression and marker network results">
 
@@ -794,7 +796,7 @@ gnrh_celldot(
 )
 ```
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/hpsc-stage-marker-dotplot.png" width="820" alt="Top stage-associated markers in the hPSC demo object">
 
@@ -1028,13 +1030,13 @@ Cross-dataset result:
 | Mouse HypoMap | 2,174 | 130 | 3 | 0 | 15 | 104 | 8 |
 | Human HypoMap | 2,400 | 213 | 1 | 17 | 2 | 157 | 36 |
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/demo-stage-composition.png" width="800" alt="Cross-dataset GnRH stage composition">
 
 </div>
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/gnrh_detected_plot.png" width="800" alt="Cross-dataset detected GnRH neurons">
 
@@ -1130,7 +1132,7 @@ overlap <- gnrh_upset(
 )
 ```
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/gene_overlap_plot.png" width="800" alt="Cross-dataset overlap of GnRH-associated markers">
 
@@ -1140,7 +1142,8 @@ overlap <- gnrh_upset(
 
 `gnrh_conserved()` and `gnrh_specific()` merge the dataset-level outputs
 from `gnrh_markers()` internally. Gene symbols are standardized to
-uppercase and missing markers remain distinct from genuine zero scores.
+uppercase and missing markers are kept distinct from genuine zero
+scores.
 
 The plotting functions require the optional Bioconductor packages
 `ComplexHeatmap` and `circlize`:
@@ -1156,16 +1159,11 @@ Use the marker files produced by `run_gnrh_collection()`:
 ``` r
 
 marker_dir <- file.path("gnrh_results", "markers")
-
 marker_files <- stats::setNames(
   paste0("gnrh_", datasets$id, "_markers.tsv"),
   datasets$label
 )
-
-marker_files <- marker_files[
-  file.exists(file.path(marker_dir, marker_files))
-]
-
+marker_files <- marker_files[file.exists(file.path(marker_dir, marker_files))]
 stopifnot(length(marker_files) >= 2L)
 ```
 
@@ -1195,7 +1193,7 @@ conserved_markers <- gnrh_conserved(
 conserved_markers$heatmap
 ```
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/conserved-gnrh-marker-heatmap.png" width="800" alt="Conserved GnRH markers">
 
@@ -1229,7 +1227,7 @@ specific_markers$specific_table
 specific_markers$heatmap
 ```
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/dataset-specific-gnrh-marker-heatmap.png" width="800" alt="Dataset-specific GnRH markers">
 
@@ -1253,8 +1251,8 @@ utils::write.csv(
 )
 ```
 
-These score-based heatmaps complement `gnrh_upset()`: the UpSet
-plot describes set membership, whereas the heatmaps retain marker-effect
+These score-based heatmaps complement `gnrh_upset()`: the UpSet plot
+describes set membership, whereas the heatmaps retain marker-effect
 magnitude across datasets.
 
 ``` r
@@ -1295,7 +1293,7 @@ gnrh_program_plot(
 )
 ```
 
-<div align="center">
+<div data-align="center">
 
 <img src="man/figures/marker-program-plots.png" width="800" alt="Cross-dataset GnRH stage composition">
 
