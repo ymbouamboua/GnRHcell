@@ -248,7 +248,7 @@ detect_gnrh <- function(object,
   object$gnrh_neuro_support <- neuro_support
   object$gnrh_migration_support <- migration_support
   object$gnrh_independent_support <- independent_support
-  object$gnrh_confident <- .compute_gnrh_confident(object[[]],min_umi)
+  object$gnrh_confident <- .compute_gnrh_confident(.gnrh_metadata(object),min_umi)
   object@misc$gnrh_gene <- gnrh_gene
   object@misc$gnrh_params <- list(
     assay=assay,layer=layer,reduction=reduction,dims=dims,k=k,

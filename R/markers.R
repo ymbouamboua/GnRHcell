@@ -51,7 +51,7 @@
 #' @keywords internal
 #' @noRd
 .get_cells <- function(object,group.by,ident.1,ident.2=NULL) {
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   if (!group.by %in% colnames(md)) stop("Metadata column `",group.by,"` not found.",call.=FALSE)
   grp <- md[[group.by]]
   names(grp) <- rownames(md)
@@ -99,7 +99,7 @@
   genes <- intersect(genes,rownames(expr))
   cells <- intersect(cells,colnames(expr))
   if (!length(genes) || length(cells)<3L) return(setNames(numeric(0),character(0)))
-  meta <- object[[]]
+  meta <- .gnrh_metadata(object)
   cells <- intersect(cells,rownames(meta))
   if (length(cells)<3L) return(setNames(rep(NA_real_,length(genes)),genes))
   y <- suppressWarnings(as.numeric(meta[cells,program_col]))
@@ -484,12 +484,12 @@ gnrh_markers <- function(
     length(unique(gnrh_pos_vals))<3L ||
     !is.finite(gnrh_var) ||
     gnrh_var<0.25
-  if (is.null(program_col) && "gnrh_identity_score" %in% colnames(object[[]])) program_col <- "gnrh_identity_score"
+  if (is.null(program_col) && "gnrh_identity_score" %in% colnames(.gnrh_metadata(object))) program_col <- "gnrh_identity_score"
   has_program <- !is.null(program_col) &&
     length(program_col)==1L &&
     !is.na(program_col) &&
     nzchar(program_col) &&
-    program_col %in% colnames(object[[]])
+    program_col %in% colnames(.gnrh_metadata(object))
   resolved_mode <- association_mode
   if (association_mode=="auto") {
     if (low_information && has_program) resolved_mode <- "combined"
@@ -752,7 +752,7 @@ find_gnrh_genes <- function(
   if (!inherits(object,"Seurat")) stop("`object` must be a Seurat object.",call.=FALSE)
   set.seed(seed)
   log <- .msg(verbose)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   required <- c(status_col,annotation_col,if (!is.null(confidence_col)) confidence_col,if (!is.null(donor_col)) donor_col)
   missing <- setdiff(required,colnames(md))
   if (length(missing)) stop("Missing metadata column(s): ",paste(missing,collapse=", "),call.=FALSE)
@@ -1022,7 +1022,7 @@ find_gnrh_stage_markers <- function(
 ) {
   if (!inherits(object,"Seurat")) stop("`object` must be a Seurat object.",call.=FALSE)
   log <- .msg(verbose)
-  metadata <- object[[]]
+  metadata <- .gnrh_metadata(object)
   required <- c(stage_col,if (!is.null(class_col)) class_col,if (!is.null(donor_col)) donor_col)
   missing <- setdiff(required,colnames(metadata))
   if (length(missing)) stop("Missing metadata column(s): ",paste(missing,collapse=", "),call.=FALSE)

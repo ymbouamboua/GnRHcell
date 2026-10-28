@@ -88,7 +88,7 @@ run_gnrh_dataset <- function(
     diagnostic_args = diagnostic_args,
     verbose = verbose
   )
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   # ========================================================================= #
   # Run information
   # ========================================================================= #

@@ -123,7 +123,7 @@ gnrh_signature <- function(
     id <- datasets_sel$id[[i]]
     label <- datasets_sel$label[[i]]
     object <- objects[[id]]
-    metadata <- object[[]]
+    metadata <- .gnrh_metadata(object)
     if (!status_field %in% colnames(metadata)) {
       warning("Metadata field `", status_field, "` is absent from ", id, ".", call. = FALSE)
       return(NULL)

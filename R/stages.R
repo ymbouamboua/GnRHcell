@@ -82,7 +82,7 @@ stage_gnrh <- function(object,assay="RNA",layer="data",min_migration_hits=2L,min
   if (length(stage_margin)!=1L || !is.finite(stage_margin) || stage_margin<0) stop("`stage_margin` must be a single non-negative number.",call.=FALSE)
   log <- .msg(verbose)
   object <- .validate_input(object,assay=assay,required_layers=layer,auto_normalize=FALSE,verbose=FALSE)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   if (!"gnrh_status" %in% colnames(md)) stop("`gnrh_status` is missing. Run `detect_gnrh()` first.",call.=FALSE)
   positive <- !is.na(md$gnrh_status) & as.character(md$gnrh_status)=="pos"
   negative <- !positive
@@ -142,7 +142,7 @@ stage_gnrh <- function(object,assay="RNA",layer="data",min_migration_hits=2L,min
   object$gnrh_early_specification_score <- stage_score$early
   object$gnrh_lineage_identity_score <- if ("gnrh_identity_score" %in% colnames(md)) as.numeric(md$gnrh_identity_score) else stage_score$early
   obsolete <- c("gnrh_stage_legacy","gnrh_developmental_state","gnrh_stage_identity_score","gnrh_stage_identity_expression","gnrh_stage_identity_fraction")
-  for (nm in intersect(obsolete,colnames(object[[]]))) object[[nm]] <- NULL
+  for (nm in intersect(obsolete,colnames(.gnrh_metadata(object)))) object[[nm]] <- NULL
   for (nm in req) {
     object[[paste0("gnrh_stage_",nm,"_score")]] <- stage_score[[nm]]
     object[[paste0("gnrh_stage_",nm,"_expression")]] <- expr_score[[nm]]

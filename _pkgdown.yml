@@ -28,6 +28,9 @@ reference:
       staging, diagnostic, and reporting workflow.
     contents:
       - run_gnrh
+      - gnrh_compact
+      - gnrh_metadata
+      - gnrh_restore
       - gnrh_report
 
   - title: GnRH-neuron detection and staging

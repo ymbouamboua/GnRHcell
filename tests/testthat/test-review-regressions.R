@@ -9,7 +9,7 @@ test_that("detailed summaries handle exclusions for multiple cells", {
   object$gnrh_stage <- factor(c("early","non-gnrh","mature"))
   object$gnrh_secretory <- factor(c("limited","non-gnrh","supported"))
   expect_no_error(result <- run_gnrh(object,detect=FALSE,stage=FALSE,
-                                    diagnostics=FALSE,summary_level="detailed",
+                                    diagnostics=FALSE,summary_level="detailed",metadata="full",
                                     verbose=FALSE))
   expect_identical(result[[]],object[[]])
 })

@@ -46,7 +46,7 @@
   summary_table <- do.call(
     rbind,
     lapply(seq_along(objects), function(i) {
-      md <- objects[[i]][[]]
+      md <- .gnrh_metadata(objects[[i]])
       positive <- as.character(md$gnrh_status) == "pos"
       data.frame(
         dataset = as.character(datasets$label[[i]]),
@@ -73,7 +73,7 @@
   # ========================================================================= #
   status_plots <- lapply(seq_along(objects), function(i) {
     object <- objects[[i]]
-    md <- object[[]]
+    md <- .gnrh_metadata(object)
     reduction_i <- gnrh_reduction(object, as.character(datasets$reduction[[i]]))
     n_neg <- sum(as.character(md$gnrh_status) == "neg", na.rm = TRUE)
     n_pos <- sum(as.character(md$gnrh_status) == "pos", na.rm = TRUE)
@@ -173,7 +173,7 @@
 
   stage_plots <- lapply(seq_along(objects), function(i) {
     object <- objects[[i]]
-    md <- object[[]]
+    md <- .gnrh_metadata(object)
     if (!stage_col %in% colnames(md)) return(NULL)
     reduction_i <- gnrh_reduction(object, as.character(datasets$reduction[[i]]))
     stage_counts <- table(
@@ -283,7 +283,7 @@
   stage_data <- do.call(
     rbind,
     lapply(seq_along(objects), function(i) {
-      md <- objects[[i]][[]]
+      md <- .gnrh_metadata(objects[[i]])
       md <- md[as.character(md$gnrh_status) == "pos", , drop = FALSE]
       counts <- table(factor(as.character(md[[stage_col]]), levels = stage_levels))
       total <- sum(counts)

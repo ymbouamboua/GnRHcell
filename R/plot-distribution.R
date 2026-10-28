@@ -52,7 +52,7 @@ gnrh_celldistribution <- function(
 
   style = match.arg(style)
 
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
 
   if (!group.by %in% names(md))
     stop("`group.by` not found.", call. = FALSE)

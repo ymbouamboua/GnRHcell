@@ -94,7 +94,7 @@ gnrh_cellmap <- function(
   # Validation
   # ========================================================================= #
   .validate_seurat(object)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   dots <- list(...)
   if (!is.null(dots$theme)) style <- dots$theme
   style <- match.arg(style)
@@ -529,9 +529,10 @@ gnrh_cellfeat <- function(
     if (!is.null(features) && !is.null(preset)) stop("Supply either `features` or `preset`, not both.", call. = FALSE)
     if (!is.null(preset)) features <- .gnrh_features(preset)
     if (is.null(features) || !length(features)) stop("Supply `features` or `preset`.", call. = FALSE)
+    object <- .gnrh_restore_columns(object, c(features, split.by))
     features <- intersect(
       unique(as.character(features)),
-      c(rownames(object), colnames(object[[]]))
+      c(rownames(object), colnames(.gnrh_metadata(object)))
     )
     if (!length(features)) stop("No valid features found.", call. = FALSE)
     reduction <- gnrh_reduction(object, reduction)
@@ -615,7 +616,7 @@ gnrh_cellfeat <- function(
     for (i in seq_along(features)) {
       label_i <- unname(feature_title[features[[i]]])
       if (!length(label_i) || is.na(label_i)) {
-        label_i <- if (features[[i]] %in% colnames(object[[]])) {
+        label_i <- if (features[[i]] %in% colnames(.gnrh_metadata(object))) {
           tools::toTitleCase(gsub("_", " ", sub("^gnrh_", "", features[[i]])))
         } else {
           features[[i]]
@@ -827,6 +828,7 @@ gnrh_celldot <- function(
 
   .check_seurat(object)
 
+  object <- .gnrh_restore_columns(object, group.by)
   if (!group.by %in% colnames(object@meta.data)) {
     stop("Grouping column not found: ", group.by, call. = FALSE)
   }

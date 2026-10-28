@@ -129,7 +129,7 @@ gnrh_compare <- function(
       figdir <- file.path(dataset_dir, id)
       dir.create(figdir, recursive = TRUE, showWarnings = FALSE)
       plots <- list(embeddings = list(), features = list(), associations = list(), networks = list())
-      for (field in intersect(embedding_fields, names(object[[]]))) {
+      for (field in intersect(embedding_fields, names(.gnrh_metadata(object)))) {
         plot <- safe_plot(gnrh_cellmap(
           object,
           group_by = field,
@@ -145,7 +145,7 @@ gnrh_compare <- function(
           object, preset = preset, reduction = reduction, ncol = 3,
           txtsize = getOption("gnrhcell.base_size", 14), merge.leg = preset %in% c("secretory", "hits")
         ), paste(id, preset, sep = " | "))
-        panel_n <- max(1L, length(intersect(preset_features, c(rownames(object), names(object[[]])))))
+        panel_n <- max(1L, length(intersect(preset_features, c(rownames(object), names(.gnrh_metadata(object))))))
         save_one(
           plot,
           file.path(figdir, paste0(id, "_gnrh_", preset)),

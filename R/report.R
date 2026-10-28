@@ -101,7 +101,7 @@ gnrh_report <- function(
     )
 
   d <- as.data.frame(g$diagnostics)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
 
   req <- c(
     "expr",

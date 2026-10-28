@@ -138,6 +138,39 @@ Result:
 | Stage  | `transitional`   |   150 |
 | Stage  | `non-gnrh`       | 1,873 |
 
+### Compact metadata and detailed results
+
+`run_gnrh()` now defaults to `metadata = "compact"`. Only eight essential
+GnRH columns remain in `meta.data` when available: `gnrh_status`, `gnrh_class`,
+`gnrh_score`, `gnrh_confident`, `gnrh_stage`, `gnrh_stage_confident`,
+`gnrh_stage_resolution`, and `gnrh_secretory`. Detailed scores, marker hits,
+intermediate stages, and evidence flags are stored in
+`obj@misc$gnrh$cell_metadata`, indexed by cell names. Other user metadata is
+preserved, including existing `total_hits` and `total_hits_bin` columns.
+
+```r
+# Simplify an existing object without rerunning detection or staging:
+obj <- gnrh_compact(obj)
+
+# Read all metadata, automatically aligning archived rows by cell name:
+all_metadata <- gnrh_metadata(obj)
+identity_score <- gnrh_metadata(obj, "gnrh_identity_score")
+
+# Return all details to meta.data when needed by external Seurat functions:
+obj_full <- gnrh_restore(obj)
+
+# Opt into the full layout for a new run:
+obj_full <- run_gnrh(obj, metadata = "full")
+```
+
+GnRHcell plots and analysis functions can read archived fields automatically.
+For external Seurat plots or `subset(..., subset = ...)` expressions involving
+an archived field, restore it first or select cell names from `gnrh_metadata()`.
+Restore before renaming cell barcodes, then compact again. Moving columns into
+`misc` simplifies the interface; it does not substantially reduce total object
+memory. Use `metadata_keep` in `run_gnrh()` or `keep` in `gnrh_compact()` to
+customize the retained GnRH fields.
+
 The most frequently used metadata columns include:
 
 ``` r
@@ -149,7 +182,7 @@ grep(
 )
 ```
 
-Important output groups are:
+Important output groups (available through `gnrh_metadata(obj)`) are:
 
 | Output | Typical values or interpretation |
 |----|----|

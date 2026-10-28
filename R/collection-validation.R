@@ -137,7 +137,7 @@
       "gnrh_stage"
     )
     for (id in names(gnrh_list)) {
-      md <- gnrh_list[[id]][[]]
+      md <- .gnrh_metadata(gnrh_list[[id]])
       missing <- setdiff(required_gnrh, colnames(md))
       if (length(missing)) {
         stop(
@@ -150,7 +150,7 @@
     observed_classes <- unique(unlist(
       lapply(
         gnrh_list,
-        function(object) unique(as.character(object[[]]$gnrh_class))
+        function(object) unique(as.character(.gnrh_metadata(object)$gnrh_class))
       ),
       use.names = FALSE
     ))
@@ -207,7 +207,7 @@
     detection <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        md <- object[[]]
+        md <- .gnrh_metadata(object)
         class <- as.character(md$gnrh_class)
         status <- as.character(md$gnrh_status)
         total <- nrow(md)
@@ -278,7 +278,7 @@
     transcriptomic_candidates <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        md <- object[[]]
+        md <- .gnrh_metadata(object)
         column <- if ("gnrh_transcriptomic_candidate" %in% colnames(md)) {
           "gnrh_transcriptomic_candidate"
         } else if ("gnrh_dropout_candidate" %in% colnames(md)) {
@@ -324,7 +324,7 @@
     status_class <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        object[[]] |>
+        .gnrh_metadata(object) |>
           tibble::as_tibble() |>
           dplyr::transmute(
             gnrh_status = as.character(.data$gnrh_status),
@@ -348,7 +348,7 @@
     classification_consistency <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        md <- object[[]]
+        md <- .gnrh_metadata(object)
         status <- as.character(md$gnrh_status)
         class <- as.character(md$gnrh_class)
         raw <- if ("gnrh_raw" %in% colnames(md)) {
@@ -431,7 +431,7 @@
       intersect,
       lapply(
         gnrh_list,
-        function(object) colnames(object[[]])
+        function(object) colnames(.gnrh_metadata(object))
       )
     )
     score_columns <- intersect(
@@ -442,7 +442,7 @@
       purrr::imap_dfr(
         gnrh_list,
         function(object, id) {
-          object[[]] |>
+          .gnrh_metadata(object) |>
             tibble::as_tibble() |>
             dplyr::mutate(
               gnrh_class = as.character(.data$gnrh_class)
@@ -478,7 +478,7 @@
     stages <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        x <- object[[]] |>
+        x <- .gnrh_metadata(object) |>
           tibble::as_tibble() |>
           dplyr::mutate(
             gnrh_status = as.character(.data$gnrh_status),
@@ -505,7 +505,7 @@
     stage_class <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        x <- object[[]] |>
+        x <- .gnrh_metadata(object) |>
           tibble::as_tibble() |>
           dplyr::mutate(
             gnrh_status = as.character(.data$gnrh_status),
@@ -541,7 +541,7 @@
     secretory <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        md <- object[[]]
+        md <- .gnrh_metadata(object)
         if (!"gnrh_secretory" %in% colnames(md)) {
           return(tibble::tibble())
         }
@@ -580,7 +580,7 @@
     has_refinement <- vapply(
       gnrh_list,
       function(object) {
-        all(refinement_required %in% colnames(object[[]]))
+        all(refinement_required %in% colnames(.gnrh_metadata(object)))
       },
       logical(1)
     )
@@ -590,7 +590,7 @@
       stage_refinement <- purrr::imap_dfr(
         gnrh_list[has_refinement],
         function(object, id) {
-          md <- object[[]]
+          md <- .gnrh_metadata(object)
           positive <- as.character(md$gnrh_status) == "pos"
           n_positive <- sum(positive, na.rm = TRUE)
           n_reassigned <- sum(
@@ -622,7 +622,7 @@
       stage_reassignment <- purrr::imap_dfr(
         gnrh_list[has_refinement],
         function(object, id) {
-          object[[]] |>
+          .gnrh_metadata(object) |>
             tibble::as_tibble() |>
             dplyr::filter(
               as.character(.data$gnrh_status) == "pos"
@@ -658,7 +658,7 @@
     has_migration <- vapply(
       gnrh_list,
       function(object) {
-        all(migration_required %in% colnames(object[[]]))
+        all(migration_required %in% colnames(.gnrh_metadata(object)))
       },
       logical(1)
     )
@@ -669,7 +669,7 @@
       migration_core <- purrr::imap_dfr(
         gnrh_list[has_migration],
         function(object, id) {
-          object[[]] |>
+          .gnrh_metadata(object) |>
             tibble::as_tibble() |>
             dplyr::filter(
               as.character(.data$gnrh_status) == "pos"
@@ -700,7 +700,7 @@
       migration_refinement <- purrr::imap_dfr(
         gnrh_list[has_migration],
         function(object, id) {
-          x <- object[[]] |>
+          x <- .gnrh_metadata(object) |>
             tibble::as_tibble() |>
             dplyr::mutate(
               gnrh_status = as.character(.data$gnrh_status),
@@ -794,7 +794,7 @@
     biological_markers <- purrr::imap_dfr(
       gnrh_list,
       function(object, id) {
-        md <- object[[]]
+        md <- .gnrh_metadata(object)
         cells <- rownames(md)[
           as.character(md$gnrh_status) == "pos"
         ]

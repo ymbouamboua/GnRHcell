@@ -101,6 +101,7 @@ gnrh_program <- function(
   if (length(missing)) {
     stop("Marker-program table is missing: ", paste(missing, collapse = ", "), ".", call. = FALSE)
   }
+  object <- .gnrh_restore_columns(object, group.by)
   if (!group.by %in% colnames(object@meta.data)) {
     stop("Grouping column not found: ", group.by, call. = FALSE)
   }

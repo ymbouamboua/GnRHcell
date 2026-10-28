@@ -1,0 +1,81 @@
+compact_fixture <- function() {
+  set.seed(110)
+  genes <- unique(c("GNRH1", "ISL1", "GAPDH", "ACTB", unlist(gnrh_stage_modules(include_secretory=TRUE))))
+  counts <- matrix(stats::rpois(length(genes)*12, 2), nrow=length(genes),
+    dimnames=list(genes, paste0("cell", 1:12)))
+  counts["GNRH1",] <- c(10,5,2,0,0,0,6,0,0,0,0,0)
+  obj <- SeuratObject::CreateSeuratObject(Matrix::Matrix(counts, sparse=TRUE))
+  obj <- Seurat::NormalizeData(obj, verbose=FALSE)
+  obj$sample <- rep(c("A","B"), 6)
+  obj$total_hits <- seq_len(12)
+  obj$total_hits_bin <- factor(rep(c("custom1","custom2"),6))
+  obj$gnrh_user_note <- "keep me"
+  coord <- matrix(rnorm(24),12,dimnames=list(colnames(obj),c("UMAP_1","UMAP_2")))
+  obj[["umap"]] <- SeuratObject::CreateDimReducObject(coord,key="UMAP_",assay="RNA")
+  obj
+}
+
+test_that("compact pipeline retains eight essential results without changing biology", {
+  obj <- compact_fixture()
+  full <- run_gnrh(obj, metadata="full", verbose=FALSE)
+  compact <- run_gnrh(obj, verbose=FALSE)
+  essential <- .gnrh_essential_metadata()
+  expect_setequal(intersect(names(compact[[]]), .gnrh_owned_metadata()), essential)
+  expect_true(ncol(compact@misc$gnrh$cell_metadata)>40)
+  cols <- names(full[[]])
+  expect_equal(gnrh_metadata(compact, cols), full[[]])
+  expect_identical(compact$total_hits, obj$total_hits)
+  expect_identical(compact$total_hits_bin, obj$total_hits_bin)
+  expect_identical(compact$gnrh_user_note, obj$gnrh_user_note)
+  expect_equal(compact@misc$gnrh$diagnostics, full@misc$gnrh$diagnostics)
+  expect_identical(gnrh_compact(compact)@misc$gnrh$cell_metadata, compact@misc$gnrh$cell_metadata)
+  restored <- gnrh_restore(compact)
+  expect_equal(restored[[]][,cols], full[[]])
+  expect_null(restored@misc$gnrh$cell_metadata)
+  expect_equal(gnrh_metadata(gnrh_compact(restored), cols), full[[]])
+})
+
+test_that("archived results align by cell names after subsetting and reordering", {
+  full <- run_gnrh(compact_fixture(), metadata="full", verbose=FALSE)
+  compact <- gnrh_compact(full)
+  cells <- colnames(full)[c(8,2,11,1)]
+  small <- compact[,cells]
+  expect_identical(rownames(gnrh_metadata(small)), colnames(small))
+  expect_equal(gnrh_metadata(small, names(full[[]])), full[[]][colnames(small),,drop=FALSE])
+  restored <- gnrh_restore(small)
+  expect_identical(restored$gnrh_raw, full$gnrh_raw[match(colnames(small),colnames(full))])
+  pruned <- gnrh_compact(small)
+  expect_identical(rownames(pruned@misc$gnrh$cell_metadata), colnames(small))
+  expect_equal(nrow(pruned@misc$gnrh$cell_metadata), 4)
+})
+
+test_that("custom retention and current values take precedence", {
+  full <- run_gnrh(compact_fixture(), metadata="full", verbose=FALSE)
+  obj <- gnrh_compact(full, keep=c("gnrh_status", "gnrh_raw"))
+  expect_setequal(intersect(names(obj[[]]), .gnrh_owned_metadata()), c("gnrh_status","gnrh_raw"))
+  obj$gnrh_core_hits <- rep(99, ncol(obj))
+  expect_equal(gnrh_metadata(obj)$gnrh_core_hits, rep(99, ncol(obj)))
+  obj <- gnrh_compact(obj, keep=character())
+  expect_length(intersect(names(obj[[]]), .gnrh_owned_metadata()), 0)
+  expect_equal(gnrh_metadata(obj)$gnrh_core_hits, rep(99, ncol(obj)))
+  expect_error(gnrh_compact(obj, keep="sample"), "package-owned")
+  expect_error(gnrh_metadata(obj, "missing_column"), "Missing metadata")
+  expect_error(run_gnrh(full, metadata_keep="sample", verbose=FALSE), "package-owned")
+})
+
+test_that("diagnostics, staging, plotting and reruns consume archived fields", {
+  full <- run_gnrh(compact_fixture(), metadata="full", verbose=FALSE)
+  obj <- gnrh_compact(full)
+  expect_no_error(diag <- gnrh_diagnostics(obj, verbose=FALSE))
+  expect_equal(diag@misc$gnrh$diagnostics, full@misc$gnrh$diagnostics)
+  expect_no_error(staged <- stage_gnrh(obj, verbose=FALSE))
+  expect_identical(staged$gnrh_stage, full$gnrh_stage)
+  expect_no_error(gnrh_cellmap(obj, group_by="gnrh_signal_class", raster=FALSE))
+  expect_no_error(gnrh_cellfeat(obj, features="gnrh_support_score", reduction="umap", raster=FALSE))
+  expect_no_error(gnrh_celldot(obj, features="GNRH1", group.by="gnrh_signal_class"))
+  expect_no_error(rerun <- run_gnrh(obj, detect=FALSE, verbose=FALSE))
+  expect_equal(gnrh_metadata(rerun, names(full[[]])), full[[]])
+  expect_false("gnrh_support_score" %in% names(obj[[]]))
+  expect_no_error(rerun <- run_gnrh(obj, verbose=FALSE))
+  expect_equal(gnrh_metadata(rerun, names(full[[]])), full[[]])
+})

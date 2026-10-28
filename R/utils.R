@@ -114,7 +114,7 @@
 #' @keywords internal
 #' @noRd
 .make_total_hits <- function(object) {
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   req <- c("gnrh_core_hits","gnrh_mig_hits","gnrh_neuro_hits")
   miss <- setdiff(req,colnames(md))
   if (length(miss)) stop("Missing GnRH marker-hit columns: ",paste(miss,collapse=", "),call.=FALSE)
@@ -124,8 +124,6 @@
   object$gnrh_identity_neuro_hits <- identity_neuro
   object$gnrh_total_hits <- total
   object$gnrh_total_hits_bin <- bin_hits(total)
-  object$total_hits <- total
-  object$total_hits_bin <- object$gnrh_total_hits_bin
   object
 }
 
@@ -138,7 +136,7 @@
 #' @noRd
 .gnrh_build_roc <- function(object,truth,predictor="gnrh_support_score_raw",positive=NULL) {
   if (!requireNamespace("pROC",quietly=TRUE)) stop("Package 'pROC' is required.",call.=FALSE)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   if (missing(truth) || is.null(truth)) stop("`truth` must contain an independent binary reference annotation.",call.=FALSE)
   y <- if (is.character(truth) && length(truth)==1L) {
     if (!truth %in% colnames(md)) stop("Truth column `",truth,"` not found.",call.=FALSE)
@@ -192,7 +190,7 @@
 #' @noRd
 .add_run_info <- function(object,step_times=list(),params=list()) {
   object <- .init_gnrh_misc(object)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   count_if <- function(x) if (x %in% colnames(md)) .count_factor(md[[x]]) else NULL
   sum_if <- function(x) if (x %in% colnames(md)) sum(md[[x]] %in% TRUE,na.rm=TRUE) else NULL
   object@misc$gnrh$run_info <- list(
@@ -252,7 +250,7 @@
   info <- object@misc$gnrh$run_info
   sec <- info$timing$seconds %||% list()
   hum <- info$timing$human %||% list()
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   count_value <- function(col,val) if (col %in% colnames(md)) sum(as.character(md[[col]])==val,na.rm=TRUE) else 0L
   count_true <- function(col) if (col %in% colnames(md)) sum(md[[col]] %in% TRUE,na.rm=TRUE) else 0L
   data.frame(

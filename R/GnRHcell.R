@@ -11,11 +11,24 @@
 #' @param diagnostic_args Named arguments passed to `gnrh_diagnostics()`.
 #' @param summary_level Summary level: concise, detailed, or none.
 #' @param verbose Print progress messages.
+#' @param metadata Metadata layout: `"compact"` (default) keeps eight essential
+#'   GnRH columns in `meta.data`; `"full"` retains all per-cell results there.
+#' @param metadata_keep Optional character vector overriding the essential GnRH
+#'   columns in compact mode. Only package-owned GnRH fields may be specified.
+#' @details Detailed per-cell results are stored in
+#'   `object@misc$gnrh$cell_metadata`, indexed by cell names. Use
+#'   [gnrh_metadata()] to read all results, [gnrh_compact()] to simplify an
+#'   existing object without rerunning the analysis, or [gnrh_restore()] to
+#'   restore the full metadata layout. GnRHcell plots read archived fields
+#'   automatically. External Seurat plots need the field in `meta.data`.
 #' @param ... Additional arguments passed to `detect_gnrh()`.
 #' @return Updated Seurat object.
 #' @export
-run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=list(),stage_args=list(),diagnostic_args=list(),summary_level=c("concise","detailed","none"),verbose=TRUE,...) {
+run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=list(),stage_args=list(),diagnostic_args=list(),summary_level=c("concise","detailed","none"),verbose=TRUE,metadata=c("compact","full"),metadata_keep=NULL,...) {
   if (!inherits(object,"Seurat")) stop("`object` must be a Seurat object.",call.=FALSE)
+  metadata <- match.arg(metadata)
+  .gnrh_check_keep(metadata_keep)
+  object <- gnrh_restore(object)
   summary_level <- match.arg(summary_level)
   args <- list(detect_args=detect_args,stage_args=stage_args,diagnostic_args=diagnostic_args)
   for (nm in names(args)) {
@@ -56,7 +69,7 @@ run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=
     log("Detection complete.",type="done",duration=step_times$detect_sec)
   }
   if (isTRUE(stage)) {
-    if (!"gnrh_status" %in% colnames(object[[]])) stop("Developmental staging requires GnRH detection metadata.",call.=FALSE)
+    if (!"gnrh_status" %in% colnames(.gnrh_metadata(object))) stop("Developmental staging requires GnRH detection metadata.",call.=FALSE)
     log(step_label("Assigning developmental stages"),type="step")
     t0 <- Sys.time()
     object <- do.call(stage_gnrh,c(list(object=object,verbose=FALSE),stage_args))
@@ -64,7 +77,7 @@ run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=
     log("Staging complete.",type="done",duration=step_times$stage_sec)
   }
   if (isTRUE(diagnostics)) {
-    if (!"gnrh_status" %in% colnames(object[[]])) stop("Diagnostics require GnRH detection metadata.",call.=FALSE)
+    if (!"gnrh_status" %in% colnames(.gnrh_metadata(object))) stop("Diagnostics require GnRH detection metadata.",call.=FALSE)
     log(step_label("Running diagnostics"),type="step")
     t0 <- Sys.time()
     object <- do.call(gnrh_diagnostics,c(list(object=object,verbose=FALSE),diagnostic_args))
@@ -78,10 +91,11 @@ run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=
     diagnostics=isTRUE(diagnostics),
     detect_args=detect_args,
     stage_args=stage_args,
-    diagnostic_args=diagnostic_args
+    diagnostic_args=diagnostic_args,
+    metadata=metadata, metadata_keep=metadata_keep
   )
   object <- .add_run_info(object,step_times=step_times,params=params)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   count_true <- function(x) if (x %in% colnames(md)) sum(md[[x]] %in% TRUE,na.rm=TRUE) else NA_integer_
   count_value <- function(x,v) if (x %in% colnames(md)) sum(as.character(md[[x]])==v,na.rm=TRUE) else 0L
   print_table <- function(x,title,exclude=NULL,order=NULL) {
@@ -188,6 +202,7 @@ run_gnrh <- function(object,detect=TRUE,stage=TRUE,diagnostics=TRUE,detect_args=
       }
     }
   }
+  if (metadata=="compact") object <- gnrh_compact(object, keep=metadata_keep)
   log("==== GnRHcell PIPELINE COMPLETE ====",type="done",duration=step_times$total_sec)
   object
 }

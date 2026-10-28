@@ -627,7 +627,7 @@ gnrh_cellcount <- function(
 ) {
   .validate_seurat(object)
 
-  df <- object[[]] |>
+  df <- .gnrh_metadata(object) |>
     dplyr::count(.data$gnrh_class, name = "n") |>
     dplyr::mutate(pct = 100 * .data$n / sum(.data$n))
 
@@ -678,7 +678,7 @@ gnrh_specificity <- function(
 ) {
   .validate_seurat(object)
 
-  df <- object[[]]
+  df <- .gnrh_metadata(object)
 
   support_col <- if (
     "gnrh_support_score_raw" %in%

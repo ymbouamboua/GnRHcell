@@ -14,6 +14,8 @@ run_gnrh(
   diagnostic_args = list(),
   summary_level = c("concise", "detailed", "none"),
   verbose = TRUE,
+  metadata = c("compact", "full"),
+  metadata_keep = NULL,
   ...
 )
 }
@@ -36,6 +38,12 @@ run_gnrh(
 
 \item{verbose}{Print progress messages.}
 
+\item{metadata}{Metadata layout: \code{"compact"} (default) keeps eight essential
+GnRH columns in \code{meta.data}; \code{"full"} retains all per-cell results there.}
+
+\item{metadata_keep}{Optional character vector overriding the essential GnRH
+columns in compact mode. Only package-owned GnRH fields may be specified.}
+
 \item{...}{Additional arguments passed to \code{detect_gnrh()}.}
 }
 \value{
@@ -43,4 +51,12 @@ Updated Seurat object.
 }
 \description{
 Run complete GnRHcell analysis pipeline
+}
+\details{
+Detailed per-cell results are stored in
+\code{object@misc$gnrh$cell_metadata}, indexed by cell names. Use
+\code{\link[=gnrh_metadata]{gnrh_metadata()}} to read all results, \code{\link[=gnrh_compact]{gnrh_compact()}} to simplify an
+existing object without rerunning the analysis, or \code{\link[=gnrh_restore]{gnrh_restore()}} to
+restore the full metadata layout. GnRHcell plots read archived fields
+automatically. External Seurat plots need the field in \code{meta.data}.
 }

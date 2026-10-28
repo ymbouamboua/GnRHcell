@@ -17,14 +17,14 @@ gnrh_diagnostics <- function(object,truth=NULL,positive=NULL,predictor="gnrh_sup
   if (!inherits(object,"Seurat")) stop("`object` must be a Seurat object.",call.=FALSE)
   log <- .msg(verbose)
   log("Running diagnostics")
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   if (is.null(object@misc$gnrh_params)) stop("Missing `gnrh_params`; run `detect_gnrh()` first.",call.=FALSE)
   req <- c("gnrh_raw","gnrh_expr","gnrh_score","gnrh_status","gnrh_class","gnrh_core_hits","gnrh_mig_hits","gnrh_neuro_hits","gnrh_confident")
   miss <- setdiff(req,colnames(md))
   if (length(miss)) stop("Missing required metadata columns: ",paste(miss,collapse=", "),call.=FALSE)
   object <- .init_gnrh_misc(object)
   object <- .make_total_hits(object)
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
   opt <- function(x,default=NA) if (x %in% colnames(md)) md[[x]] else rep(default,nrow(md))
   diagnostics <- data.frame(
     raw_expr=md$gnrh_raw,

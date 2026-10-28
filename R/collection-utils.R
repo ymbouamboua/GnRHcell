@@ -15,7 +15,7 @@ resolve_split_column <- function(
     object,
     split_by = NULL
 ) {
-  md <- object[[]]
+  md <- .gnrh_metadata(object)
 
   candidates <- unique(
     c(
@@ -401,7 +401,7 @@ combine_gnrh_datasets <- function(
     object <- objects[[i]]
     .check_seurat(object)
     if (isTRUE(gnrh_only)) {
-      md <- object[[]]
+      md <- .gnrh_metadata(object)
       if (!status_col %in% names(md)) {
         stop("Metadata column not found in ", selected$id[[i]], ": ", status_col, ".", call. = FALSE)
       }
