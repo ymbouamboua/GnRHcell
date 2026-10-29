@@ -323,6 +323,9 @@ gnrh_report <- function(
     out[is.finite(x) & x<0.01] <-
       sprintf("%.3f%%",x[is.finite(x) & x<0.01])
 
+    near_all <- is.finite(x) & x<100 & round(x,1)>=100
+    out[near_all] <- sprintf("%.2f%%",x[near_all])
+    out[near_all & round(x,2)>=100] <- ">99.99%"
     out
   }
 
@@ -354,7 +357,8 @@ gnrh_report <- function(
 
     stats::setNames(
       sprintf(
-        "%s  ·  %s",
+        "%s\n%s  ·  %s",
+        lev,
         format(n,big.mark=","),
         format_pct(pct)
       ),
@@ -531,12 +535,13 @@ gnrh_report <- function(
 
           if (z=="non-gnrh") {
             sprintf(
-              "non-GnRH  ·  %s",
+              "non-GnRH\n%s",
               format(n,big.mark=",")
             )
           } else {
             sprintf(
-              "%s  ·  %s",
+              "%s\n%s  ·  %s",
+              z,
               format(n,big.mark=","),
               format_pct(
                 100*n/n_gnrh

@@ -166,8 +166,8 @@ head(genes$candidates)
 \code{\link{gnrh_markers}},
 \code{\link{find_gnrh_stage_markers}}
 
-Other marker discovery: 
-\code{\link{find_gnrh_stage_markers}()},
-\code{\link{gnrh_markers}()}
+Other marker discovery:
+\code{\link[=find_gnrh_stage_markers]{find_gnrh_stage_markers()}},
+\code{\link[=gnrh_markers]{gnrh_markers()}}
 }
 \concept{marker discovery}

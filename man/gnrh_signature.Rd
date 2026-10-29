@@ -45,7 +45,7 @@ whose \code{species} value is \code{"Human"} are used.}
 
 \item{positive_value}{Value in \code{status_field} identifying detected cells.}
 
-\item{layer}{Seurat expression layer passed to \code{\link[Seurat:reexports]{Seurat::FetchData()}}.}
+\item{layer}{Seurat expression layer passed to \code{\link[Seurat:FetchData]{Seurat::FetchData()}}.}
 
 \item{scale_expression}{Standardize mean expression separately for each gene
 across datasets. Recommended when datasets were normalized independently.}

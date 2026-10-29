@@ -140,15 +140,16 @@ Result:
 
 ### Compact metadata and detailed results
 
-`run_gnrh()` now defaults to `metadata = "compact"`. Only eight essential
-GnRH columns remain in `meta.data` when available: `gnrh_status`, `gnrh_class`,
-`gnrh_score`, `gnrh_confident`, `gnrh_stage`, `gnrh_stage_confident`,
-`gnrh_stage_resolution`, and `gnrh_secretory`. Detailed scores, marker hits,
-intermediate stages, and evidence flags are stored in
-`obj@misc$gnrh$cell_metadata`, indexed by cell names. Other user metadata is
-preserved, including existing `total_hits` and `total_hits_bin` columns.
+`run_gnrh()` now defaults to `metadata = "compact"`. Only eight
+essential GnRH columns remain in `meta.data` when available:
+`gnrh_status`, `gnrh_class`, `gnrh_score`, `gnrh_confident`,
+`gnrh_stage`, `gnrh_stage_confident`, `gnrh_stage_resolution`, and
+`gnrh_secretory`. Detailed scores, marker hits, intermediate stages, and
+evidence flags are stored in `obj@misc$gnrh$cell_metadata`, indexed by
+cell names. Other user metadata is preserved, including existing
+`total_hits` and `total_hits_bin` columns.
 
-```r
+``` r
 # Simplify an existing object without rerunning detection or staging:
 obj <- gnrh_compact(obj)
 
@@ -163,12 +164,13 @@ obj_full <- gnrh_restore(obj)
 obj_full <- run_gnrh(obj, metadata = "full")
 ```
 
-GnRHcell plots and analysis functions can read archived fields automatically.
-For external Seurat plots or `subset(..., subset = ...)` expressions involving
-an archived field, restore it first or select cell names from `gnrh_metadata()`.
-Restore before renaming cell barcodes, then compact again. Moving columns into
-`misc` simplifies the interface; it does not substantially reduce total object
-memory. Use `metadata_keep` in `run_gnrh()` or `keep` in `gnrh_compact()` to
+GnRHcell plots and analysis functions can read archived fields
+automatically. For external Seurat plots or `subset(..., subset = ...)`
+expressions involving an archived field, restore it first or select cell
+names from `gnrh_metadata()`. Restore before renaming cell barcodes,
+then compact again. Moving columns into `misc` simplifies the interface;
+it does not substantially reduce total object memory. Use
+`metadata_keep` in `run_gnrh()` or `keep` in `gnrh_compact()` to
 customize the retained GnRH fields.
 
 The most frequently used metadata columns include:
@@ -1465,3 +1467,57 @@ If you use `GnRHcell`, please cite:
 `GnRHcell` is under active development. Interfaces and biological models
 may evolve as detection, staging, and cross-dataset validation methods
 are refined.
+
+### Detection QC and parameter sensitivity
+
+`gnrh_qc()` combines the direct GNRH1 signal and independent support score,
+technical QC by evidence category, sample detection proportions with their
+denominators, developmental-state confidence, and optional embedding/zoom
+panels. It reads compact and full metadata layouts without modifying the input.
+The automatic sample selector tries `donor`, `sample`, then `orig.ident`; pass
+`sample.by` explicitly when these fields have different meanings.
+
+```r
+qc <- gnrh_qc(obj, sample.by = "donor")
+qc$plot
+qc$data$samples
+ggplot2::ggsave("gnrh_qc.png", qc$plot, width=16, height=16, dpi=300)
+
+# Detection is rerun sequentially for each grid setting.
+stability <- gnrh_stability(
+  obj, sample.by="donor",
+  grid=expand.grid(min_umi=c(1,2,3), supported_q=c(.5,.6,.8))
+)
+stability$plot
+stability$runs
+stability$cells
+```
+
+Add a `k` column to the grid to evaluate neighborhood sensitivity. The baseline
+is recomputed on the current cells, with differences from stored labels reported
+in `stability$baseline`. Adaptive thresholds are recalibrated for every trial.
+Positive frequencies and Jaccard overlap describe sensitivity to the chosen grid;
+they are not independent validation or probabilities. Both-positive-sets-empty
+is explicitly defined as Jaccard 1. Technical QC is descriptive; no cells are
+removed or reannotated by either diagnostic function.
+
+### Controlling QC zooms
+
+`gnrh_qc()` frames positive cells by default. The context plot shows the zoom
+rectangle. A central 95% interval on each axis reduces expansion by dispersed
+points, followed by padding and square limits. The actual numbers inside and
+outside are shown on the zoom; all cells remain in the global view and object.
+
+```r
+qc <- gnrh_qc(obj, sample.by="sample")
+qc$data$zoom$cells_outside
+
+# Include the complete positive-cell extent:
+qc <- gnrh_qc(obj, sample.by="sample", zoom.quantile=1)
+
+# Choose the confidence subset or explicit cell names defining a local region:
+qc <- gnrh_qc(obj, sample.by="sample", zoom.by="confident")
+# qc <- gnrh_qc(obj, zoom.cells=selected_cell_names)
+
+ggplot2::ggsave("gnrh_qc.png", qc$plot, width=16, height=18, dpi=300)
+```

@@ -42,6 +42,8 @@ reference:
       - detect_gnrh
       - stage_gnrh
       - gnrh_diagnostics
+      - gnrh_qc
+      - gnrh_stability
 
   - title: Marker discovery and biological programs
     desc: >

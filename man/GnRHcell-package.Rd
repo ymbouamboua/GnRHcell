@@ -22,5 +22,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Yvon Mbouamboua \email{yvon.mbouamboua@gmail.com}
 
+Authors:
+\itemize{
+  \item Yvon Mbouamboua \email{yvon.mbouamboua@gmail.com}
+}
+
 }
 \keyword{internal}

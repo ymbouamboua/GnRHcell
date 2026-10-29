@@ -184,8 +184,8 @@ stage_markers <- find_gnrh_stage_markers(
 \code{\link{find_gnrh_genes}},
 \code{\link{stage_gnrh}}
 
-Other marker discovery: 
-\code{\link{find_gnrh_genes}()},
-\code{\link{gnrh_markers}()}
+Other marker discovery:
+\code{\link[=find_gnrh_genes]{find_gnrh_genes()}},
+\code{\link[=gnrh_markers]{gnrh_markers()}}
 }
 \concept{marker discovery}
